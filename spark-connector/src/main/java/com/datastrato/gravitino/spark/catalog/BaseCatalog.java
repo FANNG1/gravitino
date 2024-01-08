@@ -8,10 +8,13 @@ package com.datastrato.gravitino.spark.catalog;
 import com.datastrato.gravitino.Catalog;
 import com.datastrato.gravitino.NameIdentifier;
 import com.datastrato.gravitino.Namespace;
+import com.datastrato.gravitino.dto.rel.ColumnDTO;
 import com.datastrato.gravitino.exceptions.NoSuchSchemaException;
 import com.datastrato.gravitino.exceptions.NonEmptySchemaException;
 import com.datastrato.gravitino.exceptions.SchemaAlreadyExistsException;
 import com.datastrato.gravitino.rel.Schema;
+import com.datastrato.gravitino.spark.PropertiesConverter;
+import com.datastrato.gravitino.spark.SparkTypeConverter;
 import com.google.common.base.Preconditions;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -41,6 +44,7 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 public abstract class BaseCatalog implements TableCatalog, SupportsNamespaces {
   protected TableCatalog sparkCatalog;
   protected Catalog gravitinoCatalog;
+  protected PropertiesConverter propertiesConverter;
 
   private String metalakeName;
   private String catalogName;
@@ -54,9 +58,12 @@ public abstract class BaseCatalog implements TableCatalog, SupportsNamespaces {
   // Create a internal catalog to do IO operations.
   abstract TableCatalog createAndInitSparkCatalog(String name, CaseInsensitiveStringMap options);
 
+  abstract PropertiesConverter createPropertiesConverter();
+
   public BaseCatalog() {
     gravitinoCatalogManager = GravitinoCatalogManager.get();
     metalakeName = gravitinoCatalogManager.getMetalakeName();
+    propertiesConverter = createPropertiesConverter();
   }
 
   @Override
@@ -68,13 +75,43 @@ public abstract class BaseCatalog implements TableCatalog, SupportsNamespaces {
   public Table createTable(
       Identifier ident, Column[] columns, Transform[] partitions, Map<String, String> properties)
       throws TableAlreadyExistsException, NoSuchNamespaceException {
-    throw new NotSupportedException("Doesn't support creating table");
+    NameIdentifier nameIdentifier =
+        NameIdentifier.of(metalakeName, catalogName, getDatabase(ident), ident.name());
+    ColumnDTO[] gravitinoColumns =
+        Arrays.stream(columns)
+            .map(column -> createGravitinoColumn(column))
+            .toArray(ColumnDTO[]::new);
+
+    Map<String, String> gravitinoProperties =
+        propertiesConverter.toGravitinoTableProperties(properties);
+    String comment = gravitinoProperties.remove("comment");
+
+    try {
+      com.datastrato.gravitino.rel.Table table =
+          gravitinoCatalog
+              .asTableCatalog()
+              .createTable(nameIdentifier, gravitinoColumns, comment, gravitinoProperties);
+      return createSparkTable(ident, table);
+    } catch (NoSuchSchemaException e) {
+      throw new NoSuchNamespaceException(ident.namespace());
+    } catch (com.datastrato.gravitino.exceptions.TableAlreadyExistsException e) {
+      throw new TableAlreadyExistsException(ident);
+    }
   }
 
   // Will create a catalog specific table by invoking createSparkTable()
   @Override
   public Table loadTable(Identifier ident) throws NoSuchTableException {
-    throw new NotSupportedException("Doesn't support loading table");
+    try {
+      com.datastrato.gravitino.rel.Table table =
+          gravitinoCatalog
+              .asTableCatalog()
+              .loadTable(
+                  NameIdentifier.of(metalakeName, catalogName, getDatabase(ident), ident.name()));
+      return createSparkTable(ident, table);
+    } catch (com.datastrato.gravitino.exceptions.NoSuchTableException e) {
+      throw new NoSuchTableException(ident);
+    }
   }
 
   @SuppressWarnings("deprecation")
@@ -92,7 +129,9 @@ public abstract class BaseCatalog implements TableCatalog, SupportsNamespaces {
 
   @Override
   public boolean dropTable(Identifier ident) {
-    throw new NotSupportedException("Doesn't support drop table");
+    return gravitinoCatalog
+        .asTableCatalog()
+        .dropTable(NameIdentifier.of(metalakeName, catalogName, getDatabase(ident), ident.name()));
   }
 
   @Override
@@ -187,9 +226,28 @@ public abstract class BaseCatalog implements TableCatalog, SupportsNamespaces {
     }
   }
 
+  private String getDatabase(Identifier ident) {
+    String database = "default";
+    if (ident.namespace().length > 0) {
+      database = ident.namespace()[0];
+    }
+    return database;
+  }
+
   private void valiateNamespace(String[] namespace) {
     Preconditions.checkArgument(
         namespace.length == 1,
         "Doesn't support multi level namespaces: " + String.join(".", namespace));
   }
+
+  private ColumnDTO createGravitinoColumn(Column sparkColumn) {
+    return ColumnDTO.builder()
+        .withName(sparkColumn.name())
+        .withDataType(SparkTypeConverter.convert(sparkColumn.dataType()))
+        .withNullable(sparkColumn.nullable())
+        .withComment(sparkColumn.comment())
+        .build();
+  }
+
+  void convertTableProperties(Map<String, String> properties) {}
 }

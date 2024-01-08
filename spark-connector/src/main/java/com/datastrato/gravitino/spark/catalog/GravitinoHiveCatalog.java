@@ -6,9 +6,11 @@
 package com.datastrato.gravitino.spark.catalog;
 
 import com.datastrato.gravitino.spark.GravitinoSparkConfig;
+import com.datastrato.gravitino.spark.PropertiesConverter;
+import com.datastrato.gravitino.spark.hive.GravitinoHiveTable;
+import com.datastrato.gravitino.spark.hive.HivePropertiesConverter;
 import com.google.common.base.Preconditions;
 import java.util.HashMap;
-import javax.ws.rs.NotSupportedException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kyuubi.spark.connector.hive.HiveTableCatalog;
 import org.apache.spark.sql.connector.catalog.Identifier;
@@ -22,7 +24,7 @@ public class GravitinoHiveCatalog extends BaseCatalog {
   @Override
   public Table createSparkTable(
       Identifier identifier, com.datastrato.gravitino.rel.Table gravitinoTable) {
-    throw new NotSupportedException("Doesn't support creating spark hive table");
+    return new GravitinoHiveTable(identifier, gravitinoTable, sparkCatalog, propertiesConverter);
   }
 
   @Override
@@ -39,10 +41,15 @@ public class GravitinoHiveCatalog extends BaseCatalog {
 
     TableCatalog hiveCatalog = new HiveTableCatalog();
     HashMap all = new HashMap(options);
-    //all.put(GravitinoSparkConfig.SPARK_HIVE_METASTORE_URI, metastoreUri);
+    // all.put(GravitinoSparkConfig.SPARK_HIVE_METASTORE_URI, metastoreUri);
     all.put(GravitinoSparkConfig.SPARK_HIVE_METASTORE_URI, "thrift://127.0.0.100:10000");
     hiveCatalog.initialize(name, new CaseInsensitiveStringMap(all));
 
     return hiveCatalog;
+  }
+
+  @Override
+  PropertiesConverter createPropertiesConverter() {
+    return new HivePropertiesConverter();
   }
 }

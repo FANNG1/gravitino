@@ -32,8 +32,8 @@ public class SparkEnvIT extends SparkUtilIT {
   private final String metalakeName = "test";
 
   private SparkSession sparkSession;
-  private String hiveMetastoreUri;
-  private String gravitinoUri;
+  private String hiveMetastoreUri = "thrift://127.0.0.1:9083";
+  private String gravitinoUri = "http://127.0.0.1:8090";
 
   @Override
   protected SparkSession getSparkSession() {
@@ -43,9 +43,9 @@ public class SparkEnvIT extends SparkUtilIT {
 
   @BeforeAll
   void startup() {
-    initHiveEnv();
-    initGravitinoEnv();
-    initMetalakeCatalogs();
+    // initHiveEnv();
+    // initGravitinoEnv();
+    // initMetalakeCatalogs();
     initSparkEnv();
     LOG.info(
         "Startup Spark env successfully, gravitino uri: {}, hive metastore uri: {}",

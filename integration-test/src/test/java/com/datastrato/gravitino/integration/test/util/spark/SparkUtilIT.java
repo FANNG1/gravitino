@@ -20,13 +20,17 @@
 package com.datastrato.gravitino.integration.test.util.spark;
 
 import com.datastrato.gravitino.integration.test.util.AbstractIT;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * Provides helper methods to execute SparkSQL and get SparkSQL result, will be reused by SparkIT
@@ -38,12 +42,20 @@ public abstract class SparkUtilIT extends AbstractIT {
 
   protected abstract SparkSession getSparkSession();
 
+  public static void startIntegrationTest() throws Exception {}
+
+  public static void stopIntegrationTest() {}
+
   protected Set<String> getCatalogs() {
     return convertToStringSet(sql("SHOW CATALOGS"), 0);
   }
 
   protected Set<String> getDatabases() {
     return convertToStringSet(sql("SHOW DATABASES"), 0);
+  }
+
+  protected void dropDatabase(String database) {
+    sql("DROP DATABASE IF EXISTS " + database);
   }
 
   protected Map<String, String> getDatabaseMetadata(String database) {
@@ -53,6 +65,50 @@ public abstract class SparkUtilIT extends AbstractIT {
   protected List<Object[]> sql(String query) {
     List<Row> rows = getSparkSession().sql(query).collectAsList();
     return rowsToJava(rows);
+  }
+
+  protected List<String> getTableColumns(String tableName) {
+    List<Object[]> objects = sql("desc table extended " + tableName);
+    List<String> columns = new ArrayList<>();
+    objects.stream()
+        .anyMatch(
+            row -> {
+              String columName = (String) row[0];
+              if (StringUtils.isNoneBlank(columName)) {
+                columns.add(columName);
+                return false;
+              }
+              return true;
+            });
+    return columns;
+  }
+
+  protected SparkTableInfo getTableInfo(String tableName) {
+    return SparkTableInfo.getSparkTableInfo(sql("desc table extended " + tableName));
+  }
+
+  protected void dropTable(String tableName) {
+    sql("drop table if exists " + tableName);
+  }
+
+  /** Check whether all child map content is in parent map */
+  protected void checkMapContains(Map<String, String> child, Map<String, String> parent) {
+    child.forEach(
+        (k, v) -> {
+          Assertions.assertTrue(parent.containsKey(k));
+          Assertions.assertEquals(v, parent.get(k));
+        });
+  }
+
+  /** Mainly used to debug */
+  protected void printObjects(List<Object[]> objects) {
+    objects.stream()
+        .forEach(
+            row -> {
+              String oneRow =
+                  Arrays.stream(row).map(o -> String.valueOf(o)).collect(Collectors.joining(","));
+              System.out.println(oneRow);
+            });
   }
 
   private List<Object[]> rowsToJava(List<Row> rows) {
@@ -83,7 +139,11 @@ public abstract class SparkUtilIT extends AbstractIT {
     return objects.stream().map(row -> String.valueOf(row[index])).collect(Collectors.toSet());
   }
 
-  private Map<String, String> convertToStringMap(List<Object[]> objects) {
+  private List<String> convertToStringList(List<Object[]> objects, int index) {
+    return objects.stream().map(row -> String.valueOf(row[index])).collect(Collectors.toList());
+  }
+
+  private static Map<String, String> convertToStringMap(List<Object[]> objects) {
     return objects.stream()
         .collect(
             Collectors.toMap(
