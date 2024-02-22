@@ -26,4 +26,6 @@ dependencies {
   implementation("org.apache.iceberg:iceberg-spark-runtime-3.4_$scalaVersion:$icebergVersion")
   implementation("org.apache.kyuubi:kyuubi-spark-connector-hive_$scalaVersion:$kyuubiVersion")
   implementation("org.apache.spark:spark-catalyst_$scalaVersion:$sparkVersion")
+  implementation("org.apache.spark:spark-sql_$scalaVersion:$sparkVersion")
+  implementation(project(mapOf("path" to ":clients:client-java")))
 }

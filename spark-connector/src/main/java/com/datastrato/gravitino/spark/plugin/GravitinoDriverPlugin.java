@@ -83,17 +83,6 @@ public class GravitinoDriverPlugin implements DriverPlugin {
   private void registerGravitinoHiveCatalog(
       SparkConf sparkConf, Catalog catalog, String sparkCatalogConfigName) {
     sparkConf.set(sparkCatalogConfigName, GravitinoHiveCatalog.class.getName());
-    Preconditions.checkArgument(
-        catalog.properties() != null, "Hive Catalog properties should not be null");
-    String metastoreUri =
-        catalog.properties().get(GravitinoSparkConfig.GRAVITINO_HIVE_METASTORE_URI);
-    Preconditions.checkArgument(
-        StringUtils.isNoneBlank(metastoreUri),
-        "Couldn't get "
-            + GravitinoSparkConfig.GRAVITINO_HIVE_METASTORE_URI
-            + " from catalog properties");
-    sparkConf.set(
-        sparkCatalogConfigName + "." + GravitinoSparkConfig.SPARK_HIVE_METASTORE_URI, metastoreUri);
   }
 
   // Todo inject Iceberg extensions
