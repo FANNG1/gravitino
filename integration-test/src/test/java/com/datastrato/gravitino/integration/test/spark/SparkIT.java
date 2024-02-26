@@ -132,6 +132,27 @@ public class SparkIT extends SparkEnvIT {
     checkTableReadWrite(tableInfo);
   }
 
+  @Test
+  public void testDropTable() {
+    sql("drop table notExists");
+
+    String tableName = "dropTable";
+    String createTableSQL = getCreateSimpleTableString(tableName);
+
+    sql(createTableSQL);
+    SparkTableInfo tableInfo = getTableInfo(tableName);
+
+    dropTable(tableName);
+    tableInfo = getTableInfo(tableName);
+  }
+
+  @Test
+  public void testRenameTable() {
+    String tableName = "rename1";
+    String createTableSQL = getCreateSimpleTableString(tableName);
+    sql("RENAME rename1 to rename2");
+  }
+
   // SparkSQL doesn't support not null, create a complex example
   @Test
   public void testCreateDatasourceTable() {
@@ -382,6 +403,18 @@ public class SparkIT extends SparkEnvIT {
     Assertions.assertTrue(
         queryResult.size() == 1, "should just one row, table content: " + queryResult);
     Assertions.assertEquals(checkValues, queryResult.get(0));
+  }
+
+  private String getCreateSimpleTableString(String tableName) {
+    return String.format(
+        "CREATE TABLE %s (id INT COMMENT 'id comment', name STRING, age INT)", tableName);
+  }
+
+  private List<SparkColumnInfo> getSimpleTableColumn() {
+    return Arrays.asList(
+        SparkColumnInfo.of("id", "int", "id comment"),
+        SparkColumnInfo.of("name", "string", null),
+        SparkColumnInfo.of("age", "int", null));
   }
 
   public void testFunction() {

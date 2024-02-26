@@ -137,6 +137,17 @@ public abstract class BaseCatalog implements TableCatalog, SupportsNamespaces {
   @Override
   public void renameTable(Identifier oldIdent, Identifier newIdent)
       throws NoSuchTableException, TableAlreadyExistsException {
+    com.datastrato.gravitino.rel.TableChange rename =
+        com.datastrato.gravitino.rel.TableChange.rename(newIdent.name());
+    try {
+      gravitinoCatalog
+          .asTableCatalog()
+          .alterTable(
+              NameIdentifier.of(metalakeName, catalogName, getDatabase(oldIdent), oldIdent.name()),
+              rename);
+    } catch (com.datastrato.gravitino.exceptions.NoSuchTableException e) {
+      throw new NoSuchTableException(oldIdent);
+    }
     throw new NotSupportedException("Doesn't support renaming table");
   }
 
