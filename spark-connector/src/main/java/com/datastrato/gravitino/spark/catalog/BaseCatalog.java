@@ -254,7 +254,7 @@ public abstract class BaseCatalog implements TableCatalog, SupportsNamespaces {
   private ColumnDTO createGravitinoColumn(Column sparkColumn) {
     return ColumnDTO.builder()
         .withName(sparkColumn.name())
-        .withDataType(SparkTypeConverter.convert(sparkColumn.dataType()))
+        .withDataType(SparkTypeConverter.toGravitinoType(sparkColumn.dataType()))
         .withNullable(sparkColumn.nullable())
         .withComment(sparkColumn.comment())
         .build();

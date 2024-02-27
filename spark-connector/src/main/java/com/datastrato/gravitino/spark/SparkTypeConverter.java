@@ -16,7 +16,7 @@ import org.apache.spark.sql.types.StringType;
 import org.apache.spark.sql.types.StringType$;
 
 public class SparkTypeConverter {
-  public static Type convert(DataType sparkType) {
+  public static Type toGravitinoType(DataType sparkType) {
     if (sparkType instanceof StringType) {
       return Types.StringType.get();
     } else if (sparkType instanceof BooleanType) {
@@ -27,7 +27,7 @@ public class SparkTypeConverter {
     throw new UnsupportedOperationException("Not support " + sparkType.toString());
   }
 
-  public static DataType convert(Type gravitinoType) {
+  public static DataType toSparkType(Type gravitinoType) {
     if (gravitinoType instanceof Types.StringType) {
       return StringType$.MODULE$;
     } else if (gravitinoType instanceof Types.BooleanType) {

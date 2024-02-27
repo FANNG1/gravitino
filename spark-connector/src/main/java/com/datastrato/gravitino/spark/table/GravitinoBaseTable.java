@@ -83,7 +83,7 @@ public class GravitinoBaseTable implements Table, SupportsRead, SupportsWrite {
                   }
                   return StructField.apply(
                       column.name(),
-                      SparkTypeConverter.convert(column.dataType()),
+                      SparkTypeConverter.toSparkType(column.dataType()),
                       column.nullable(),
                       metadata);
                 })
