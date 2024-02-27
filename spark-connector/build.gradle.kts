@@ -28,4 +28,8 @@ dependencies {
   implementation("org.apache.spark:spark-catalyst_$scalaVersion:$sparkVersion")
   implementation("org.apache.spark:spark-sql_$scalaVersion:$sparkVersion")
   implementation(project(mapOf("path" to ":clients:client-java")))
+
+  testImplementation(libs.junit.jupiter.api)
+  testImplementation(libs.junit.jupiter.params)
+  testRuntimeOnly(libs.junit.jupiter.engine)
 }
