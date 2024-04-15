@@ -18,6 +18,7 @@ import org.apache.spark.sql.types.CharType;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.DateType;
+import org.apache.spark.sql.types.DayTimeIntervalType;
 import org.apache.spark.sql.types.DecimalType;
 import org.apache.spark.sql.types.DoubleType;
 import org.apache.spark.sql.types.FloatType;
@@ -33,6 +34,7 @@ import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.types.TimestampNTZType;
 import org.apache.spark.sql.types.TimestampType;
 import org.apache.spark.sql.types.VarcharType;
+import org.apache.spark.sql.types.YearMonthIntervalType;
 
 /** Transform DataTypes between Gravitino and Spark. */
 public class SparkTypeConverter {
@@ -70,6 +72,10 @@ public class SparkTypeConverter {
       return Types.TimestampType.withTimeZone();
     } else if (sparkType instanceof TimestampNTZType) {
       return Types.TimestampType.withoutTimeZone();
+    } else if (sparkType instanceof YearMonthIntervalType) {
+      return Types.IntervalYearType.get();
+    } else if (sparkType instanceof DayTimeIntervalType) {
+      return Types.IntervalDayType.get();
     } else if (sparkType instanceof ArrayType) {
       ArrayType arrayType = (ArrayType) sparkType;
       return Types.ListType.of(toGravitinoType(arrayType.elementType()), arrayType.containsNull());

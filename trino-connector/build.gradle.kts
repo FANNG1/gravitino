@@ -21,7 +21,8 @@ dependencies {
   implementation(libs.jackson.annotations)
   implementation(libs.jackson.databind)
   implementation(libs.commons.collections4)
-  compileOnly(libs.trino.spi) {
+    implementation(project(mapOf("path" to ":api")))
+    compileOnly(libs.trino.spi) {
     exclude("org.apache.logging.log4j")
   }
   testImplementation(libs.mockito.core)
