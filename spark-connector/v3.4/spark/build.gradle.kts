@@ -14,16 +14,15 @@ repositories {
 }
 
 val scalaVersion: String = project.properties["scalaVersion"] as? String ?: extra["defaultScalaVersion"].toString()
-val sparkVersion: String = libs.versions.spark35.get()
+val sparkVersion: String = libs.versions.spark34.get()
 val sparkMajorVersion: String = sparkVersion.substringBeforeLast(".")
 val icebergVersion: String = libs.versions.iceberg4spark.get()
-val kyuubiVersion: String = libs.versions.kyuubi4spark35.get()
+val kyuubiVersion: String = libs.versions.kyuubi4spark34.get()
 val scalaJava8CompatVersion: String = libs.versions.scala.java.compat.get()
 val scalaCollectionCompatVersion: String = libs.versions.scala.collection.compat.get()
 
 dependencies {
-  implementation(project(":spark-connector:spark3.4"))
-  implementation(project(":spark-connector:spark-connector-common"))
+  implementation(project(":spark-connector:common"))
   compileOnly("org.apache.kyuubi:kyuubi-spark-connector-hive_$scalaVersion:$kyuubiVersion")
   compileOnly("org.apache.spark:spark-catalyst_$scalaVersion:$sparkVersion") {
     exclude("com.fasterxml.jackson")
@@ -50,7 +49,7 @@ dependencies {
   testImplementation(project(":server-common")) {
     exclude("org.apache.logging.log4j")
   }
-  testImplementation(project(":spark-connector:spark-connector-common", "testArtifacts")) {
+  testImplementation(project(":spark-connector:common", "testArtifacts")) {
     exclude("com.fasterxml.jackson")
   }
 

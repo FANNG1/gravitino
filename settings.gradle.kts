@@ -28,7 +28,7 @@ include(
   "clients:client-python"
 )
 include("trino-connector")
-include("spark-connector:spark-connector-common", "spark-connector:spark3.3", "spark-connector:spark3.4", "spark-connector:spark3.5", "spark-connector:spark-connector-runtime")
+include("spark-connector:common", "spark-connector:v3.3:spark", "spark-connector:v3.3:spark-runtime", "spark-connector:v3.4:spark", "spark-connector:v3.4:spark-runtime", "spark-connector:v3.5:spark", "spark-connector:v3.5:spark-runtime") 
 include("flink-connector")
 include("web")
 include("docs")
