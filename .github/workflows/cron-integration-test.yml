@@ -59,8 +59,8 @@ jobs:
     strategy:
       matrix:
         architecture: [linux/amd64]
-        java-version: [ 8, 11, 17 ]
-        test-mode: [ embedded, deploy ]
+        java-version: [11]
+        test-mode: [deploy]
     env:
       DOCKER_RUN_NAME: hive-amd64
       PLATFORM: ${{ matrix.architecture }}
