@@ -2,12 +2,14 @@ name: Cron Integration Test
 
 # Controls when the workflow will run
 on:
-  schedule: # Runs by default on main branch
-    - cron: '0 19 * * *' # Runs every day at 19:00 PM UTC, equal to 03:00 AM the next day in GMT+8 time zone
+  push:
+    branches: [ "main", "branch-*" ]
+  pull_request:
+    branches: [ "main", "branch-*" ]
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ contains(github.ref, 'main') }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   changes:
