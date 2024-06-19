@@ -12,41 +12,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  changes:
-    if: github.repository == 'datastrato/gravitino'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: dorny/paths-filter@v2
-        id: filter
-        with:
-          filters: |
-            source_changes:
-              - .github/**
-              - api/**
-              - bin/**
-              - catalogs/**
-              - clients/**
-              - common/**
-              - conf/**
-              - core/**
-              - dev/**
-              - gradle/**
-              - integration-test/**
-              - meta/**
-              - server/**
-              - server-common/**
-              - spark-connector/**
-              - trino-connector/**
-              - web/**
-              - docs/open-api/**
-              - build.gradle.kts
-              - gradle.properties
-              - gradlew
-              - setting.gradle.kts
-    outputs:
-      source_changes: ${{ steps.filter.outputs.source_changes }}
-
   # Integration test for AMD64 architecture
   test-amd64-arch:
     needs: changes
