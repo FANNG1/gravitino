@@ -26,7 +26,8 @@ plugins {
   id("jacoco")
   alias(libs.plugins.gradle.extensions)
   alias(libs.plugins.node) apply false
-
+ 
+  // test
   // Spotless version < 6.19.0 (https://github.com/diffplug/spotless/issues/1819) has an issue
   // running against JDK21, but we cannot upgrade the spotless to 6.19.0 or later since it only
   // support JDK11+. So we don't support JDK21 and thrown an exception for now.

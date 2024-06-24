@@ -5,6 +5,7 @@
 
 status = warn
 
+
 # Log files location
 property.basePath = ${sys:gravitino.log.path}
 

@@ -49,7 +49,7 @@ public abstract class FlinkEnvIT extends AbstractIT {
     initHdfsEnv();
     initDefaultCatalog();
     initFlinkEnv();
-    LOG.info("Startup Flink env successfully, Gravitino uri: {}.", gravitinoUri);
+    LOG.info("Startup Flink env successfully sss, Gravitino uri: {}.", gravitinoUri);
   }
 
   @AfterAll
