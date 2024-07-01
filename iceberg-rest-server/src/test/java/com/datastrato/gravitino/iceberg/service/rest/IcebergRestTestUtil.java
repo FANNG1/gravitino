@@ -3,13 +3,14 @@
  * This software is licensed under the Apache License version 2.
  */
 
-package com.datastrato.gravitino.catalog.lakehouse.iceberg.web.rest;
+package com.datastrato.gravitino.iceberg.service.rest;
 
-import com.datastrato.gravitino.catalog.lakehouse.iceberg.IcebergConfig;
-import com.datastrato.gravitino.catalog.lakehouse.iceberg.ops.IcebergTableOps;
-import com.datastrato.gravitino.catalog.lakehouse.iceberg.web.IcebergExceptionMapper;
-import com.datastrato.gravitino.catalog.lakehouse.iceberg.web.IcebergObjectMapperProvider;
-import com.datastrato.gravitino.catalog.lakehouse.iceberg.web.metrics.IcebergMetricsManager;
+
+import com.datastrato.gravitino.iceberg.common.IcebergConfig;
+import com.datastrato.gravitino.iceberg.common.ops.IcebergTableOps;
+import com.datastrato.gravitino.iceberg.service.IcebergExceptionMapper;
+import com.datastrato.gravitino.iceberg.service.IcebergObjectMapperProvider;
+import com.datastrato.gravitino.iceberg.service.metrics.IcebergMetricsManager;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;

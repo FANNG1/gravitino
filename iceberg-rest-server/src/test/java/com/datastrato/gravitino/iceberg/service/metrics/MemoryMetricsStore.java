@@ -3,7 +3,7 @@
  *  This software is licensed under the Apache License version 2.
  */
 
-package com.datastrato.gravitino.catalog.lakehouse.iceberg.web.metrics;
+package com.datastrato.gravitino.iceberg.service.metrics;
 
 import java.time.Instant;
 import java.util.Map;

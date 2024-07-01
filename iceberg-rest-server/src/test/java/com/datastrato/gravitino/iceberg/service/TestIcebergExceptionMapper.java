@@ -2,7 +2,7 @@
  * Copyright 2023 Datastrato Pvt Ltd.
  * This software is licensed under the Apache License version 2.
  */
-package com.datastrato.gravitino.catalog.lakehouse.iceberg.web;
+package com.datastrato.gravitino.iceberg.service;
 
 import javax.ws.rs.core.Response;
 import org.apache.iceberg.exceptions.AlreadyExistsException;

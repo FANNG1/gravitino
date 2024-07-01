@@ -25,9 +25,6 @@ import org.slf4j.LoggerFactory;
 
 public class IcebergMetricsManager {
   private static final Logger LOG = LoggerFactory.getLogger(IcebergTableOps.class);
-  public static final String ICEBERG_METRICS_STORE = "metricsStore";
-  public static final String ICEBERG_METRICS_STORE_RETAIN_DAYS = "metricsStoreRetainDays";
-  public static final String ICEBERG_METRICS_QUEUE_CAPACITY = "metricsQueueCapacity";
 
   // Register IcebergMetricsStore's short name to its full qualified class name in the map. So
   // that user doesn't need to specify the full qualified class name when creating an

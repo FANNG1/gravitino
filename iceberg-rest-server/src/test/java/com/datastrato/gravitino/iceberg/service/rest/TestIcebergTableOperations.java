@@ -3,7 +3,7 @@
  * This software is licensed under the Apache License version 2.
  */
 
-package com.datastrato.gravitino.catalog.lakehouse.iceberg.web.rest;
+package com.datastrato.gravitino.iceberg.service.rest;
 
 import com.google.common.collect.ImmutableSet;
 import java.util.Optional;

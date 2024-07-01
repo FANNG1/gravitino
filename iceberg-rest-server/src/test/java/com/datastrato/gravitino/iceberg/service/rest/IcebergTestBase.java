@@ -3,12 +3,10 @@
  * This software is licensed under the Apache License version 2.
  */
 
-package com.datastrato.gravitino.catalog.lakehouse.iceberg.web.rest;
+package com.datastrato.gravitino.iceberg.service.rest;
 
-import com.datastrato.gravitino.catalog.lakehouse.iceberg.web.IcebergObjectMapperProvider;
-import com.datastrato.gravitino.rest.RESTUtils;
+import com.datastrato.gravitino.iceberg.service.IcebergObjectMapperProvider;
 import com.google.common.base.Joiner;
-import java.io.IOException;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -19,18 +17,19 @@ import javax.ws.rs.core.MediaType;
 import org.apache.commons.lang3.ArrayUtils;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.test.JerseyTest;
-import org.glassfish.jersey.test.TestProperties;
 import org.junit.jupiter.api.Assertions;
 
 public class IcebergTestBase extends JerseyTest {
   @Override
   protected Application configure() {
+    /*
     try {
       forceSet(
           TestProperties.CONTAINER_PORT, String.valueOf(RESTUtils.findAvailablePort(2000, 3000)));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+     */
 
     return new ResourceConfig();
   }

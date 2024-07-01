@@ -3,12 +3,12 @@
  * This software is licensed under the Apache License version 2.
  */
 
-package com.datastrato.gravitino.catalog.lakehouse.iceberg.integration.test;
+package com.datastrato.gravitino.iceberg.integration.test;
 
 import com.datastrato.gravitino.auxiliary.AuxiliaryServiceManager;
-import com.datastrato.gravitino.catalog.lakehouse.iceberg.IcebergCatalogBackend;
-import com.datastrato.gravitino.catalog.lakehouse.iceberg.IcebergConfig;
-import com.datastrato.gravitino.catalog.lakehouse.iceberg.IcebergRESTService;
+import com.datastrato.gravitino.iceberg.common.IcebergCatalogBackend;
+import com.datastrato.gravitino.iceberg.common.IcebergConfig;
+import com.datastrato.gravitino.iceberg.common.IcebergConstants;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import java.util.Arrays;
@@ -61,14 +61,14 @@ public class IcebergRESTServiceIT extends IcebergRESTServiceBaseIT {
     Map<String, String> configMap = new HashMap<>();
     configMap.put(
         AuxiliaryServiceManager.GRAVITINO_AUX_SERVICE_PREFIX
-            + IcebergRESTService.SERVICE_NAME
+            + IcebergConstants.GRAVITINO_ICEBERG_REST_SERVICE_NAME
             + "."
             + IcebergConfig.CATALOG_BACKEND.getKey(),
         IcebergCatalogBackend.MEMORY.toString().toLowerCase());
 
     configMap.put(
         AuxiliaryServiceManager.GRAVITINO_AUX_SERVICE_PREFIX
-            + IcebergRESTService.SERVICE_NAME
+            + IcebergConstants.GRAVITINO_ICEBERG_REST_SERVICE_NAME
             + "."
             + IcebergConfig.CATALOG_WAREHOUSE.getKey(),
         "/tmp/");

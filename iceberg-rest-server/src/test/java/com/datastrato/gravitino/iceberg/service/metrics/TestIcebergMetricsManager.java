@@ -3,12 +3,14 @@
  *  This software is licensed under the Apache License version 2.
  */
 
-package com.datastrato.gravitino.catalog.lakehouse.iceberg.web.metrics;
+package com.datastrato.gravitino.iceberg.service.metrics;
+
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
-import com.datastrato.gravitino.catalog.lakehouse.iceberg.IcebergConfig;
+import com.datastrato.gravitino.iceberg.common.IcebergConfig;
+import com.datastrato.gravitino.iceberg.common.IcebergConstants;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -60,7 +62,7 @@ public class TestIcebergMetricsManager {
   void testIcebergMetricsManagerWithNotExistsStoreType() {
     IcebergConfig icebergConfig =
         new IcebergConfig(
-            ImmutableMap.of(IcebergMetricsManager.ICEBERG_METRICS_STORE, "not-exists"));
+            ImmutableMap.of(IcebergConstants.ICEBERG_METRICS_STORE, "not-exists"));
 
     Assertions.assertThrowsExactly(
         RuntimeException.class, () -> new IcebergMetricsManager(icebergConfig));
@@ -70,8 +72,8 @@ public class TestIcebergMetricsManager {
   void testIcebergMetricsManagerWithMemoryStore() throws InterruptedException {
     Map<String, String> properties =
         ImmutableMap.of(
-            IcebergMetricsManager.ICEBERG_METRICS_STORE,
-            "com.datastrato.gravitino.catalog.lakehouse.iceberg.web.metrics.MemoryMetricsStore",
+            IcebergConstants.ICEBERG_METRICS_STORE,
+            MemoryMetricsStore.class.getName(),
             "a",
             "b");
     IcebergConfig icebergConfig = new IcebergConfig(properties);
