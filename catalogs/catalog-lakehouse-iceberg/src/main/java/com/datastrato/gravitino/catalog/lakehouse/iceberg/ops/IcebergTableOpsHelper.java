@@ -22,6 +22,7 @@ package com.datastrato.gravitino.catalog.lakehouse.iceberg.ops;
 import static com.datastrato.gravitino.catalog.lakehouse.iceberg.converter.IcebergDataTypeConverter.CONVERTER;
 
 import com.datastrato.gravitino.NameIdentifier;
+import com.datastrato.gravitino.iceberg.common.ops.IcebergTableOps.IcebergTableChange;
 import com.datastrato.gravitino.rel.TableChange;
 import com.datastrato.gravitino.rel.TableChange.AddColumn;
 import com.datastrato.gravitino.rel.TableChange.After;
@@ -44,8 +45,6 @@ import com.google.common.collect.Lists;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import lombok.Getter;
-import lombok.Setter;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
@@ -73,19 +72,6 @@ public class IcebergTableOpsHelper {
 
   public IcebergTableOpsHelper(Catalog icebergCatalog) {
     this.icebergCatalog = icebergCatalog;
-  }
-
-  @Getter
-  @Setter
-  public static final class IcebergTableChange {
-
-    private TableIdentifier tableIdentifier;
-    private Transaction transaction;
-
-    IcebergTableChange(TableIdentifier tableIdentifier, Transaction transaction) {
-      this.tableIdentifier = tableIdentifier;
-      this.transaction = transaction;
-    }
   }
 
   private void doDeleteColumn(

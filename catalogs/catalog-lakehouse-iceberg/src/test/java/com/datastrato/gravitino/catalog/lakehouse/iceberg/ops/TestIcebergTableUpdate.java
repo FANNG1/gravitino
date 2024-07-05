@@ -19,8 +19,8 @@
 package com.datastrato.gravitino.catalog.lakehouse.iceberg.ops;
 
 import com.datastrato.gravitino.NameIdentifier;
-import com.datastrato.gravitino.catalog.lakehouse.iceberg.IcebergCatalogOperations;
 import com.datastrato.gravitino.iceberg.common.ops.IcebergTableOps;
+import com.datastrato.gravitino.iceberg.common.ops.IcebergTableOps.IcebergTableChange;
 import com.datastrato.gravitino.rel.TableChange;
 import com.datastrato.gravitino.rel.TableChange.ColumnPosition;
 import com.datastrato.gravitino.rel.types.Types;
@@ -87,8 +87,10 @@ public class TestIcebergTableUpdate {
 
   public LoadTableResponse updateTable(
       NameIdentifier gravitinoNameIdentifier, TableChange... gravitinoTableChanges) {
-    return IcebergCatalogOperations.updateTable(
-        gravitinoNameIdentifier, icebergTableOpsHelper, icebergTableOps, gravitinoTableChanges);
+    IcebergTableChange icebergTableChange =
+        icebergTableOpsHelper.buildIcebergTableChanges(
+            gravitinoNameIdentifier, gravitinoTableChanges);
+    return icebergTableOps.updateTable(icebergTableChange);
   }
 
   private void createNamespace(String namespace) {

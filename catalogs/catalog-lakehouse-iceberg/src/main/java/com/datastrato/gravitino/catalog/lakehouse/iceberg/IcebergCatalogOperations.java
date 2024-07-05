@@ -36,6 +36,7 @@ import com.datastrato.gravitino.exceptions.SchemaAlreadyExistsException;
 import com.datastrato.gravitino.exceptions.TableAlreadyExistsException;
 import com.datastrato.gravitino.iceberg.common.IcebergConfig;
 import com.datastrato.gravitino.iceberg.common.ops.IcebergTableOps;
+import com.datastrato.gravitino.iceberg.common.ops.IcebergTableOps.IcebergTableChange;
 import com.datastrato.gravitino.meta.AuditInfo;
 import com.datastrato.gravitino.rel.Column;
 import com.datastrato.gravitino.rel.Table;
@@ -59,7 +60,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.iceberg.Transaction;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.exceptions.NamespaceNotEmptyException;
@@ -403,28 +403,14 @@ public class IcebergCatalogOperations implements CatalogOperations, SupportsSche
 
   private Table internalUpdateTable(NameIdentifier tableIdent, TableChange... changes)
       throws NoSuchTableException, IllegalArgumentException {
-    LoadTableResponse loadTableResponse =
-        updateTable(tableIdent, icebergTableOpsHelper, icebergTableOps, changes);
-    return IcebergTable.fromIcebergTable(loadTableResponse.tableMetadata(), tableIdent.name());
-  }
-
-  @VisibleForTesting
-  public static LoadTableResponse updateTable(
-      NameIdentifier tableIdent,
-      IcebergTableOpsHelper icebergTableOpsHelper,
-      IcebergTableOps icebergTableOps,
-      TableChange... changes) {
     try {
       String[] levels = tableIdent.namespace().levels();
-      IcebergTableOpsHelper.IcebergTableChange icebergTableChange =
+      IcebergTableChange icebergTableChange =
           icebergTableOpsHelper.buildIcebergTableChanges(
               NameIdentifier.of(levels[levels.length - 1], tableIdent.name()), changes);
-      Transaction transaction = icebergTableChange.getTransaction();
-      transaction.commitTransaction();
-      LoadTableResponse loadTableResponse =
-          icebergTableOps.loadTable(icebergTableChange.getTableIdentifier());
+      LoadTableResponse loadTableResponse = icebergTableOps.updateTable(icebergTableChange);
       loadTableResponse.validate();
-      return loadTableResponse;
+      return IcebergTable.fromIcebergTable(loadTableResponse.tableMetadata(), tableIdent.name());
     } catch (org.apache.iceberg.exceptions.NoSuchTableException e) {
       throw new NoSuchTableException(e, ICEBERG_TABLE_DOES_NOT_EXIST_MSG, tableIdent.name());
     }

@@ -28,6 +28,8 @@ import java.sql.DriverManager;
 import java.util.Collections;
 import java.util.Optional;
 import lombok.Getter;
+import lombok.Setter;
+import org.apache.iceberg.Transaction;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.SupportsNamespaces;
@@ -146,6 +148,12 @@ public class IcebergTableOps implements AutoCloseable {
     return CatalogHandlers.updateTable(catalog, tableIdentifier, updateTableRequest);
   }
 
+  public LoadTableResponse updateTable(IcebergTableChange icebergTableChange) {
+    Transaction transaction = icebergTableChange.getTransaction();
+    transaction.commitTransaction();
+    return loadTable(icebergTableChange.getTableIdentifier());
+  }
+
   @Override
   public void close() throws Exception {
     if (catalog instanceof AutoCloseable) {
@@ -201,5 +209,18 @@ public class IcebergTableOps implements AutoCloseable {
 
   private void closePostgreSQLCatalogResource() {
     closeDriverLoadedByIsolatedClassLoader(catalogUri);
+  }
+
+  @Getter
+  @Setter
+  public static final class IcebergTableChange {
+
+    private TableIdentifier tableIdentifier;
+    private Transaction transaction;
+
+    public IcebergTableChange(TableIdentifier tableIdentifier, Transaction transaction) {
+      this.tableIdentifier = tableIdentifier;
+      this.transaction = transaction;
+    }
   }
 }
