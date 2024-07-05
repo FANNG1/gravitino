@@ -59,7 +59,6 @@ import org.apache.iceberg.types.Types.NestedField;
 import org.apache.iceberg.types.Types.StructType;
 
 public class IcebergTableOpsHelper {
-
   @VisibleForTesting public static final Joiner DOT = Joiner.on(".");
   private static final Set<String> IcebergReservedProperties =
       ImmutableSet.of(

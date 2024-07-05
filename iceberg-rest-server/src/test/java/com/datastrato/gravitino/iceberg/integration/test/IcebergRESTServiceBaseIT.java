@@ -54,7 +54,7 @@ public abstract class IcebergRESTServiceBaseIT {
 
   @BeforeAll
   void initIcebergTestEnv() throws Exception {
-    // Start hive hdfs if necessary
+    // Start Hive HDFS if necessary
     initEnv();
     // Start Iceberg REST server
     this.icebergRESTServerManager = IcebergRESTServerManager.create();

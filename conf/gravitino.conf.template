@@ -68,4 +68,3 @@ gravitino.iceberg-rest.classpath = extensions/iceberg-rest-server/libs
 gravitino.iceberg-rest.host = 0.0.0.0
 # Iceberg REST service http port
 gravitino.iceberg-rest.httpPort = 9001
-
