@@ -612,12 +612,28 @@ tasks {
   val assembleIcebergRESTServer by registering(Tar::class) {
     dependsOn("iceberg-rest-server:copyLibs")
     group = "gravitino distribution"
-    // finalizedBy("checksumTrinoConnector")
-    into("${rootProject.name}-iceberg-rest-server-$version")
-    from("iceberg-rest-server/build/libs")
+    finalizedBy("checksumIcebergRESTServerDistribution")
+    into("${rootProject.name}-iceberg-rest-server-$version-bin")
+    from(copyIcebergRESTServer.map { it.outputs.files.single() })
     compression = Compression.GZIP
-    archiveFileName.set("${rootProject.name}-iceberg-rest-server-$version.tar.gz")
+    archiveFileName.set("${rootProject.name}-iceberg-rest-server-$version-bin.tar.gz")
     destinationDirectory.set(projectDir.dir("distribution"))
+  }
+
+  register("checksumIcebergRESTServerDistribution") {
+    group = "gravitino distribution"
+    dependsOn(assembleIcebergRESTServer)
+    val archiveFile = assembleIcebergRESTServer.flatMap { it.archiveFile }
+    val checksumFile = archiveFile.map { archive ->
+      archive.asFile.let { it.resolveSibling("${it.name}.sha256") }
+    }
+    inputs.file(archiveFile)
+    outputs.file(checksumFile)
+    doLast {
+      checksumFile.get().writeText(
+        serviceOf<ChecksumService>().sha256(archiveFile.get().asFile).toString()
+      )
+    }
   }
 
   register("checksumDistribution") {
