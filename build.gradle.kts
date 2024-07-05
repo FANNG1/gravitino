@@ -566,7 +566,7 @@ tasks {
 
   val copyIcebergRESTServer by registering {
     dependsOn("iceberg-rest-server:copyLibs")
-    group = "Iceberg REST server distribution"
+    group = "gravitino distribution"
     outputs.dir(projectDir.dir("distribution/package/extensions/iceberg-rest-server"))
     doLast {
       copy {

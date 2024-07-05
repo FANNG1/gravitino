@@ -37,14 +37,15 @@ dependencies {
   implementation(project(":iceberg-common"))
   implementation(project(":server-common"))
   implementation(libs.bundles.iceberg)
-  implementation(libs.bundles.jetty)
-  implementation(libs.bundles.jersey)
+  // implementation(libs.bundles.jetty)
+  // implementation(libs.bundles.jersey)
   implementation(libs.bundles.log4j)
   implementation(libs.cglib)
   implementation(libs.commons.collections4)
   implementation(libs.commons.io)
   implementation(libs.commons.lang3)
   implementation(libs.guava)
+/*
   implementation(libs.hive2.metastore) {
     exclude("co.cask.tephra")
     exclude("com.github.spotbugs")
@@ -69,10 +70,12 @@ dependencies {
     exclude("com.sun.jersey", "jersey-server")
   }
   implementation(libs.iceberg.hive.metastore)
+
   implementation(libs.jackson.annotations)
   implementation(libs.jackson.databind)
   implementation(libs.jackson.datatype.jdk8)
   implementation(libs.jackson.datatype.jsr310)
+*/
   implementation(libs.sqlite.jdbc)
 
   annotationProcessor(libs.lombok)
@@ -82,19 +85,18 @@ dependencies {
   testImplementation(project(":catalogs:catalog-jdbc-common", "testArtifacts"))
   testImplementation(project(":clients:client-java"))
   testImplementation(project(":integration-test-common", "testArtifacts"))
-  testImplementation(project(":server"))
-  testImplementation(project(":server-common"))
+  // testImplementation(project(":server"))
+  // testImplementation(project(":server-common"))
 
-  implementation(libs.hadoop2.common) {
-    exclude("com.github.spotbugs")
-  }
+/*
   implementation(libs.hadoop2.hdfs)
   implementation(libs.hadoop2.mapreduce.client.core)
   implementation(libs.metrics.jersey2)
+*/
 
   testImplementation("org.scala-lang.modules:scala-collection-compat_$scalaVersion:$scalaCollectionCompatVersion")
-  testImplementation("org.apache.iceberg:iceberg-spark-runtime-${sparkMajorVersion}_$scalaVersion:$icebergVersion")
-  testImplementation("org.apache.spark:spark-hive_$scalaVersion:$sparkVersion")
+  // testImplementation("org.apache.iceberg:iceberg-spark-runtime-${sparkMajorVersion}_$scalaVersion:$icebergVersion")
+  // testImplementation("org.apache.spark:spark-hive_$scalaVersion:$sparkVersion")
   testImplementation("org.apache.spark:spark-sql_$scalaVersion:$sparkVersion") {
     exclude("org.apache.avro")
     exclude("org.apache.hadoop")
@@ -104,6 +106,9 @@ dependencies {
   }
 
   testImplementation(libs.bundles.log4j)
+  testImplementation(libs.hadoop2.common) {
+    exclude("com.github.spotbugs")
+  }
   testImplementation(libs.jersey.test.framework.core) {
     exclude(group = "org.junit.jupiter")
   }
