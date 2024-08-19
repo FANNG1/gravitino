@@ -31,6 +31,9 @@ import org.apache.gravitino.config.ConfigConstants;
 import org.apache.gravitino.config.ConfigEntry;
 import org.apache.gravitino.server.web.JettyServerConfig;
 import org.apache.gravitino.server.web.OverwriteDefaultConfig;
+import org.apache.gravitino.storage.credential.CredentialProvider;
+import org.apache.gravitino.storage.credential.DummyCredentialProvider;
+import org.apache.gravitino.storage.s3.S3CredentialProvider;
 
 public class IcebergConfig extends Config implements OverwriteDefaultConfig {
 
@@ -88,6 +91,13 @@ public class IcebergConfig extends Config implements OverwriteDefaultConfig {
           .version(ConfigConstants.VERSION_0_2_0)
           .booleanConf()
           .createWithDefault(true);
+
+  public static final ConfigEntry<String> STORAGE_TYPE =
+      new ConfigBuilder(IcebergConstants.STORAGE_TYPE)
+          .doc("The storage type in Iceberg")
+          .version(ConfigConstants.VERSION_0_7_0)
+          .stringConf()
+          .create();
 
   public static final ConfigEntry<String> IO_IMPL =
       new ConfigBuilder(IcebergConstants.IO_IMPL)
@@ -198,5 +208,14 @@ public class IcebergConfig extends Config implements OverwriteDefaultConfig {
         String.valueOf(JettyServerConfig.DEFAULT_ICEBERG_REST_SERVICE_HTTP_PORT),
         JettyServerConfig.WEBSERVER_HTTPS_PORT.getKey(),
         String.valueOf(JettyServerConfig.DEFAULT_ICEBERG_REST_SERVICE_HTTPS_PORT));
+  }
+
+  public CredentialProvider storageCredentialProvider() {
+    String storageType = get(STORAGE_TYPE);
+    if ("s3".equalsIgnoreCase(storageType)) {
+      return new S3CredentialProvider();
+    } else {
+      return new DummyCredentialProvider();
+    }
   }
 }

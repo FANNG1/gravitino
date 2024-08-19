@@ -22,7 +22,9 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import java.sql.Driver;
 import java.sql.DriverManager;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -30,14 +32,18 @@ import java.util.Set;
 import java.util.function.Supplier;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.gravitino.catalog.lakehouse.iceberg.IcebergConstants;
 import org.apache.gravitino.iceberg.common.IcebergCatalogBackend;
 import org.apache.gravitino.iceberg.common.IcebergConfig;
 import org.apache.gravitino.iceberg.common.utils.IcebergCatalogUtil;
+import org.apache.gravitino.storage.credential.CredentialContext;
+import org.apache.gravitino.storage.credential.CredentialProvider;
 import org.apache.gravitino.utils.IsolatedClassLoader;
 import org.apache.gravitino.utils.MapUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
@@ -66,6 +72,7 @@ public class IcebergTableOps implements AutoCloseable {
   @Getter protected Catalog catalog;
   private SupportsNamespaces asNamespaceCatalog;
   private final IcebergCatalogBackend catalogBackend;
+  private CredentialProvider credentialProvider;
   private String catalogUri = null;
   private Map<String, String> catalogConfigToClients;
   private Map<String, String> catalogPropertiesMap;
@@ -96,6 +103,7 @@ public class IcebergTableOps implements AutoCloseable {
             key -> catalogPropertiesToClientKeys.contains(key));
 
     this.catalogPropertiesMap = icebergConfig.getIcebergCatalogProperties();
+    this.credentialProvider = icebergConfig.storageCredentialProvider();
   }
 
   public IcebergTableOps() {
@@ -174,7 +182,15 @@ public class IcebergTableOps implements AutoCloseable {
   }
 
   public LoadTableResponse loadTable(TableIdentifier tableIdentifier) {
-    return injectTableConfig(() -> CatalogHandlers.loadTable(catalog, tableIdentifier));
+    return loadTable(tableIdentifier, null);
+  }
+
+  public LoadTableResponse loadTable(TableIdentifier tableIdentifier, String accessDelegation) {
+    if (StringUtils.isBlank(accessDelegation)) {
+      return CatalogHandlers.loadTable(catalog, tableIdentifier);
+    } else {
+      return injectTableConfig(() -> CatalogHandlers.loadTable(catalog, tableIdentifier));
+    }
   }
 
   public boolean tableExists(TableIdentifier tableIdentifier) {
@@ -263,12 +279,25 @@ public class IcebergTableOps implements AutoCloseable {
     LoadTableResponse loadTableResponse = supplier.get();
     return LoadTableResponse.builder()
         .withTableMetadata(loadTableResponse.tableMetadata())
-        .addAllConfig(getCatalogConfigToClient())
+        .addAllConfig(getCatalogConfigToClient(loadTableResponse.tableMetadata().location()))
         .build();
   }
 
-  private Map<String, String> getCatalogConfigToClient() {
-    return catalogConfigToClients;
+  private Map<String, String> getCatalogConfigToClient(String location) {
+    Map<String, String> configs = new HashMap<>();
+    configs.putAll(catalogConfigToClients);
+    configs.putAll(getCredentialVending(location, true));
+    return configs;
+  }
+
+  private Map<String, String> getCredentialVending(String tableLocation, boolean write) {
+    if (write) {
+      return credentialProvider.getCredential(true, Arrays.asList(tableLocation),
+          Arrays.asList());
+    } else {
+      return credentialProvider.getCredential(true, Arrays.asList(),
+          Arrays.asList(tableLocation));
+    }
   }
 
   @Getter

@@ -35,6 +35,7 @@ public class IcebergConstants {
   public static final String CATALOG_BACKEND_NAME = "catalog-backend-name";
 
   // IO properties
+  public static final String STORAGE_TYPE = "storage-type";
   public static final String IO_IMPL = "io-impl";
   public static final String GRAVITINO_S3_ENDPOINT = "s3-endpoint";
   public static final String ICEBERG_S3_ENDPOINT = "s3.endpoint";

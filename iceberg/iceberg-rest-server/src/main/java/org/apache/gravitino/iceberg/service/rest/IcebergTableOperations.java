@@ -29,6 +29,7 @@ import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.HEAD;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -56,6 +57,7 @@ import org.slf4j.LoggerFactory;
 public class IcebergTableOperations {
 
   private static final Logger LOG = LoggerFactory.getLogger(IcebergTableOperations.class);
+  private static final String ICEBERG_ACCESS_DELEGATION = "X-Iceberg-Access-Delegation";
 
   private IcebergTableOpsManager icebergTableOpsManager;
   private IcebergMetricsManager icebergMetricsManager;
@@ -159,11 +161,12 @@ public class IcebergTableOperations {
       @PathParam("prefix") String prefix,
       @PathParam("namespace") String namespace,
       @PathParam("table") String table,
-      @DefaultValue("all") @QueryParam("snapshots") String snapshots) {
+      @DefaultValue("all") @QueryParam("snapshots") String snapshots,
+      @HeaderParam(ICEBERG_ACCESS_DELEGATION) String accessDelegation) {
     // todo support snapshots
     TableIdentifier tableIdentifier =
         TableIdentifier.of(RESTUtil.decodeNamespace(namespace), table);
-    return IcebergRestUtils.ok(icebergTableOpsManager.getOps(prefix).loadTable(tableIdentifier));
+    return IcebergRestUtils.ok(icebergTableOpsManager.getOps(prefix).loadTable(tableIdentifier, accessDelegation));
   }
 
   @HEAD
