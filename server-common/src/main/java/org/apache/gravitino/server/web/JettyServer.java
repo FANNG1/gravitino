@@ -260,6 +260,29 @@ public final class JettyServer {
     servletContextHandler = new WebAppContext();
 
     boolean isUnitTest = System.getenv("GRAVITINO_TEST") != null;
+    if (isUnitTest) {
+      /**
+       * Set the default descriptor to null to avoid using the Jetty class configurations in the
+       * default web.xml file, as these Jetty class names cannot be found in integration-test-common
+       * shadow mode. This causes Gravitino to fail to start. Similarly, this approach is supported
+       * for the future provision of individual miniGravitino modules.
+       */
+      String webXmlPath =
+          String.join(
+              File.separator,
+              System.getenv("GRAVITINO_ROOT_DIR"),
+              "server-common",
+              "src",
+              "test",
+              "resources",
+              "web.xml");
+      File xmlFile = new File(webXmlPath);
+      if (xmlFile.exists() && xmlFile.isFile()) {
+        ((WebAppContext) servletContextHandler).setDefaultsDescriptor(xmlFile.getAbsolutePath());
+      } else {
+        throw new RuntimeException("Failed to find web.xml file in the test resources path.");
+      }
+    }
 
     // If in development/test mode, you can set `war` file or `web/dist` directory in the
     // `GRAVITINO_WAR` environment variable.
@@ -299,7 +322,7 @@ public final class JettyServer {
     if (warFile.isDirectory()) {
       // Development mode, read from FS
       servletContextHandler.setResourceBase(warFile.getPath());
-      servletContextHandler.setContextPath("/");
+      servletContextHandler.addServlet(DefaultServlet.class, "/");
     } else {
       // use packaged WAR
       ((WebAppContext) servletContextHandler).setWar(warFile.getAbsolutePath());

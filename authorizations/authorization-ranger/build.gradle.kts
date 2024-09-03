@@ -24,6 +24,10 @@ plugins {
   id("idea")
 }
 
+val scalaVersion: String = project.properties["scalaVersion"] as? String ?: extra["defaultScalaVersion"].toString()
+val sparkVersion: String = libs.versions.spark35.get()
+val kyuubiVersion: String = libs.versions.kyuubi4spark35.get()
+
 dependencies {
   implementation(project(":api")) {
     exclude(group = "*")
@@ -57,12 +61,12 @@ dependencies {
     exclude("net.java.dev.jna")
     exclude("javax.ws.rs")
     exclude("org.eclipse.jetty")
+    exclude("com.amazonaws", "aws-java-sdk-bundle")
   }
   implementation(libs.rome)
 
   testImplementation(project(":common"))
   testImplementation(project(":clients:client-java"))
-  testImplementation(project(":server"))
   testImplementation(project(":catalogs:catalog-common"))
   testImplementation(project(":integration-test-common", "testArtifacts"))
   testImplementation(libs.junit.jupiter.api)
@@ -80,13 +84,24 @@ dependencies {
     exclude("org.elasticsearch.plugin")
     exclude("javax.ws.rs")
     exclude("org.apache.ranger", "ranger-plugin-classloader")
+    exclude("com.amazonaws", "aws-java-sdk-bundle")
+    exclude("org.eclipse.jetty")
+    exclude("org.apache.hadoop")
   }
-  testImplementation(libs.hive2.jdbc) {
-    exclude("org.slf4j")
-    exclude("org.eclipse.jetty.aggregate")
-  }
+  testImplementation(libs.h2db)
   testImplementation(libs.mysql.driver)
   testImplementation(libs.postgresql.driver)
+  testImplementation("org.apache.spark:spark-hive_$scalaVersion:$sparkVersion")
+  testImplementation("org.apache.spark:spark-sql_$scalaVersion:$sparkVersion") {
+    exclude("org.apache.avro")
+    exclude("org.apache.hadoop")
+    exclude("org.apache.zookeeper")
+    exclude("io.dropwizard.metrics")
+    exclude("org.rocksdb")
+  }
+  testImplementation("org.apache.kyuubi:kyuubi-spark-authz_$scalaVersion:$kyuubiVersion") {
+    exclude("com.sun.jersey")
+  }
 }
 
 tasks {
@@ -123,5 +138,8 @@ tasks.test {
     exclude("**/integration/test/**")
   } else {
     dependsOn(tasks.jar)
+  }
+  doFirst {
+    environment("HADOOP_USER_NAME", "gravitino")
   }
 }

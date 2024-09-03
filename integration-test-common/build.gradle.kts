@@ -16,9 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
   id("java")
+  alias(libs.plugins.shadow)
 }
 
 repositories {
@@ -29,9 +31,15 @@ dependencies {
   testImplementation(project(":api"))
   testImplementation(project(":clients:client-java"))
   testImplementation(project(":common"))
-  testImplementation(project(":core"))
-  testImplementation(project(":server"))
-  testImplementation(project(":server-common"))
+  testImplementation(project(":core")) {
+    exclude(group = "org.rocksdb", module = "rocksdbjni")
+  }
+  testImplementation(project(":server")) {
+    exclude(group = "org.rocksdb", module = "rocksdbjni")
+  }
+  testImplementation(project(":server-common")) {
+    exclude(group = "org.rocksdb", module = "rocksdbjni")
+  }
   testImplementation(project(":authorizations:authorization-ranger"))
   testImplementation(libs.bundles.jetty)
   testImplementation(libs.bundles.jersey)
@@ -54,19 +62,31 @@ dependencies {
     exclude("org.elasticsearch")
     exclude("org.elasticsearch.client")
     exclude("org.elasticsearch.plugin")
+    exclude("com.amazonaws", "aws-java-sdk-bundle")
   }
+  testImplementation(libs.junit.jupiter.params)
+  testImplementation(libs.junit.jupiter.api)
+  testImplementation(libs.junit.jupiter.engine)
+  testImplementation(libs.bundles.jersey)
+}
 
-  testImplementation(platform("org.junit:junit-bom:5.9.1"))
-  testImplementation("org.junit.jupiter:junit-jupiter")
+val testShadowJar by tasks.registering(ShadowJar::class) {
+  isZip64 = true
+  configurations = listOf(
+    project.configurations.runtimeClasspath.get(),
+    project.configurations.testRuntimeClasspath.get()
+  )
+  archiveClassifier.set("tests-shadow")
+  relocate("org.eclipse.jetty", "org.apache.gravitino.it.shaded.org.eclipse.jetty")
+  from(sourceSets["test"].output)
+}
+
+tasks.jar {
+  dependsOn(testShadowJar)
 }
 
 tasks.test {
   useJUnitPlatform()
-}
-
-val testJar by tasks.registering(Jar::class) {
-  archiveClassifier.set("tests")
-  from(sourceSets["test"].output)
 }
 
 configurations {
@@ -74,5 +94,5 @@ configurations {
 }
 
 artifacts {
-  add("testArtifacts", testJar)
+  add("testArtifacts", testShadowJar)
 }
