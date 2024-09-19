@@ -77,6 +77,8 @@ val testShadowJar by tasks.registering(ShadowJar::class) {
     project.configurations.testRuntimeClasspath.get()
   )
   archiveClassifier.set("tests-shadow")
+  // avoid conflict with Spark test
+  exclude("org/apache/logging/slf4j/**")
   relocate("org.eclipse.jetty", "org.apache.gravitino.it.shaded.org.eclipse.jetty")
   from(sourceSets["test"].output)
 }
