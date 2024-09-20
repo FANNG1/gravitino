@@ -35,6 +35,7 @@ import org.apache.gravitino.authorization.ranger.RangerPrivilege;
 import org.apache.gravitino.authorization.ranger.reference.RangerDefines;
 import org.apache.gravitino.integration.test.container.ContainerSuite;
 import org.apache.gravitino.integration.test.container.HiveContainer;
+import org.apache.gravitino.integration.test.container.RangerContainer;
 import org.apache.gravitino.integration.test.container.TrinoContainer;
 import org.apache.ranger.RangerServiceException;
 import org.apache.ranger.plugin.model.RangerPolicy;
@@ -55,6 +56,7 @@ public class RangerITEnv {
   protected static final String RANGER_HDFS_REPO_NAME = "hdfsDev";
   private static final String RANGER_HDFS_TYPE = "hdfs";
   protected static RangerClientExtension rangerClient;
+  protected static final String HADOOP_USER_NAME = "gravitino";
   private static volatile boolean initRangerService = false;
   private static final ContainerSuite containerSuite = ContainerSuite.getInstance();
 
@@ -106,11 +108,30 @@ public class RangerITEnv {
     }
   }
 
+  static void startHiveRangerContainer() {
+    containerSuite.startHiveRangerContainer(
+        new HashMap<>(
+            ImmutableMap.of(
+                HiveContainer.HIVE_RUNTIME_VERSION,
+                HiveContainer.HIVE3,
+                RangerContainer.DOCKER_ENV_RANGER_SERVER_URL,
+                String.format(
+                    "http://%s:%d",
+                    containerSuite.getRangerContainer().getContainerIpAddress(),
+                    RangerContainer.RANGER_SERVER_PORT),
+                RangerContainer.DOCKER_ENV_RANGER_HIVE_REPOSITORY_NAME,
+                RangerITEnv.RANGER_HIVE_REPO_NAME,
+                RangerContainer.DOCKER_ENV_RANGER_HDFS_REPOSITORY_NAME,
+                RangerITEnv.RANGER_HDFS_REPO_NAME,
+                HiveContainer.HADOOP_USER_NAME,
+                HADOOP_USER_NAME)));
+  }
+
   /** Currently we only test Ranger Hive, So wo Allow anyone to visit HDFS */
   static void allowAnyoneAccessHDFS() {
     String policyName = currentFunName();
     try {
-      if (null != rangerClient.getPolicy(RangerDefines.SERVICE_TYPE_HDFS, policyName)) {
+      if (null != rangerClient.getPolicy(RANGER_HDFS_REPO_NAME, policyName)) {
         return;
       }
     } catch (RangerServiceException e) {
@@ -131,7 +152,7 @@ public class RangerITEnv {
             new RangerPolicy.RangerPolicyItemAccess(
                 RangerPrivilege.RangerHdfsPrivilege.EXECUTE.toString())));
     updateOrCreateRangerPolicy(
-        RangerDefines.SERVICE_TYPE_HDFS,
+        RANGER_HDFS_TYPE,
         RANGER_HDFS_REPO_NAME,
         policyName,
         policyResourceMap,
@@ -145,7 +166,7 @@ public class RangerITEnv {
   static void allowAnyoneAccessInformationSchema() {
     String policyName = currentFunName();
     try {
-      if (null != rangerClient.getPolicy(RangerDefines.SERVICE_TYPE_HIVE, policyName)) {
+      if (null != rangerClient.getPolicy(RANGER_HIVE_REPO_NAME, policyName)) {
         return;
       }
     } catch (RangerServiceException e) {
@@ -168,7 +189,7 @@ public class RangerITEnv {
             new RangerPolicy.RangerPolicyItemAccess(
                 RangerPrivilege.RangerHivePrivilege.SELECT.toString())));
     updateOrCreateRangerPolicy(
-        RangerDefines.SERVICE_TYPE_HIVE,
+        RANGER_HIVE_TYPE,
         RANGER_HIVE_REPO_NAME,
         policyName,
         policyResourceMap,

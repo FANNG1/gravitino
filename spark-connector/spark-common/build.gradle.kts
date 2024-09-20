@@ -74,9 +74,7 @@ dependencies {
   testImplementation(project(":server-common")) {
     exclude("org.apache.logging.log4j")
   }
-  testImplementation(project(":integration-test-common", "testArtifacts"))
-
-  testImplementation(libs.hive2.common) {
+  testImplementation(project(":integration-test-common", "testArtifacts")) testImplementation(libs.hive2.common) {
     exclude("org.apache.curator")
     // use hadoop from Spark
     exclude("org.apache.hadoop")
