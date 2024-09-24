@@ -37,16 +37,21 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.iceberg.service.IcebergCatalogWrapperManager;
 import org.apache.gravitino.iceberg.service.IcebergObjectMapper;
 import org.apache.gravitino.iceberg.service.IcebergRestUtils;
 import org.apache.gravitino.iceberg.service.metrics.IcebergMetricsManager;
+import org.apache.gravitino.listener.EventBus;
+import org.apache.gravitino.listener.api.event.IcebergCreateTableEvent;
+import org.apache.gravitino.listener.api.event.IcebergUpdateTableEvent;
 import org.apache.gravitino.metrics.MetricNames;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.rest.RESTUtil;
 import org.apache.iceberg.rest.requests.CreateTableRequest;
 import org.apache.iceberg.rest.requests.ReportMetricsRequest;
 import org.apache.iceberg.rest.requests.UpdateTableRequest;
+import org.apache.iceberg.rest.responses.LoadTableResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,6 +66,7 @@ public class IcebergTableOperations {
   private IcebergMetricsManager icebergMetricsManager;
 
   private ObjectMapper icebergObjectMapper;
+  private EventBus eventBus;
 
   @SuppressWarnings("UnusedVariable")
   @Context
@@ -69,10 +75,12 @@ public class IcebergTableOperations {
   @Inject
   public IcebergTableOperations(
       IcebergCatalogWrapperManager icebergCatalogWrapperManager,
-      IcebergMetricsManager icebergMetricsManager) {
+      IcebergMetricsManager icebergMetricsManager,
+      EventBus eventBus) {
     this.icebergCatalogWrapperManager = icebergCatalogWrapperManager;
     this.icebergObjectMapper = IcebergObjectMapper.getInstance();
     this.icebergMetricsManager = icebergMetricsManager;
+    this.eventBus = eventBus;
   }
 
   @GET
@@ -97,10 +105,20 @@ public class IcebergTableOperations {
         "Create Iceberg table, namespace: {}, create table request: {}",
         namespace,
         createTableRequest);
-    return IcebergRestUtils.ok(
+
+    LoadTableResponse loadTableResponse =
         icebergCatalogWrapperManager
             .getOps(prefix)
-            .createTable(RESTUtil.decodeNamespace(namespace), createTableRequest));
+            .createTable(RESTUtil.decodeNamespace(namespace), createTableRequest);
+
+    eventBus.dispatchEvent(
+        new IcebergCreateTableEvent(
+            "user",
+            NameIdentifier.of(namespace, createTableRequest.name()),
+            createTableRequest,
+            loadTableResponse));
+
+    return IcebergRestUtils.ok(loadTableResponse);
   }
 
   @POST
@@ -122,10 +140,14 @@ public class IcebergTableOperations {
     }
     TableIdentifier tableIdentifier =
         TableIdentifier.of(RESTUtil.decodeNamespace(namespace), table);
-    return IcebergRestUtils.ok(
+    LoadTableResponse loadTableResponse =
         icebergCatalogWrapperManager
             .getOps(prefix)
-            .updateTable(tableIdentifier, updateTableRequest));
+            .updateTable(tableIdentifier, updateTableRequest);
+    eventBus.dispatchEvent(
+        new IcebergUpdateTableEvent(
+            "user", NameIdentifier.of(namespace, table), updateTableRequest, loadTableResponse));
+    return IcebergRestUtils.ok(loadTableResponse);
   }
 
   @DELETE
