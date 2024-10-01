@@ -23,8 +23,11 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.gravitino.listener.api.EventListenerPlugin;
+import org.apache.gravitino.listener.api.EventListenerPlugin.PreEventCheckException;
 import org.apache.gravitino.listener.api.event.Event;
 import org.apache.gravitino.listener.api.event.PreEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The {@code EventBus} class serves as a mechanism to dispatch events to registered listeners. It
@@ -32,6 +35,7 @@ import org.apache.gravitino.listener.api.event.PreEvent;
  * within its internal management.
  */
 public class EventBus {
+  private static final Logger LOG = LoggerFactory.getLogger(EventListenerManager.class);
 
   // Holds instances of EventListenerPlugin. These instances can either be
   // EventListenerPluginWrapper,
@@ -82,7 +86,17 @@ public class EventBus {
   }
 
   public void dispatchPreEvent(PreEvent event) {
-    preEventListeners.forEach(postEventListener -> postEventListener.onPreEvent(event));
+    preEventListeners.forEach(
+        preEventListener -> {
+          try {
+            preEventListener.onPreEvent(event);
+          } catch (PreEventCheckException e) {
+            // todo transform to ValidateException for IcebergRESTServer
+            throw new RuntimeException(e);
+          } catch (Exception e) {
+            LOG.warn("PreEvent handle exception,", e);
+          }
+        });
   }
 
   private void dispatchPostEvent(Event event) {

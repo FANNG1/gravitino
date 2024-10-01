@@ -34,6 +34,9 @@ import org.apache.gravitino.listener.api.event.PreEvent;
  */
 @DeveloperApi
 public interface EventListenerPlugin {
+
+  class PreEventCheckException extends RuntimeException {}
+
   /**
    * Defines the operational modes for event processing within an event listener, catering to both
    * synchronous and asynchronous processing strategies. Each mode determines how events are
@@ -108,7 +111,9 @@ public interface EventListenerPlugin {
    */
   void onPostEvent(Event event) throws RuntimeException;
 
-  void onPreEvent(PreEvent preEvent) throws RuntimeException;
+  // The related operation will fail, if throwing PreEventCheckException, will ignore other
+  // Exceptions.
+  void onPreEvent(PreEvent preEvent) throws PreEventCheckException;
 
   /**
    * Specifies the default operational mode for event processing by the plugin. The default
