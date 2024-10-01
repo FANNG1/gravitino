@@ -21,8 +21,10 @@ package org.apache.gravitino.listener;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.gravitino.listener.api.EventListenerPlugin;
 import org.apache.gravitino.listener.api.event.Event;
+import org.apache.gravitino.listener.api.event.PreEvent;
 
 /**
  * The {@code EventBus} class serves as a mechanism to dispatch events to registered listeners. It
@@ -30,20 +32,27 @@ import org.apache.gravitino.listener.api.event.Event;
  * within its internal management.
  */
 public class EventBus {
+
   // Holds instances of EventListenerPlugin. These instances can either be
   // EventListenerPluginWrapper,
   // which are meant for synchronous event listening, or AsyncQueueListener, designed for
   // asynchronous event processing.
   private final List<EventListenerPlugin> postEventListeners;
+  private final List<EventListenerPlugin> preEventListeners;
 
   /**
    * Constructs an EventBus with a predefined list of event listeners.
    *
-   * @param postEventListeners A list of {@link EventListenerPlugin} instances that are to be
+   * @param eventListenerPlugins A list of {@link EventListenerPlugin} instances that are to be
    *     registered with this EventBus for event dispatch.
    */
-  public EventBus(List<EventListenerPlugin> postEventListeners) {
-    this.postEventListeners = postEventListeners;
+  public EventBus(List<EventListenerPlugin> eventListenerPlugins) {
+    this.postEventListeners = eventListenerPlugins;
+    // todo: use a more general way to create preEventListeners
+    this.preEventListeners =
+        postEventListeners.stream()
+            .filter(eventListenerPlugin -> eventListenerPlugin instanceof AsyncQueueListener)
+            .collect(Collectors.toList());
   }
 
   /**
@@ -53,7 +62,11 @@ public class EventBus {
    * @param event The event to be dispatched to all registered listeners.
    */
   public void dispatchEvent(Event event) {
-    postEventListeners.forEach(postEventListener -> postEventListener.onPostEvent(event));
+    if (event instanceof PreEvent) {
+      dispatchPreEvent((PreEvent) event);
+    } else {
+      dispatchPostEvent(event);
+    }
   }
 
   /**
@@ -66,5 +79,13 @@ public class EventBus {
   @VisibleForTesting
   List<EventListenerPlugin> getPostEventListeners() {
     return postEventListeners;
+  }
+
+  public void dispatchPreEvent(PreEvent event) {
+    preEventListeners.forEach(postEventListener -> postEventListener.onPreEvent(event));
+  }
+
+  private void dispatchPostEvent(Event event) {
+    postEventListeners.forEach(postEventListener -> postEventListener.onPostEvent(event));
   }
 }

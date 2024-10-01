@@ -22,6 +22,7 @@ package org.apache.gravitino.listener.api;
 import java.util.Map;
 import org.apache.gravitino.annotation.DeveloperApi;
 import org.apache.gravitino.listener.api.event.Event;
+import org.apache.gravitino.listener.api.event.PreEvent;
 
 /**
  * Defines an interface for event listeners that manage the lifecycle and state of a plugin,
@@ -106,6 +107,8 @@ public interface EventListenerPlugin {
    * @throws RuntimeException Indicates issues encountered during event processing.
    */
   void onPostEvent(Event event) throws RuntimeException;
+
+  void onPreEvent(PreEvent preEvent) throws RuntimeException;
 
   /**
    * Specifies the default operational mode for event processing by the plugin. The default

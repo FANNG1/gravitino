@@ -43,8 +43,10 @@ import org.apache.gravitino.iceberg.service.IcebergObjectMapper;
 import org.apache.gravitino.iceberg.service.IcebergRestUtils;
 import org.apache.gravitino.iceberg.service.metrics.IcebergMetricsManager;
 import org.apache.gravitino.listener.EventBus;
-import org.apache.gravitino.listener.api.event.IcebergCreateTableEvent;
-import org.apache.gravitino.listener.api.event.IcebergUpdateTableEvent;
+import org.apache.gravitino.listener.api.event.IcebergCreateTablePostEvent;
+import org.apache.gravitino.listener.api.event.IcebergCreateTablePreEvent;
+import org.apache.gravitino.listener.api.event.IcebergUpdateTablePostEvent;
+import org.apache.gravitino.listener.api.event.IcebergUpdateTablePreEvent;
 import org.apache.gravitino.metrics.MetricNames;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.rest.RESTUtil;
@@ -106,13 +108,17 @@ public class IcebergTableOperations {
         namespace,
         createTableRequest);
 
+    eventBus.dispatchPreEvent(
+        new IcebergCreateTablePreEvent(
+            "user", NameIdentifier.of(namespace, createTableRequest.name()), createTableRequest));
+
     LoadTableResponse loadTableResponse =
         icebergCatalogWrapperManager
             .getOps(prefix)
             .createTable(RESTUtil.decodeNamespace(namespace), createTableRequest);
 
     eventBus.dispatchEvent(
-        new IcebergCreateTableEvent(
+        new IcebergCreateTablePostEvent(
             "user",
             NameIdentifier.of(namespace, createTableRequest.name()),
             createTableRequest,
@@ -140,12 +146,15 @@ public class IcebergTableOperations {
     }
     TableIdentifier tableIdentifier =
         TableIdentifier.of(RESTUtil.decodeNamespace(namespace), table);
+    eventBus.dispatchPreEvent(
+        new IcebergUpdateTablePreEvent(
+            "user", NameIdentifier.of(namespace, table), updateTableRequest));
     LoadTableResponse loadTableResponse =
         icebergCatalogWrapperManager
             .getOps(prefix)
             .updateTable(tableIdentifier, updateTableRequest);
     eventBus.dispatchEvent(
-        new IcebergUpdateTableEvent(
+        new IcebergUpdateTablePostEvent(
             "user", NameIdentifier.of(namespace, table), updateTableRequest, loadTableResponse));
     return IcebergRestUtils.ok(loadTableResponse);
   }

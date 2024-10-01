@@ -22,8 +22,11 @@ package org.apache.gravitino.iceberg.extension;
 import java.util.Map;
 import org.apache.gravitino.listener.api.EventListenerPlugin;
 import org.apache.gravitino.listener.api.event.Event;
-import org.apache.gravitino.listener.api.event.IcebergCreateTableEvent;
-import org.apache.gravitino.listener.api.event.IcebergUpdateTableEvent;
+import org.apache.gravitino.listener.api.event.IcebergCreateTablePostEvent;
+import org.apache.gravitino.listener.api.event.IcebergCreateTablePreEvent;
+import org.apache.gravitino.listener.api.event.IcebergUpdateTablePostEvent;
+import org.apache.gravitino.listener.api.event.IcebergUpdateTablePreEvent;
+import org.apache.gravitino.listener.api.event.PreEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,16 +45,31 @@ public class IcebergEventLogger implements EventListenerPlugin {
 
   @Override
   public void onPostEvent(Event event) throws RuntimeException {
-    if (event instanceof IcebergCreateTableEvent) {
+    if (event instanceof IcebergCreateTablePostEvent) {
       LOG.info(
           "Create table event, request: {}",
-          ((IcebergCreateTableEvent) event).createTableRequest());
-    } else if (event instanceof IcebergUpdateTableEvent) {
+          ((IcebergCreateTablePostEvent) event).createTableRequest());
+    } else if (event instanceof IcebergUpdateTablePostEvent) {
       LOG.info(
           "Update table event, request: {}",
-          ((IcebergUpdateTableEvent) event).updateTableRequest());
+          ((IcebergUpdateTablePostEvent) event).updateTableRequest());
     } else {
       LOG.info("Unknown event: {}", event.getClass().getSimpleName());
+    }
+  }
+
+  @Override
+  public void onPreEvent(PreEvent preEvent) throws RuntimeException {
+    if (preEvent instanceof IcebergCreateTablePreEvent) {
+      LOG.info(
+          "Create table event, request: {}",
+          ((IcebergCreateTablePreEvent) preEvent).createTableRequest());
+    } else if (preEvent instanceof IcebergUpdateTablePreEvent) {
+      LOG.info(
+          "Update table event, request: {}",
+          ((IcebergUpdateTablePreEvent) preEvent).updateTableRequest());
+    } else {
+      LOG.info("Unknown event: {}", preEvent.getClass().getSimpleName());
     }
   }
 

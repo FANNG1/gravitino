@@ -20,29 +20,9 @@
 package org.apache.gravitino.listener.api.event;
 
 import org.apache.gravitino.NameIdentifier;
-import org.apache.iceberg.rest.requests.CreateTableRequest;
-import org.apache.iceberg.rest.responses.LoadTableResponse;
 
-public class IcebergCreateTableEvent extends IcebergEvent {
-
-  private CreateTableRequest createTableRequest;
-  private LoadTableResponse loadTableResponse;
-
-  public IcebergCreateTableEvent(
-      String user,
-      NameIdentifier resourceIdentifier,
-      CreateTableRequest createTableRequest,
-      LoadTableResponse loadTableResponse) {
+public abstract class IcebergPostEvent extends Event {
+  public IcebergPostEvent(String user, NameIdentifier resourceIdentifier) {
     super(user, resourceIdentifier);
-    this.createTableRequest = createTableRequest;
-    this.loadTableResponse = loadTableResponse;
-  }
-
-  public CreateTableRequest createTableRequest() {
-    return createTableRequest;
-  }
-
-  public LoadTableResponse loadTableResponse() {
-    return loadTableResponse;
   }
 }
