@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
  * within its internal management.
  */
 public class EventBus {
-  private static final Logger LOG = LoggerFactory.getLogger(EventListenerManager.class);
+  private static final Logger LOG = LoggerFactory.getLogger(EventBus.class);
 
   // Holds instances of EventListenerPlugin. These instances can either be
   // EventListenerPluginWrapper,
@@ -55,7 +55,7 @@ public class EventBus {
     // todo: use a more general way to create preEventListeners
     this.preEventListeners =
         postEventListeners.stream()
-            .filter(eventListenerPlugin -> eventListenerPlugin instanceof AsyncQueueListener)
+            .filter(eventListenerPlugin -> !(eventListenerPlugin instanceof AsyncQueueListener))
             .collect(Collectors.toList());
   }
 
