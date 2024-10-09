@@ -42,6 +42,7 @@ dependencies {
   }
   // todo remove
   implementation(project(":credential:s3"))
+  implementation(project(":credential:gcs"))
   implementation(project(":iceberg:iceberg-common"))
   implementation(project(":server-common")) {
     exclude("*")
