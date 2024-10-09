@@ -75,6 +75,9 @@ dependencies {
     exclude("org.rocksdb")
   }
 
+  testImplementation(project(":bundles:gcp-bundle")) 
+
+  testImplementation(libs.iceberg.gcp.bundle)
   testImplementation(libs.jersey.test.framework.core) {
     exclude(group = "org.junit.jupiter")
   }
