@@ -17,7 +17,7 @@
  *  under the License.
  */
 
-package org.apache.gravitino.credential.gcs;
+package org.apache.gravitino.gcs.credential;
 
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.CredentialAccessBoundary;
@@ -36,12 +36,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.gravitino.credential.Context;
 import org.apache.gravitino.credential.Credential;
 import org.apache.gravitino.credential.CredentialConstants;
+import org.apache.gravitino.credential.CredentialContext;
 import org.apache.gravitino.credential.CredentialProvider;
 import org.apache.gravitino.credential.GcsTokenCredential;
-import org.apache.gravitino.credential.LocationContext;
+import org.apache.gravitino.credential.PathBasedCredentialContext;
 import org.apache.gravitino.credential.config.GCSCredentialConfig;
 
 // Refer from org/apache/polaris/core/storage/gcp/GcpCredentialsStorageIntegration
@@ -62,7 +62,7 @@ public class GcsTokenProvider implements CredentialProvider {
   }
 
   @Override
-  public void stop() {}
+  public void close() {}
 
   @Override
   public String credentialType() {
@@ -70,14 +70,14 @@ public class GcsTokenProvider implements CredentialProvider {
   }
 
   @Override
-  public Credential getCredential(Context context) {
-    if (!(context instanceof LocationContext)) {
+  public Credential getCredential(CredentialContext context) {
+    if (!(context instanceof PathBasedCredentialContext)) {
       return null;
     }
-    LocationContext locationContext = (LocationContext) context;
+    PathBasedCredentialContext pathBasedCredentialContext = (PathBasedCredentialContext) context;
     try {
       AccessToken accessToken =
-          getToken(locationContext.getReadLocations(), locationContext.getWriteLocations());
+          getToken(pathBasedCredentialContext.getReadPaths(), pathBasedCredentialContext.getWritePaths());
       String tokenValue = accessToken.getTokenValue();
       long expireTime = accessToken.getExpirationTime().toInstant().toEpochMilli();
       return new GcsTokenCredential(tokenValue, expireTime);

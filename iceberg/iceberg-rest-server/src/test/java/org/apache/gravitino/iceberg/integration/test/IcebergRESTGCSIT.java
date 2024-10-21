@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.gravitino.catalog.lakehouse.iceberg.IcebergConstants;
+import org.apache.gravitino.credential.Credential;
 import org.apache.gravitino.credential.CredentialConstants;
 import org.apache.gravitino.iceberg.common.IcebergConfig;
 import org.apache.gravitino.integration.test.util.DownloaderUtils;
@@ -31,7 +32,8 @@ import org.apache.gravitino.integration.test.util.ITUtils;
 import org.apache.gravitino.storage.GCSProperties;
 
 // @Disabled
-public class IcebergRESTGcsIT extends IcebergRESTJdbcCatalogIT {
+// export GOOGLE_APPLICATION_CREDENTIALS=/Users/fanng/deploy/gcs/tonal-land-426304-d3-a75b6878b6ce.json
+public class IcebergRESTGCSIT extends IcebergRESTJdbcCatalogIT {
   private String gcsWarehouse = "gs://strato-iceberg/test";
   private String gcsCredentialPath =
       "/Users/fanng/deploy/gcs/tonal-land-426304-d3-a75b6878b6ce.json";
@@ -57,15 +59,19 @@ public class IcebergRESTGcsIT extends IcebergRESTJdbcCatalogIT {
   public Map<String, String> getCatalogConfig() {
     HashMap m = new HashMap<String, String>();
     m.putAll(getCatalogJdbcConfig());
-    m.putAll(getGcsConfig());
+    m.putAll(getGCSConfig());
     return m;
   }
 
-  private Map<String, String> getGcsConfig() {
+  public boolean supportsCredentialVending() {
+    return false;
+  }
+
+  private Map<String, String> getGCSConfig() {
     Map configMap = new HashMap<String, String>();
 
     configMap.put(
-        IcebergConfig.ICEBERG_CONFIG_PREFIX + CredentialConstants.CREDENTIAL_TYPE,
+        IcebergConfig.ICEBERG_CONFIG_PREFIX + CredentialConstants.CREDENTIAL_PROVIDER_TYPE,
         CredentialConstants.GCS_TOKEN_CREDENTIAL_TYPE);
     configMap.put(
         IcebergConfig.ICEBERG_CONFIG_PREFIX + GCSProperties.GRAVITINO_GCS_CREDENTIAL_FILE_PATH,

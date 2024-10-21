@@ -26,10 +26,14 @@ plugins {
 
 dependencies {
   compileOnly(project(":api"))
+  compileOnly(project(":core"))
   compileOnly(project(":catalogs:catalog-common"))
   compileOnly(project(":catalogs:catalog-hadoop"))
+
   compileOnly(libs.hadoop3.common)
-  implementation(libs.hadoop3.gcs)
+
+  compileOnly(libs.hadoop3.gcs)
+  implementation(libs.iceberg.gcp.bundle)
 }
 
 tasks.withType(ShadowJar::class.java) {
