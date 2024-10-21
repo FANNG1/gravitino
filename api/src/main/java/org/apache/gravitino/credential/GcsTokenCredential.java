@@ -22,6 +22,7 @@ package org.apache.gravitino.credential;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
+import org.apache.gravitino.credential.Credential;
 
 /** Generating gcs tokens. */
 public class GcsTokenCredential implements Credential {
