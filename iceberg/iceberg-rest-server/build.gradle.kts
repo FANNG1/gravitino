@@ -63,6 +63,7 @@ dependencies {
 
   compileOnly(libs.lombok)
 
+  testImplementation(project(":bundles:gcp-bundle"))
   testImplementation(project(":integration-test-common", "testArtifacts"))
 
   testImplementation("org.scala-lang.modules:scala-collection-compat_$scalaVersion:$scalaCollectionCompatVersion")
@@ -74,8 +75,6 @@ dependencies {
     exclude("io.dropwizard.metrics")
     exclude("org.rocksdb")
   }
-
-  testImplementation(project(":bundles:gcp-bundle")) 
 
   testImplementation(libs.iceberg.gcp.bundle)
   testImplementation(libs.jersey.test.framework.core) {

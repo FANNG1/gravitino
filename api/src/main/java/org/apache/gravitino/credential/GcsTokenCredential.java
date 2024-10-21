@@ -22,12 +22,16 @@ package org.apache.gravitino.credential;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
-import org.apache.gravitino.storage.GCSProperties;
 
+/** Generating gcs tokens. */
 public class GcsTokenCredential implements Credential {
   private String token;
   private long expireMs;
 
+  /**
+   * @param sessionToken The gcs session token.
+   * @param expireMs The gcs session token expire time at ms.
+   */
   public GcsTokenCredential(String sessionToken, long expireMs) {
     Preconditions.checkNotNull(sessionToken, "gcs session token should not null");
     this.token = sessionToken;
@@ -35,20 +39,20 @@ public class GcsTokenCredential implements Credential {
   }
 
   @Override
-  public String getCredentialType() {
-    return CredentialConstants.GCS_TOKEN_CREDENTIAL_TYPE;
+  public String credentialType() {
+    return Credential.GCS_TOKEN_CREDENTIAL_TYPE;
   }
 
   @Override
-  public long getExpireTime() {
+  public long expireTimeInMs() {
     return expireMs;
   }
 
   @Override
-  public Map<String, String> getCredentialInfo() {
+  public Map<String, String> credentialInfo() {
     return (new ImmutableMap.Builder<String, String>())
-        .put(GCSProperties.GRAVITINO_GCS_TOKEN, token)
-        .put(GCSProperties.GRAVITINO_TOKEN_EXPIRE_MS, String.valueOf(expireMs))
+        .put(Credential.GCS_TOKEN_NAME, token)
+        .put(Credential.GCS_TOKEN_EXPIRE_MS, String.valueOf(expireMs))
         .build();
   }
 }
