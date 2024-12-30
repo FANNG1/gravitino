@@ -20,6 +20,7 @@
 package org.apache.gravitino.s3.credential;
 
 import java.net.URI;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -49,6 +50,7 @@ import software.amazon.awssdk.services.sts.model.Credentials;
 
 /** Generates S3 token to access S3 data. */
 public class S3TokenProvider implements CredentialProvider {
+
   private StsClient stsClient;
   private String roleArn;
   private String externalID;
@@ -121,6 +123,10 @@ public class S3TokenProvider implements CredentialProvider {
         IamStatement.builder()
             .effect(IamEffect.ALLOW)
             .addAction("s3:GetObject")
+            .addAction("s3:GetObjectAcl")
+            .addAction("s3:GetObjectTagging")
+            .addAction("s3:GetObjectVersion")
+            .addAction("s3:GetObjectAttributes")
             .addAction("s3:GetObjectVersion");
     Map<String, IamStatement.Builder> bucketListStatmentBuilder = new HashMap<>();
     Map<String, IamStatement.Builder> bucketGetLocationStatmentBuilder = new HashMap<>();
@@ -142,10 +148,12 @@ public class S3TokenProvider implements CredentialProvider {
                               .effect(IamEffect.ALLOW)
                               .addAction("s3:ListBucket")
                               .addResource(key))
-                  .addCondition(
+                  .addConditions(
                       IamConditionOperator.STRING_LIKE,
                       "s3:prefix",
-                      concatPathWithSep(trimLeadingSlash(uri.getPath()), "*", "/"));
+                      Arrays.asList(
+                          trimLeadingSlash(uri.getPath()),
+                          concatPathWithSep(trimLeadingSlash(uri.getPath()), "*", "/")));
               bucketGetLocationStatmentBuilder.computeIfAbsent(
                   bucketArn,
                   key ->

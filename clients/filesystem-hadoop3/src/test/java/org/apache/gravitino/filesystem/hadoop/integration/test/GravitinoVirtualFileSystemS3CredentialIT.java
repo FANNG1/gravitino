@@ -37,6 +37,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.platform.commons.util.StringUtils;
 import org.slf4j.Logger;
@@ -114,6 +115,11 @@ public class GravitinoVirtualFileSystemS3CredentialIT extends GravitinoVirtualFi
     conf.set(S3Properties.GRAVITINO_S3_ENDPOINT, S3_ENDPOINT);
     conf.set(S3Properties.GRAVITINO_S3_REGION, S3_REGION);
     conf.set(S3Properties.GRAVITINO_S3_ROLE_ARN, S3_ROLE_ARN);
+  }
+
+  @Test
+  void test() throws IOException {
+    testCreate();
   }
 
   @AfterAll
