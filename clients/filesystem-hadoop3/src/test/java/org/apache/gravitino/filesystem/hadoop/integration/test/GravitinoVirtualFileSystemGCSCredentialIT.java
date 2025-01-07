@@ -37,6 +37,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +54,11 @@ public class GravitinoVirtualFileSystemGCSCredentialIT extends GravitinoVirtualF
   @BeforeAll
   public void startIntegrationTest() {
     // Do nothing
+  }
+
+  @Test
+  void test() throws IOException {
+    testCreate();
   }
 
   @BeforeAll
@@ -137,7 +143,7 @@ public class GravitinoVirtualFileSystemGCSCredentialIT extends GravitinoVirtualF
   }
 
   protected String genStorageLocation(String fileset) {
-    return String.format("gs://%s/%s", BUCKET_NAME, fileset);
+    return String.format("gs://%s/1/%s", BUCKET_NAME, fileset);
   }
 
   @Disabled(

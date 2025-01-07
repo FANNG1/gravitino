@@ -24,6 +24,7 @@ import com.google.auth.oauth2.CredentialAccessBoundary;
 import com.google.auth.oauth2.CredentialAccessBoundary.AccessBoundaryRule;
 import com.google.auth.oauth2.DownscopedCredentials;
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -44,7 +45,9 @@ import org.apache.gravitino.credential.GCSTokenCredential;
 import org.apache.gravitino.credential.PathBasedCredentialContext;
 import org.apache.gravitino.credential.config.GCSCredentialConfig;
 
-/** Generate GCS access token according to the read and write paths. */
+/**
+ * Generate GCS access token according to the read and write paths.
+ */
 public class GCSTokenProvider implements CredentialProvider {
 
   private static final String INITIAL_SCOPE = "https://www.googleapis.com/auth/cloud-platform";
@@ -63,7 +66,8 @@ public class GCSTokenProvider implements CredentialProvider {
   }
 
   @Override
-  public void close() {}
+  public void close() {
+  }
 
   @Override
   public String credentialType() {
@@ -97,6 +101,36 @@ public class GCSTokenProvider implements CredentialProvider {
             .setCredentialAccessBoundary(getAccessBoundary(readLocations, writeLocations))
             .build();
     return downscopedCredentials.refreshAccessToken();
+  }
+
+  @VisibleForTesting
+  List<String> getReadExpressions(String bucketName, String resourcePath) {
+    List<String> readExpressions = new ArrayList<>();
+    readExpressions.add(String.format(
+        "resource.name.startsWith('projects/_/buckets/%s/objects/%s')",
+        bucketName, resourcePath));
+    getParentResources(resourcePath).forEach(
+        parentResourcePath -> readExpressions.add(
+            String.format(
+                "resource.name == 'projects/_/buckets/%s/objects/%s'",
+                bucketName, parentResourcePath)
+        )
+    );
+    return readExpressions;
+  }
+
+  static List<String> getParentResources(String resourcePath) {
+    if (resourcePath.endsWith("/")) {
+      resourcePath = resourcePath.substring(0, resourcePath.length() - 1);
+    }
+    List<String> parts = Arrays.asList(resourcePath.split("/"));
+    List<String> parents = new ArrayList<>();
+    String parent = "";
+    for (int i = 0; i < parts.size() - 1; i++) {
+      parent += parts.get(i) + "/";
+      parents.add(parent);
+    }
+    return parents;
   }
 
   private CredentialAccessBoundary getAccessBoundary(
