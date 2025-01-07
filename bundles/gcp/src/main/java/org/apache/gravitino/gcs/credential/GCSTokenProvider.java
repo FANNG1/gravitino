@@ -109,7 +109,7 @@ public class GCSTokenProvider implements CredentialProvider {
     readExpressions.add(String.format(
         "resource.name.startsWith('projects/_/buckets/%s/objects/%s')",
         bucketName, resourcePath));
-    getParentResources(resourcePath).forEach(
+    getAllResources(resourcePath).forEach(
         parentResourcePath -> readExpressions.add(
             String.format(
                 "resource.name == 'projects/_/buckets/%s/objects/%s'",
@@ -119,18 +119,32 @@ public class GCSTokenProvider implements CredentialProvider {
     return readExpressions;
   }
 
-  static List<String> getParentResources(String resourcePath) {
+  // "a/b/c" will get ["a", "a/", "a/b", "a/b/", "a/b/c"]
+  static List<String> getAllResources(String resourcePath) {
     if (resourcePath.endsWith("/")) {
       resourcePath = resourcePath.substring(0, resourcePath.length() - 1);
     }
     List<String> parts = Arrays.asList(resourcePath.split("/"));
-    List<String> parents = new ArrayList<>();
+    List<String> results = new ArrayList<>();
     String parent = "";
     for (int i = 0; i < parts.size() - 1; i++) {
+      results.add(parts.get(i));
       parent += parts.get(i) + "/";
-      parents.add(parent);
+      results.add(parent);
     }
-    return parents;
+    results.add(parent +  parts.get(parts.size() - 1));
+    return results;
+  }
+
+  // remove the first '/', and append `/` if the path does not end with '/'.
+  static String normalizeUriPath(String resourcePath) {
+    if (resourcePath.startsWith("/")) {
+      resourcePath = resourcePath.substring(1);
+    }
+    if (resourcePath.endsWith("/")) {
+      return resourcePath;
+    }
+    return resourcePath + "/";
   }
 
   private CredentialAccessBoundary getAccessBoundary(
@@ -150,14 +164,11 @@ public class GCSTokenProvider implements CredentialProvider {
               URI uri = URI.create(location);
               String bucketName = getBucketName(uri);
               readBuckets.add(bucketName);
-              String resourcePath = uri.getPath().substring(1);
+              String resourcePath = normalizeUriPath(uri.getPath());
               List<String> resourceExpressions =
                   readExpressions.computeIfAbsent(bucketName, key -> new ArrayList<>());
               // add read privilege
-              resourceExpressions.add(
-                  String.format(
-                      "resource.name.startsWith('projects/_/buckets/%s/objects/%s')",
-                      bucketName, resourcePath));
+              resourceExpressions.addAll(getReadExpressions(bucketName, resourcePath));
               // add list privilege
               resourceExpressions.add(
                   String.format(
@@ -180,11 +191,12 @@ public class GCSTokenProvider implements CredentialProvider {
         CredentialAccessBoundary.newBuilder();
     readBuckets.forEach(
         bucket -> {
-          // Hadoop GCS connector needs to get bucket info
+          // Hadoop GCS connector needs storage.buckets.get permission, the reason why not use
+          // inRole:roles/storage.legacyBucketReader is it provides extra list permission.
           AccessBoundaryRule bucketInfoRule =
               AccessBoundaryRule.newBuilder()
                   .setAvailableResource(toGCSBucketResource(bucket))
-                  .setAvailablePermissions(Arrays.asList("inRole:roles/storage.legacyBucketReader"))
+                  .setAvailablePermissions(Arrays.asList("inRole:roles/storage.insightsCollectorService"))
                   .build();
           credentialAccessBoundaryBuilder.addRule(bucketInfoRule);
           List<String> readConditions = readExpressions.get(bucket);
@@ -192,9 +204,7 @@ public class GCSTokenProvider implements CredentialProvider {
               getAccessBoundaryRule(
                   bucket,
                   readConditions,
-                  Arrays.asList(
-                      "inRole:roles/storage.legacyObjectReader",
-                      "inRole:roles/storage.objectViewer"));
+                  Arrays.asList("inRole:roles/storage.objectViewer"));
           if (rule == null) {
             return;
           }
