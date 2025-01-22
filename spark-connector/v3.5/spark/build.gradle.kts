@@ -53,6 +53,10 @@ dependencies {
   testImplementation(project(":api")) {
     exclude("org.apache.logging.log4j")
   }
+  testImplementation(project(":catalogs:catalog-jdbc-common")) {
+    exclude("org.slf4j")
+    exclude("org.apache.logging.log4j")
+  }
   testImplementation(project(":catalogs:hive-metastore-common")) {
     exclude("*")
   }
