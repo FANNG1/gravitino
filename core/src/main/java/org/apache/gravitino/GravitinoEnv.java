@@ -54,6 +54,7 @@ import org.apache.gravitino.hook.MetalakeHookDispatcher;
 import org.apache.gravitino.hook.SchemaHookDispatcher;
 import org.apache.gravitino.hook.TableHookDispatcher;
 import org.apache.gravitino.hook.TopicHookDispatcher;
+import org.apache.gravitino.lineage.LineageService;
 import org.apache.gravitino.listener.CatalogEventDispatcher;
 import org.apache.gravitino.listener.EventBus;
 import org.apache.gravitino.listener.EventListenerManager;
@@ -129,6 +130,8 @@ public class GravitinoEnv {
   private EventBus eventBus;
   private OwnerManager ownerManager;
   private FutureGrantManager futureGrantManager;
+
+  private LineageService lineageService;
 
   protected GravitinoEnv() {}
 
@@ -350,6 +353,15 @@ public class GravitinoEnv {
     return futureGrantManager;
   }
 
+  /**
+   * Get the LineageService associated with the Gravitino environment.
+   *
+   * @return The LineageService instance.
+   */
+  public LineageService lineageService() {
+    return lineageService;
+  }
+
   public void start() {
     metricsSystem.start();
     eventListenerManager.start();
@@ -503,5 +515,6 @@ public class GravitinoEnv {
 
     // Create and initialize Tag related modules
     this.tagDispatcher = new TagEventDispatcher(eventBus, new TagManager(idGenerator, entityStore));
+    this.lineageService = new LineageService();
   }
 }
