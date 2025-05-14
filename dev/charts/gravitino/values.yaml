@@ -185,6 +185,7 @@ icebergRest:
   #   secretAccessKey: ""
   #   roleArn: ""
   #   endpoint: ""
+  #   pathStyleAccess: ""
   #   region: ""
   #   externalId: ""
   #   tokenServiceEndpoint: ""
