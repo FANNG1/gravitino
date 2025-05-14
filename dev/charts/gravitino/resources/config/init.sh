@@ -34,10 +34,9 @@ echo "Finish downloading"
 
 ## Should be refactor
 iceberg_version="1.6.1"
-iceberg_gcp_bundle="iceberg-gcp-bundle-${iceberg_version}.jar"
-wget https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-gcp-bundle/${iceberg_version}/${iceberg_gcp_bundle} -O ${GRAVITINO_HOME}/iceberg-rest-server/libs/${iceberg_gcp_bundle}
-wget https://repo1.maven.org/maven2/org/apache/gravitino/gravitino-gcp/0.8.0-incubating/gravitino-gcp-0.8.0-incubating.jar -O ${GRAVITINO_HOME}/iceberg-rest-server/libs/gravitino-gcp-0.8.0-incubating.jar
-export GOOGLE_APPLICATION_CREDENTIALS=/tmp/conf/gcs-credentials.json
+iceberg_aws_bundle="iceberg-aws-bundle-${iceberg_version}.jar"
+wget https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-aws-bundle/${iceberg_version}/${iceberg_aws_bundle} -O ${GRAVITINO_HOME}/iceberg-rest-server/libs/${iceberg_aws_bundle}
+wget https://repo1.maven.org/maven2/org/apache/gravitino/gravitino-aws/0.8.0-incubating/gravitino-aws-0.8.0-incubating.jar -O ${GRAVITINO_HOME}/iceberg-rest-server/libs/gravitino-aws-0.8.0-incubating.jar
 
 cp /tmp/conf/* ${GRAVITINO_HOME}/conf
 cp /tmp/conf/log4j2.properties ${GRAVITINO_HOME}/conf
