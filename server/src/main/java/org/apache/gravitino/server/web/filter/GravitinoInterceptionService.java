@@ -19,12 +19,7 @@ package org.apache.gravitino.server.web.filter;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -58,16 +53,13 @@ import org.apache.gravitino.utils.NameIdentifierUtil;
 import org.apache.gravitino.utils.PrincipalUtils;
 import org.glassfish.hk2.api.Descriptor;
 import org.glassfish.hk2.api.Filter;
-import org.glassfish.hk2.api.InterceptionService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * GravitinoInterceptionService defines a method interceptor for REST interfaces to create dynamic
  * proxies. It implements metadata authorization when invoking REST API methods. It needs to be
  * registered in the hk2 bean container when the gravitino server starts.
  */
-public class GravitinoInterceptionService implements InterceptionService {
+public class GravitinoInterceptionService extends BaseInterceptionService {
 
   @Override
   public Filter getDescriptorFilter() {
