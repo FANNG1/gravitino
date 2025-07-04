@@ -51,6 +51,7 @@ import org.apache.gravitino.listener.api.event.IcebergRequestContext;
 import org.apache.gravitino.metrics.MetricNames;
 import org.apache.gravitino.server.web.Utils;
 import org.apache.gravitino.server.authorization.annotations.AuthorizationExpression;
+import org.apache.gravitino.server.web.Utils;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.rest.RESTUtil;
@@ -126,7 +127,8 @@ public class IcebergTableOperations {
       @PathParam("prefix") String prefix,
       @Encoded() @PathParam("namespace") String namespace,
       CreateTableRequest createTableRequest,
-      @HeaderParam(X_ICEBERG_ACCESS_DELEGATION) String accessDelegation) {
+      @HeaderParam(X_ICEBERG_ACCESS_DELEGATION) String accessDelegation)
+      throws Exception {
     boolean isCredentialVending = isCredentialVending(accessDelegation);
     String catalogName = IcebergRestUtils.getCatalogName(prefix);
     Namespace icebergNS = RESTUtil.decodeNamespace(namespace);
@@ -151,6 +153,17 @@ public class IcebergTableOperations {
     } catch (Exception e) {
       return IcebergExceptionMapper.toRESTResponse(e);
     }
+=======
+    return Utils.doAs(
+        httpRequest,
+        () -> {
+          IcebergRequestContext context =
+              new IcebergRequestContext(httpServletRequest(), catalogName, isCredentialVending);
+          LoadTableResponse loadTableResponse =
+              tableOperationDispatcher.createTable(context, icebergNS, createTableRequest);
+          return IcebergRestUtils.ok(loadTableResponse);
+        });
+>>>>>>> 26ef03552 (user)
   }
 
   @POST
@@ -249,7 +262,8 @@ public class IcebergTableOperations {
       @Encoded() @PathParam("namespace") String namespace,
       @PathParam("table") String table,
       @DefaultValue("all") @QueryParam("snapshots") String snapshots,
-      @HeaderParam(X_ICEBERG_ACCESS_DELEGATION) String accessDelegation) {
+      @HeaderParam(X_ICEBERG_ACCESS_DELEGATION) String accessDelegation)
+      throws Exception {
     String catalogName = IcebergRestUtils.getCatalogName(prefix);
     Namespace icebergNS = RESTUtil.decodeNamespace(namespace);
     boolean isCredentialVending = isCredentialVending(accessDelegation);
