@@ -18,6 +18,7 @@
  */
 package org.apache.gravitino.iceberg;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import java.lang.reflect.Constructor;
@@ -36,12 +37,15 @@ import org.apache.gravitino.Entity;
 import org.apache.gravitino.MetadataObject;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.exceptions.ForbiddenException;
+import org.apache.gravitino.iceberg.service.IcebergRestUtils;
 import org.apache.gravitino.iceberg.service.rest.IcebergTableOperations;
 import org.apache.gravitino.server.authorization.annotations.AuthorizationExpression;
 import org.apache.gravitino.server.authorization.annotations.AuthorizationMetadata;
 import org.apache.gravitino.server.authorization.expression.AuthorizationExpressionEvaluator;
 import org.apache.gravitino.server.web.Utils;
 import org.apache.gravitino.utils.NameIdentifierUtil;
+import org.apache.iceberg.catalog.Namespace;
+import org.apache.iceberg.rest.RESTUtil;
 import org.glassfish.hk2.api.Descriptor;
 import org.glassfish.hk2.api.Filter;
 import org.glassfish.hk2.api.InterceptionService;
@@ -53,11 +57,7 @@ import org.glassfish.hk2.api.InterceptionService;
  */
 public class IcebergRESTAuthInterceptionService implements InterceptionService {
 
-  private final String metalakeName;
-
-  public IcebergRESTAuthInterceptionService(String metalakeName) {
-    this.metalakeName = metalakeName;
-  }
+  private final String metalakeName = "test";
 
   @Override
   public Filter getDescriptorFilter() {
@@ -132,12 +132,17 @@ public class IcebergRESTAuthInterceptionService implements InterceptionService {
         String value = String.valueOf(args[i]);
         switch (type) {
           case CATALOG:
-            catalog = value;
+            catalog = IcebergRestUtils.getCatalogName(value);
             nameIdentifierMap.put(
                 Entity.EntityType.CATALOG, NameIdentifierUtil.ofCatalog(metalakeName, catalog));
             break;
           case SCHEMA:
-            schema = value;
+            Namespace ns = RESTUtil.decodeNamespace(value);
+            Preconditions.checkArgument(
+                ns.levels().length == 1,
+                "Gravitino auth doesn't support multiple namespace: %s",
+                ns);
+            schema = ns.level(0);
             nameIdentifierMap.put(
                 Entity.EntityType.SCHEMA,
                 NameIdentifierUtil.ofSchema(metalakeName, catalog, schema));

@@ -43,6 +43,7 @@ import javax.ws.rs.core.Response;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.gravitino.iceberg.service.IcebergExceptionMapper;
 import org.apache.gravitino.MetadataObject;
+import org.apache.gravitino.iceberg.service.IcebergExceptionMapper;
 import org.apache.gravitino.iceberg.service.IcebergObjectMapper;
 import org.apache.gravitino.iceberg.service.IcebergRestUtils;
 import org.apache.gravitino.iceberg.service.dispatcher.IcebergTableOperationDispatcher;
@@ -51,6 +52,7 @@ import org.apache.gravitino.listener.api.event.IcebergRequestContext;
 import org.apache.gravitino.metrics.MetricNames;
 import org.apache.gravitino.server.web.Utils;
 import org.apache.gravitino.server.authorization.annotations.AuthorizationExpression;
+import org.apache.gravitino.server.authorization.annotations.AuthorizationMetadata;
 import org.apache.gravitino.server.web.Utils;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
@@ -124,8 +126,9 @@ public class IcebergTableOperations {
               + "CATALOG::OWNER || SCHEMA::OWNER",
       accessMetadataType = MetadataObject.Type.TABLE)
   public Response createTable(
-      @PathParam("prefix") String prefix,
-      @Encoded() @PathParam("namespace") String namespace,
+      @AuthorizationMetadata(type = MetadataObject.Type.CATALOG) @PathParam("prefix") String prefix,
+      @AuthorizationMetadata(type = MetadataObject.Type.SCHEMA) @Encoded() @PathParam("namespace")
+          String namespace,
       CreateTableRequest createTableRequest,
       @HeaderParam(X_ICEBERG_ACCESS_DELEGATION) String accessDelegation)
       throws Exception {
@@ -153,17 +156,6 @@ public class IcebergTableOperations {
     } catch (Exception e) {
       return IcebergExceptionMapper.toRESTResponse(e);
     }
-=======
-    return Utils.doAs(
-        httpRequest,
-        () -> {
-          IcebergRequestContext context =
-              new IcebergRequestContext(httpServletRequest(), catalogName, isCredentialVending);
-          LoadTableResponse loadTableResponse =
-              tableOperationDispatcher.createTable(context, icebergNS, createTableRequest);
-          return IcebergRestUtils.ok(loadTableResponse);
-        });
->>>>>>> 26ef03552 (user)
   }
 
   @POST
@@ -171,15 +163,10 @@ public class IcebergTableOperations {
   @Produces(MediaType.APPLICATION_JSON)
   @Timed(name = "update-table." + MetricNames.HTTP_PROCESS_DURATION, absolute = true)
   @ResponseMetered(name = "update-table", absolute = true)
-  @AuthorizationExpression(
-      expression =
-          "METALAKE::MODIFY_TABLE || CATALOG::MODIFY_TABLE || "
-              + "SCHEMA::MODIFY_TABLE || TABLE::MODIFY_TABLE || "
-              + "METALAKE::OWNER || CATALOG::OWNER || SCHEMA::OWNER || TABLE::OWNER",
-      accessMetadataType = MetadataObject.Type.TABLE)
   public Response updateTable(
-      @PathParam("prefix") String prefix,
-      @Encoded() @PathParam("namespace") String namespace,
+      @AuthorizationMetadata(type = MetadataObject.Type.CATALOG) @PathParam("prefix") String prefix,
+      @AuthorizationMetadata(type = MetadataObject.Type.SCHEMA) @Encoded() @PathParam("namespace")
+          String namespace,
       @PathParam("table") String table,
       UpdateTableRequest updateTableRequest) {
     String catalogName = IcebergRestUtils.getCatalogName(prefix);
@@ -213,9 +200,6 @@ public class IcebergTableOperations {
   @Produces(MediaType.APPLICATION_JSON)
   @Timed(name = "drop-table." + MetricNames.HTTP_PROCESS_DURATION, absolute = true)
   @ResponseMetered(name = "drop-table", absolute = true)
-  @AuthorizationExpression(
-      expression = "METALAKE::OWNER || CATALOG::OWNER || SCHEMA::OWNER || TABLE::OWNER",
-      accessMetadataType = MetadataObject.Type.TABLE)
   public Response dropTable(
       @PathParam("prefix") String prefix,
       @Encoded() @PathParam("namespace") String namespace,
@@ -252,18 +236,18 @@ public class IcebergTableOperations {
   @AuthorizationExpression(
       expression =
           "METALAKE::SELECT_TABLE || CATALOG::SELECT_TABLE || "
-              + "SCHEMA::SELECT_TABLE || TABLE::SELECT_TABLE || "
+              + "SCHEMA::SELECT_TABLE || "
               + "METALAKE::MODIFY_TABLE || CATALOG::MODIFY_TABLE || "
-              + "SCHEMA::MODIFY_TABLE || TABLE::MODIFY_TABLE || "
-              + "METALAKE::OWNER || CATALOG::OWNER || SCHEMA::OWNER || TABLE::OWNER",
+              + "SCHEMA::MODIFY_TABLE || "
+              + "METALAKE::OWNER || CATALOG::OWNER || SCHEMA::OWNER ",
       accessMetadataType = MetadataObject.Type.TABLE)
   public Response loadTable(
-      @PathParam("prefix") String prefix,
-      @Encoded() @PathParam("namespace") String namespace,
+      @AuthorizationMetadata(type = MetadataObject.Type.CATALOG) @PathParam("prefix") String prefix,
+      @AuthorizationMetadata(type = MetadataObject.Type.SCHEMA) @Encoded() @PathParam("namespace")
+          String namespace,
       @PathParam("table") String table,
       @DefaultValue("all") @QueryParam("snapshots") String snapshots,
-      @HeaderParam(X_ICEBERG_ACCESS_DELEGATION) String accessDelegation)
-      throws Exception {
+      @HeaderParam(X_ICEBERG_ACCESS_DELEGATION) String accessDelegation) {
     String catalogName = IcebergRestUtils.getCatalogName(prefix);
     Namespace icebergNS = RESTUtil.decodeNamespace(namespace);
     boolean isCredentialVending = isCredentialVending(accessDelegation);
@@ -297,13 +281,6 @@ public class IcebergTableOperations {
   @Produces(MediaType.APPLICATION_JSON)
   @Timed(name = "table-exists." + MetricNames.HTTP_PROCESS_DURATION, absolute = true)
   @ResponseMetered(name = "table-exits", absolute = true)
-  @AuthorizationExpression(
-      expression =
-          "METALAKE::SELECT_TABLE || CATALOG::SELECT_TABLE || "
-              + "SCHEMA::SELECT_TABLE || TABLE::SELECT_TABLE || "
-              + "METALAKE::OWNER || CATALOG::OWNER || SCHEMA::OWNER || "
-              + "TABLE::OWNER",
-      accessMetadataType = MetadataObject.Type.TABLE)
   public Response tableExists(
       @PathParam("prefix") String prefix,
       @Encoded() @PathParam("namespace") String namespace,
@@ -339,12 +316,6 @@ public class IcebergTableOperations {
   @Produces(MediaType.APPLICATION_JSON)
   @Timed(name = "report-table-metrics." + MetricNames.HTTP_PROCESS_DURATION, absolute = true)
   @ResponseMetered(name = "report-table-metrics", absolute = true)
-  @AuthorizationExpression(
-      expression =
-          "METALAKE::MODIFY_TABLE || CATALOG::MODIFY_TABLE || "
-              + "SCHEMA::MODIFY_TABLE || TABLE::MODIFY_TABLE || "
-              + "METALAKE::OWNER || CATALOG::OWNER || SCHEMA::OWNER || TABLE::OWNER",
-      accessMetadataType = MetadataObject.Type.TABLE)
   public Response reportTableMetrics(
       @PathParam("prefix") String prefix,
       @Encoded() @PathParam("namespace") String namespace,
