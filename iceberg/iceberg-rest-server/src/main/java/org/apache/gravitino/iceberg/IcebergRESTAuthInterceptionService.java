@@ -34,6 +34,7 @@ import org.aopalliance.intercept.ConstructorInterceptor;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.gravitino.Entity;
+import org.apache.gravitino.Entity.EntityType;
 import org.apache.gravitino.MetadataObject;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.exceptions.ForbiddenException;
@@ -41,11 +42,13 @@ import org.apache.gravitino.iceberg.service.IcebergRestUtils;
 import org.apache.gravitino.iceberg.service.rest.IcebergTableOperations;
 import org.apache.gravitino.server.authorization.annotations.AuthorizationExpression;
 import org.apache.gravitino.server.authorization.annotations.AuthorizationMetadata;
+import org.apache.gravitino.server.authorization.annotations.IcebergAuthorizationMetadata;
 import org.apache.gravitino.server.authorization.expression.AuthorizationExpressionEvaluator;
 import org.apache.gravitino.server.web.Utils;
 import org.apache.gravitino.utils.NameIdentifierUtil;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.rest.RESTUtil;
+import org.apache.iceberg.rest.requests.CreateTableRequest;
 import org.glassfish.hk2.api.Descriptor;
 import org.glassfish.hk2.api.Filter;
 import org.glassfish.hk2.api.InterceptionService;
@@ -125,6 +128,20 @@ public class IcebergRESTAuthInterceptionService implements InterceptionService {
         Parameter parameter = parameters[i];
         AuthorizationMetadata authorizeResource =
             parameter.getAnnotation(AuthorizationMetadata.class);
+        IcebergAuthorizationMetadata icebergAuthorizeResource =
+            parameter.getAnnotation(IcebergAuthorizationMetadata.class);
+        if (icebergAuthorizeResource != null) {
+          switch (icebergAuthorizeResource.type()) {
+            case CREATE_TABLE:
+              CreateTableRequest request = (CreateTableRequest) args[i];
+              nameIdentifierMap.put(
+                  Entity.EntityType.TABLE,
+                  NameIdentifierUtil.ofTable(metalakeName, catalog, schema, request.name()));
+              break;
+            default:
+              break;
+          }
+        }
         if (authorizeResource == null) {
           continue;
         }
@@ -146,6 +163,10 @@ public class IcebergRESTAuthInterceptionService implements InterceptionService {
             nameIdentifierMap.put(
                 Entity.EntityType.SCHEMA,
                 NameIdentifierUtil.ofSchema(metalakeName, catalog, schema));
+            break;
+          case TABLE:
+            nameIdentifierMap.put(
+                EntityType.TABLE, NameIdentifierUtil.ofTable(metalakeName, catalog, schema, value));
             break;
           default:
             break;

@@ -53,6 +53,8 @@ import org.apache.gravitino.metrics.MetricNames;
 import org.apache.gravitino.server.web.Utils;
 import org.apache.gravitino.server.authorization.annotations.AuthorizationExpression;
 import org.apache.gravitino.server.authorization.annotations.AuthorizationMetadata;
+import org.apache.gravitino.server.authorization.annotations.IcebergAuthorizationMetadata;
+import org.apache.gravitino.server.authorization.annotations.IcebergAuthorizationMetadata.RequestType;
 import org.apache.gravitino.server.web.Utils;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
@@ -121,17 +123,18 @@ public class IcebergTableOperations {
   @ResponseMetered(name = "create-table", absolute = true)
   @AuthorizationExpression(
       expression =
-          "METALAKE::CREATE_TABLE || CATALOG::CREATE_TABLE || "
-              + "SCHEMA::CREATE_TABLE || METALAKE::OWNER || "
-              + "CATALOG::OWNER || SCHEMA::OWNER",
+          " ((ANY(USE_CATALOG,METALAKE,CATALOG)) && "
+              + "((ANY(USE_SCHEMA,METALAKE,CATALOG,SCHEMA)) "
+              + "&& (ANY(CREATE_TABLE,METALAKE,CATALOG,SCHEMA)) || SCHEMA::OWNER)) || "
+              + "METALAKE::OWNER || CATALOG::OWNER",
       accessMetadataType = MetadataObject.Type.TABLE)
   public Response createTable(
       @AuthorizationMetadata(type = MetadataObject.Type.CATALOG) @PathParam("prefix") String prefix,
       @AuthorizationMetadata(type = MetadataObject.Type.SCHEMA) @Encoded() @PathParam("namespace")
           String namespace,
-      CreateTableRequest createTableRequest,
-      @HeaderParam(X_ICEBERG_ACCESS_DELEGATION) String accessDelegation)
-      throws Exception {
+      @IcebergAuthorizationMetadata(type = RequestType.CREATE_TABLE)
+          CreateTableRequest createTableRequest,
+      @HeaderParam(X_ICEBERG_ACCESS_DELEGATION) String accessDelegation) {
     boolean isCredentialVending = isCredentialVending(accessDelegation);
     String catalogName = IcebergRestUtils.getCatalogName(prefix);
     Namespace icebergNS = RESTUtil.decodeNamespace(namespace);
@@ -235,17 +238,17 @@ public class IcebergTableOperations {
   @ResponseMetered(name = "load-table", absolute = true)
   @AuthorizationExpression(
       expression =
-          "METALAKE::SELECT_TABLE || CATALOG::SELECT_TABLE || "
-              + "SCHEMA::SELECT_TABLE || "
-              + "METALAKE::MODIFY_TABLE || CATALOG::MODIFY_TABLE || "
-              + "SCHEMA::MODIFY_TABLE || "
-              + "METALAKE::OWNER || CATALOG::OWNER || SCHEMA::OWNER ",
+          "((ANY(USE_CATALOG,METALAKE,CATALOG)) && "
+              + "(SCHEMA::OWNER || ((ANY(USE_SCHEMA,METALAKE,CATALOG,SCHEMA)) &&"
+              + " ( ANY(SELECT_TABLE,METALAKE,CATALOG,SCHEMA,TABLE) || "
+              + " ANY(MODIFY_TABLE,METALAKE,CATALOG,SCHEMA,TABLE) || TABLE::OWNER)))) ||"
+              + "ANY(OWNER,METALAKE,CATALOG)",
       accessMetadataType = MetadataObject.Type.TABLE)
   public Response loadTable(
       @AuthorizationMetadata(type = MetadataObject.Type.CATALOG) @PathParam("prefix") String prefix,
       @AuthorizationMetadata(type = MetadataObject.Type.SCHEMA) @Encoded() @PathParam("namespace")
           String namespace,
-      @PathParam("table") String table,
+      @AuthorizationMetadata(type = MetadataObject.Type.TABLE) @PathParam("table") String table,
       @DefaultValue("all") @QueryParam("snapshots") String snapshots,
       @HeaderParam(X_ICEBERG_ACCESS_DELEGATION) String accessDelegation) {
     String catalogName = IcebergRestUtils.getCatalogName(prefix);
