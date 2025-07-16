@@ -121,10 +121,9 @@ public class IcebergTableOperations {
   @ResponseMetered(name = "create-table", absolute = true)
   @AuthorizationExpression(
       expression =
-          " ((ANY(USE_CATALOG,METALAKE,CATALOG)) && "
-              + "((ANY(USE_SCHEMA,METALAKE,CATALOG,SCHEMA)) "
-              + "&& (ANY(CREATE_TABLE,METALAKE,CATALOG,SCHEMA)) || SCHEMA::OWNER)) || "
-              + "METALAKE::OWNER || CATALOG::OWNER",
+          "ANY(OWNER, METALAKE, CATALOG) || "
+              + "SCHEMA_OWNER_WITH_USE_CATALOG || "
+              + "ANY_USE_CATALOG && ANY_USE_SCHEMA && ANY_CREATE_TABLE",
       accessMetadataType = MetadataObject.Type.TABLE)
   public Response createTable(
       @AuthorizationMetadata(type = MetadataObject.Type.CATALOG) @PathParam("prefix") String prefix,
