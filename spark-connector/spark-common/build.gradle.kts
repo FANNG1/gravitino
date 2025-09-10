@@ -51,8 +51,10 @@ dependencies {
   compileOnly(project(":clients:client-java-runtime", configuration = "shadow"))
   compileOnly("org.apache.iceberg:iceberg-spark-runtime-${sparkMajorVersion}_$scalaVersion:$icebergVersion")
   compileOnly("org.apache.kyuubi:kyuubi-spark-connector-hive_$scalaVersion:$kyuubiVersion")
-  compileOnly("org.apache.paimon:paimon-spark-$sparkMajorVersion:$paimonVersion") {
-    exclude("org.apache.spark")
+  if (scalaVersion == "2.12") {
+    compileOnly("org.apache.paimon:paimon-spark-$sparkMajorVersion:$paimonVersion") {
+      exclude("org.apache.spark")
+    }
   }
 
   compileOnly("org.apache.spark:spark-catalyst_$scalaVersion:$sparkVersion")
@@ -126,8 +128,10 @@ dependencies {
   testImplementation("org.apache.iceberg:iceberg-core:$icebergVersion")
   testImplementation("org.apache.iceberg:iceberg-hive-metastore:$icebergVersion")
   testImplementation("org.apache.iceberg:iceberg-spark-runtime-${sparkMajorVersion}_$scalaVersion:$icebergVersion")
-  testImplementation("org.apache.paimon:paimon-spark-$sparkMajorVersion:$paimonVersion") {
-    exclude("org.apache.spark")
+  if (scalaVersion == "2.12") {
+    testImplementation("org.apache.paimon:paimon-spark-$sparkMajorVersion:$paimonVersion") {
+      exclude("org.apache.spark")
+    }
   }
   testImplementation("org.apache.kyuubi:kyuubi-spark-connector-hive_$scalaVersion:$kyuubiVersion")
   // include spark-sql,spark-catalyst,hive-common,hdfs-client
