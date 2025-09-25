@@ -37,6 +37,7 @@ import org.apache.gravitino.iceberg.common.IcebergConfig;
 import org.apache.gravitino.iceberg.common.authentication.AuthenticationConfig;
 import org.apache.gravitino.iceberg.common.authentication.kerberos.HiveBackendProxy;
 import org.apache.gravitino.iceberg.common.authentication.kerberos.KerberosClient;
+import org.apache.gravitino.iceberg.common.cache.memory.MemoryCatalogWithMetadataLocation;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.iceberg.CatalogProperties;
@@ -56,7 +57,7 @@ public class IcebergCatalogUtil {
 
   private static InMemoryCatalog loadMemoryCatalog(IcebergConfig icebergConfig) {
     String icebergCatalogName = icebergConfig.getCatalogBackendName();
-    InMemoryCatalog memoryCatalog = new InMemoryCatalog();
+    InMemoryCatalog memoryCatalog = new MemoryCatalogWithMetadataLocation();
     Map<String, String> resultProperties = icebergConfig.getIcebergCatalogProperties();
     if (!resultProperties.containsKey(IcebergConstants.WAREHOUSE)) {
       resultProperties.put(IcebergConstants.WAREHOUSE, "/tmp");

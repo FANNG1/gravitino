@@ -21,7 +21,6 @@ package org.apache.gravitino.iceberg.common.cache;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.gravitino.iceberg.common.ops.IcebergCatalogWrapper;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.slf4j.Logger;
@@ -56,18 +55,27 @@ public class MemoryMetadataCache implements MetadataCache {
       return null;
     }
     if (latestLocation.equals(tableMetadata.metadataFileLocation())) {
-      LOG.info("Table metadata location match, table identifier: {}, table metadata location: {}", tableIdentifier, tableMetadata.metadataFileLocation());
+      LOG.info(
+          "Table metadata location match, table identifier: {}, table metadata location: {}",
+          tableIdentifier,
+          tableMetadata.metadataFileLocation());
       return tableMetadata;
     }
 
-    LOG.info("Table metadata location not match, table identifier: {}, table metadata location: {}", tableIdentifier, tableMetadata.metadataFileLocation());
+    LOG.info(
+        "Table metadata location not match, table identifier: {}, table metadata location: {}",
+        tableIdentifier,
+        tableMetadata.metadataFileLocation());
     invalidate(tableIdentifier);
     return null;
   }
 
   @Override
   public void updateTableMetadata(TableIdentifier tableIdentifier, TableMetadata tableMetadata) {
-    LOG.info("Update table cache, table identifier: {}, table metadata location: {}", tableIdentifier, tableMetadata.metadataFileLocation());
+    LOG.info(
+        "Update table cache, table identifier: {}, table metadata location: {}",
+        tableIdentifier,
+        tableMetadata.metadataFileLocation());
     tableMetadataCache.put(tableIdentifier, tableMetadata);
   }
 }

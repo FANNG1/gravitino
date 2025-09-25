@@ -31,6 +31,7 @@ import org.apache.gravitino.catalog.lakehouse.iceberg.IcebergCatalogBackend;
 import org.apache.gravitino.iceberg.common.IcebergConfig;
 import org.apache.gravitino.iceberg.common.cache.MemoryMetadataCache;
 import org.apache.gravitino.iceberg.common.cache.MetadataCache;
+import org.apache.gravitino.iceberg.common.cache.SupportsMetadataLocation;
 import org.apache.gravitino.iceberg.common.utils.IcebergCatalogUtil;
 import org.apache.gravitino.utils.IsolatedClassLoader;
 import org.apache.hadoop.conf.Configuration;
@@ -92,6 +93,10 @@ public class IcebergCatalogWrapper implements AutoCloseable {
     this.catalog = IcebergCatalogUtil.loadCatalogBackend(catalogBackend, icebergConfig);
     if (catalog instanceof SupportsNamespaces) {
       this.asNamespaceCatalog = (SupportsNamespaces) catalog;
+    }
+
+    if (catalog instanceof SupportsMetadataLocation) {
+      metadataCache.initialize((SupportsMetadataLocation) catalog);
     }
 
     this.catalogPropertiesMap = icebergConfig.getIcebergCatalogProperties();
