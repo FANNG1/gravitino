@@ -19,6 +19,8 @@
 
 package org.apache.gravitino.iceberg.common.cache;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.iceberg.TableMetadata;
@@ -28,8 +30,13 @@ import org.slf4j.LoggerFactory;
 
 public class MemoryMetadataCache implements MetadataCache {
   public static final Logger LOG = LoggerFactory.getLogger(MemoryMetadataCache.class);
-  private final Map<TableIdentifier, TableMetadata> tableMetadataCache = new ConcurrentHashMap<>();
+  // private final Map<TableIdentifier, TableMetadata> tableMetadataCache = new ConcurrentHashMap<>();
+  private final Cache<TableIdentifier, TableMetadata> tableMetadataCache;
   private SupportsMetadataLocation supportsMetadataLocation;
+
+  public MemoryMetadataCache() {
+    this.tableMetadataCache = Caffeine.newBuilder().maximumSize(100).build();
+  }
 
   @Override
   public void initialize(SupportsMetadataLocation supportsMetadataLocation) {
@@ -39,12 +46,12 @@ public class MemoryMetadataCache implements MetadataCache {
   @Override
   public void invalidate(TableIdentifier tableIdentifier) {
     LOG.info("Invalidate table cache, table identifier: {}", tableIdentifier);
-    tableMetadataCache.remove(tableIdentifier);
+    tableMetadataCache.invalidate(tableIdentifier);
   }
 
   @Override
   public TableMetadata getTableMetadata(TableIdentifier tableIdentifier) {
-    TableMetadata tableMetadata = tableMetadataCache.get(tableIdentifier);
+    TableMetadata tableMetadata = tableMetadataCache.getIfPresent(tableIdentifier);
     if (tableMetadata == null) {
       LOG.info("Table cache miss, table identifier: {}", tableIdentifier);
       return null;
