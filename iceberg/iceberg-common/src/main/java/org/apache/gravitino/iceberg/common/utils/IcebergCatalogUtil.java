@@ -37,7 +37,7 @@ import org.apache.gravitino.iceberg.common.IcebergConfig;
 import org.apache.gravitino.iceberg.common.authentication.AuthenticationConfig;
 import org.apache.gravitino.iceberg.common.authentication.kerberos.HiveBackendProxy;
 import org.apache.gravitino.iceberg.common.authentication.kerberos.KerberosClient;
-import org.apache.gravitino.iceberg.common.cache.memory.MemoryCatalogWithMetadataLocation;
+import org.apache.iceberg.memory.MemoryCatalogWithMetadataLocation;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.iceberg.CatalogProperties;

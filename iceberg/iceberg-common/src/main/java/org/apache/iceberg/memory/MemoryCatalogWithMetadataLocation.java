@@ -17,9 +17,10 @@
  *  under the License.
  */
 
-package org.apache.gravitino.iceberg.common.cache.memory;
+package org.apache.iceberg.memory;
 
 import java.lang.reflect.Field;
+import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import org.apache.gravitino.iceberg.common.cache.SupportsMetadataLocation;
 import org.apache.iceberg.catalog.TableIdentifier;
@@ -30,8 +31,9 @@ public class MemoryCatalogWithMetadataLocation extends InMemoryCatalog
 
   private ConcurrentMap<TableIdentifier, String> tables;
 
-  public MemoryCatalogWithMetadataLocation() {
-    super();
+  @Override
+  public void initialize(String name, Map<String, String> properties) {
+    super.initialize(name, properties);
     loadFields();
   }
 
