@@ -58,7 +58,7 @@ public class HiveCatalogWithMetadataLocation extends ClosableHiveCatalog
   private void loadFields() {
     try {
       Class<?> baseClass = getClass().getSuperclass();
-      Field catalogNameField = baseClass.getDeclaredField("catalogName");
+      Field catalogNameField = baseClass.getDeclaredField("name");
       catalogNameField.setAccessible(true);
       this.catalogName = (String) catalogNameField.get(this);
 
