@@ -30,6 +30,10 @@ public class JdbcCatalogWithMetadataLocation extends JdbcCatalog
   private JdbcClientPool connections;
   private JdbcUtil.SchemaVersion schemaVersion;
 
+  public JdbcCatalogWithMetadataLocation(boolean initializeCatalogTables) {
+    super(null, null, initializeCatalogTables);
+  }
+
   @Override
   public void initialize(String name, Map<String, String> properties) {
     super.initialize(name, properties);
