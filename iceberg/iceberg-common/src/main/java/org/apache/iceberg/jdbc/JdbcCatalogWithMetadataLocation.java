@@ -17,35 +17,52 @@
  *  under the License.
  */
 
-package org.apache.gravitino.iceberg.common.cache.memory;
+package org.apache.iceberg.jdbc;
 
 import java.lang.reflect.Field;
-import java.util.concurrent.ConcurrentMap;
+import java.util.Map;
 import org.apache.gravitino.iceberg.common.cache.SupportsMetadataLocation;
 import org.apache.iceberg.catalog.TableIdentifier;
-import org.apache.iceberg.inmemory.InMemoryCatalog;
 
-public class MemoryCatalogWithMetadataLocation extends InMemoryCatalog
+public class JdbcCatalogWithMetadataLocation extends JdbcCatalog
     implements SupportsMetadataLocation {
+  private String catalogName;
+  private JdbcClientPool connections;
+  private JdbcUtil.SchemaVersion schemaVersion;
 
-  private ConcurrentMap<TableIdentifier, String> tables;
-
-  public MemoryCatalogWithMetadataLocation() {
-    super();
+  @Override
+  public void initialize(String name, Map<String, String> properties) {
+    super.initialize(name, properties);
     loadFields();
   }
 
   @Override
   public String metadataLocation(TableIdentifier tableIdentifier) {
-    return tables.get(tableIdentifier);
+    Map<String, String> table;
+
+    try {
+      table = JdbcUtil.loadTable(schemaVersion, connections, catalogName, tableIdentifier);
+    } catch (Exception e) {
+      return null;
+    }
+
+    return table.get(METADATA_LOCATION_PROP);
   }
 
   private void loadFields() {
     try {
       Class<?> baseClass = getClass().getSuperclass();
-      Field tablesField = baseClass.getDeclaredField("tables");
-      tablesField.setAccessible(true);
-      tables = (ConcurrentMap<TableIdentifier, String>) tablesField.get(this);
+      Field catalogNameField = baseClass.getDeclaredField("catalogName");
+      catalogNameField.setAccessible(true);
+      this.catalogName = (String) catalogNameField.get(this);
+
+      Field connectionsField = baseClass.getDeclaredField("connections");
+      connectionsField.setAccessible(true);
+      this.connections = (JdbcClientPool) connectionsField.get(this);
+
+      Field schemaVersionField = baseClass.getDeclaredField("schemaVersion");
+      schemaVersionField.setAccessible(true);
+      this.schemaVersion = (JdbcUtil.SchemaVersion) schemaVersionField.get(this);
     } catch (NoSuchFieldException | IllegalAccessException e) {
       throw new RuntimeException(e);
     }

@@ -44,8 +44,10 @@ import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.CatalogUtil;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.hive.HiveCatalog;
+import org.apache.iceberg.hive.HiveCatalogWithMetadataLocation;
 import org.apache.iceberg.inmemory.InMemoryCatalog;
 import org.apache.iceberg.jdbc.JdbcCatalog;
+import org.apache.iceberg.jdbc.JdbcCatalogWithMetadataLocation;
 import org.apache.iceberg.jdbc.UncheckedSQLException;
 import org.apache.iceberg.rest.RESTCatalog;
 import org.slf4j.Logger;
@@ -67,7 +69,7 @@ public class IcebergCatalogUtil {
   }
 
   private static HiveCatalog loadHiveCatalog(IcebergConfig icebergConfig) {
-    ClosableHiveCatalog hiveCatalog = new ClosableHiveCatalog();
+    ClosableHiveCatalog hiveCatalog = new HiveCatalogWithMetadataLocation();
     HdfsConfiguration hdfsConfiguration = new HdfsConfiguration();
     String icebergCatalogName = icebergConfig.getCatalogBackendName();
 
@@ -130,7 +132,7 @@ public class IcebergCatalogUtil {
       throw new IllegalArgumentException("Couldn't load jdbc driver " + driverClassName);
     }
     JdbcCatalog jdbcCatalog =
-        new JdbcCatalog(null, null, icebergConfig.get(IcebergConfig.JDBC_INIT_TABLES));
+        new JdbcCatalogWithMetadataLocation(icebergConfig.get(IcebergConfig.JDBC_INIT_TABLES));
 
     HdfsConfiguration hdfsConfiguration = new HdfsConfiguration();
     properties.forEach(hdfsConfiguration::set);

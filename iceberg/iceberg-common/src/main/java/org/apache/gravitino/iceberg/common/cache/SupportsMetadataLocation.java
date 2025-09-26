@@ -22,5 +22,7 @@ package org.apache.gravitino.iceberg.common.cache;
 import org.apache.iceberg.catalog.TableIdentifier;
 
 public interface SupportsMetadataLocation {
+  public static final String METADATA_LOCATION_PROP = "metadata_location";
+
   String metadataLocation(TableIdentifier tableIdentifier);
 }

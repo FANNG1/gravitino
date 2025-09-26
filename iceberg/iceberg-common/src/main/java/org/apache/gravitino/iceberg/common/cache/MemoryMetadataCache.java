@@ -21,8 +21,6 @@ package org.apache.gravitino.iceberg.common.cache;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.slf4j.Logger;
@@ -30,7 +28,8 @@ import org.slf4j.LoggerFactory;
 
 public class MemoryMetadataCache implements MetadataCache {
   public static final Logger LOG = LoggerFactory.getLogger(MemoryMetadataCache.class);
-  // private final Map<TableIdentifier, TableMetadata> tableMetadataCache = new ConcurrentHashMap<>();
+  // private final Map<TableIdentifier, TableMetadata> tableMetadataCache = new
+  // ConcurrentHashMap<>();
   private final Cache<TableIdentifier, TableMetadata> tableMetadataCache;
   private SupportsMetadataLocation supportsMetadataLocation;
 
