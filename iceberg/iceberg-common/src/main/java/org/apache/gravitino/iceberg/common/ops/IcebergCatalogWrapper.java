@@ -29,10 +29,10 @@ import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.gravitino.catalog.lakehouse.iceberg.IcebergCatalogBackend;
 import org.apache.gravitino.iceberg.common.IcebergConfig;
-import org.apache.gravitino.iceberg.common.cache.MemoryMetadataCache;
 import org.apache.gravitino.iceberg.common.cache.MetadataCache;
 import org.apache.gravitino.iceberg.common.cache.SupportsMetadataLocation;
 import org.apache.gravitino.iceberg.common.utils.IcebergCatalogUtil;
+import org.apache.gravitino.utils.ClassUtils;
 import org.apache.gravitino.utils.IsolatedClassLoader;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.UserGroupInformation;
@@ -74,7 +74,7 @@ public class IcebergCatalogWrapper implements AutoCloseable {
   private final IcebergCatalogBackend catalogBackend;
   private String catalogUri = null;
   private Map<String, String> catalogPropertiesMap;
-  private MetadataCache metadataCache = new MemoryMetadataCache();
+  private MetadataCache metadataCache;
 
   public IcebergCatalogWrapper(IcebergConfig icebergConfig) {
     this.catalogBackend =
@@ -95,10 +95,7 @@ public class IcebergCatalogWrapper implements AutoCloseable {
       this.asNamespaceCatalog = (SupportsNamespaces) catalog;
     }
 
-    if (catalog instanceof SupportsMetadataLocation) {
-      metadataCache.initialize((SupportsMetadataLocation) catalog);
-    }
-
+    this.metadataCache = loadCache(icebergConfig, catalog);
     this.catalogPropertiesMap = icebergConfig.getIcebergCatalogProperties();
   }
 
@@ -336,5 +333,22 @@ public class IcebergCatalogWrapper implements AutoCloseable {
       this.tableIdentifier = tableIdentifier;
       this.transaction = transaction;
     }
+  }
+
+  private MetadataCache loadCache(IcebergConfig config, Catalog catalog) {
+    String impl = config.get(IcebergConfig.TABLE_METADATA_CACHE_IMPL);
+    if (StringUtils.isBlank(impl)) {
+      return MetadataCache.DUMMY;
+    }
+
+    Preconditions.checkArgument(
+        catalog instanceof SupportsMetadataLocation,
+        "You shouldn't enable Iceberg metadata cache for the catalog %s, because the catalog impl does not support get metadata location.",
+        catalog.name());
+
+    MetadataCache cache = ClassUtils.loadClass(impl);
+    int capacity = config.get(IcebergConfig.TABLE_METADATA_CACHE_CAPACITY);
+    cache.initialize(capacity, config.getAllConfig(), (SupportsMetadataLocation) catalog);
+    return cache;
   }
 }

@@ -19,11 +19,41 @@
 
 package org.apache.gravitino.iceberg.common.cache;
 
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.Map;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.catalog.TableIdentifier;
 
-public interface MetadataCache {
-  void initialize(SupportsMetadataLocation supportsMetadataLocation);
+public interface MetadataCache extends Closeable {
+  MetadataCache DUMMY =
+      new MetadataCache() {
+        @Override
+        public void initialize(
+            int capacity,
+            Map<String, String> catalogProperties,
+            SupportsMetadataLocation supportsMetadataLocation) {}
+
+        @Override
+        public void invalidate(TableIdentifier tableIdentifier) {}
+
+        @Override
+        public TableMetadata getTableMetadata(TableIdentifier tableIdentifier) {
+          return null;
+        }
+
+        @Override
+        public void updateTableMetadata(
+            TableIdentifier tableIdentifier, TableMetadata tableMetadata) {}
+
+        @Override
+        public void close() throws IOException {}
+      };
+
+  void initialize(
+      int capacity,
+      Map<String, String> catalogProperties,
+      SupportsMetadataLocation supportsMetadataLocation);
 
   void invalidate(TableIdentifier tableIdentifier);
 
