@@ -64,6 +64,10 @@ public class LocalMetadataCache extends BaseMetadataCache {
     }
   }
 
+  int size() {
+    return tableMetadataCache.asMap().size();
+  }
+
   @Override
   protected TableMetadata doGetTableMetadata(TableIdentifier tableIdentifier) {
     return tableMetadataCache.getIfPresent(tableIdentifier);
