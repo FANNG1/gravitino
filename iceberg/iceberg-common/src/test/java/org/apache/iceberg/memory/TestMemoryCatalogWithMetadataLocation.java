@@ -17,14 +17,13 @@
  *  under the License.
  */
 
-package org.apache.gravitino.iceberg.common.cache.memory;
+package org.apache.iceberg.memory;
 
 import java.util.Collections;
 import org.apache.iceberg.BaseTable;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
-import org.apache.iceberg.memory.MemoryCatalogWithMetadataLocation;
 import org.apache.iceberg.types.Types;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

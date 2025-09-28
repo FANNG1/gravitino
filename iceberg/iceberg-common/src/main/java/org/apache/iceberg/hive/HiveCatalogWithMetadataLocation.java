@@ -57,12 +57,12 @@ public class HiveCatalogWithMetadataLocation extends ClosableHiveCatalog
 
   private void loadFields() {
     try {
-      Class<?> baseClass = getClass().getSuperclass();
+      Class<?> baseClass = HiveCatalog.class;
       Field catalogNameField = baseClass.getDeclaredField("name");
       catalogNameField.setAccessible(true);
       this.catalogName = (String) catalogNameField.get(this);
 
-      Field clientsField = baseClass.getDeclaredField("metaClients");
+      Field clientsField = baseClass.getDeclaredField("clients");
       clientsField.setAccessible(true);
       this.metaClients = (ClientPool<IMetaStoreClient, TException>) clientsField.get(this);
     } catch (NoSuchFieldException | IllegalAccessException e) {

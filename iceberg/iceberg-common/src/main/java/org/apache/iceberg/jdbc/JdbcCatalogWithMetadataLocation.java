@@ -55,7 +55,7 @@ public class JdbcCatalogWithMetadataLocation extends JdbcCatalog
 
   private void loadFields() {
     try {
-      Class<?> baseClass = getClass().getSuperclass();
+      Class<?> baseClass = JdbcCatalog.class;
       Field catalogNameField = baseClass.getDeclaredField("catalogName");
       catalogNameField.setAccessible(true);
       this.catalogName = (String) catalogNameField.get(this);
