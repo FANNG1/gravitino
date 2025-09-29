@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.Nullable;
-import org.apache.iceberg.exceptions.NamespaceNotEmptyException;
+import org.apache.iceberg.exceptions.BadRequestException;
 import org.apache.iceberg.exceptions.ValidationException;
 import org.apache.spark.sql.AnalysisException;
 import org.apache.spark.sql.catalyst.analysis.NamespaceAlreadyExistsException;
@@ -208,7 +208,7 @@ public abstract class IcebergRESTServiceIT extends IcebergRESTServiceBaseIT {
             namespaceName));
 
     Assertions.assertThrowsExactly(
-        NamespaceNotEmptyException.class, () -> sql("DROP DATABASE " + namespaceName));
+        BadRequestException.class, () -> sql("DROP DATABASE " + namespaceName));
     sql(String.format("DROP TABLE %s.test", namespaceName));
     sql("DROP DATABASE " + namespaceName);
 
