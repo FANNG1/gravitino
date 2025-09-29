@@ -95,7 +95,7 @@ public class IcebergCatalogWrapper implements AutoCloseable {
       this.asNamespaceCatalog = (SupportsNamespaces) catalog;
     }
 
-    this.metadataCache = loadCache(icebergConfig, catalog);
+    this.metadataCache = loadTableMetadataCache(icebergConfig, catalog);
     this.catalogPropertiesMap = icebergConfig.getIcebergCatalogProperties();
   }
 
@@ -335,7 +335,7 @@ public class IcebergCatalogWrapper implements AutoCloseable {
     }
   }
 
-  private MetadataCache loadCache(IcebergConfig config, Catalog catalog) {
+  private MetadataCache loadTableMetadataCache(IcebergConfig config, Catalog catalog) {
     String impl = config.get(IcebergConfig.TABLE_METADATA_CACHE_IMPL);
     if (StringUtils.isBlank(impl)) {
       return MetadataCache.DUMMY;
@@ -351,6 +351,12 @@ public class IcebergCatalogWrapper implements AutoCloseable {
     int expireMinutes = config.get(IcebergConfig.TABLE_METADATA_CACHE_EXPIRE_MINUTES);
     cache.initialize(
         capacity, expireMinutes, config.getAllConfig(), (SupportsMetadataLocation) catalog);
+    LOG.info(
+        "Load Iceberg table metadata cache for catalog: {}, impl:{}, capacity: {}, expire minutes: {}",
+        catalog.name(),
+        impl,
+        capacity,
+        expireMinutes);
     return cache;
   }
 }

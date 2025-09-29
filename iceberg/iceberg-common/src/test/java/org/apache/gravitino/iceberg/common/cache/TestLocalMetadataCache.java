@@ -47,7 +47,7 @@ class TestLocalMetadataCache {
     when(supportsMetadataLocation.metadataLocation(testIdentifier))
         .thenReturn("test_location_" + testIdentifier.name());
 
-    cache.initialize(10, Collections.emptyMap(), supportsMetadataLocation);
+    cache.initialize(10, 60, Collections.emptyMap(), supportsMetadataLocation);
   }
 
   @AfterEach
@@ -91,7 +91,7 @@ class TestLocalMetadataCache {
       TableMetadata metadata = mock(TableMetadata.class);
       cache.updateTableMetadata(id, metadata);
     }
-    Assertions.assertTrue(cache.size() <= 10);
+    Assertions.assertEquals(10, cache.size());
   }
 
   @Test

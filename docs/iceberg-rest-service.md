@@ -423,7 +423,7 @@ Gravitino provides a pluggable metrics store interface to store and delete Icebe
 
 ### Iceberg table metadata cache configuration
 
-Gravitino provides a plugable cache system update or retrieve table metadata cache, Gravitino will check the table metadata location with the catalog backend to grant the correctness of the cache data.
+Gravitino features a pluggable cache system for updating or retrieving table metadata caches. It validates the location of table metadata against the catalog backend to ensure the correctness of cached data.
 
 | Configuration item                                           | Description                                 | Default value | Required | Since Version |
 |--------------------------------------------------------------|---------------------------------------------|---------------|----------|---------------|
@@ -431,8 +431,7 @@ Gravitino provides a plugable cache system update or retrieve table metadata cac
 | `gravitino.iceberg-rest.table-metadata-cache-capacity`       | The capacity of table metadata cache.       | 200           | No       | 1.1.0         |
 | `gravitino.iceberg-rest.table-metadata-cache-expire-minutes` | The expire minutes of table metadata cache. | 60            | No       | 1.1.0         |
 
-Gravitino provides build-in `org.apache.gravitino.iceberg.common.cache.LocalMetadataCache` to store the cache data in local memory. And you could implement your custom cache by implementing `org.apache.gravitino.iceberg.common.cache.MetadataCache`
-
+Gravitino provides build-in `org.apache.gravitino.iceberg.common.cache.LocalMetadataCache` to store the cache data in local memory. And you could implement your custom cache by implementing `org.apache.gravitino.iceberg.common.cache.MetadataCache` interface.
 
 ### Misc configurations
 

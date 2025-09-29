@@ -21,6 +21,7 @@ package org.apache.gravitino.iceberg.common.cache;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -45,7 +46,6 @@ public class LocalMetadataCache extends BaseMetadataCache {
             .maximumSize(capacity)
             .expireAfterAccess(expireMinutes, TimeUnit.MINUTES)
             .build();
-    LOG.info("Local metadata cache capacity: {}", tableMetadataCache.asMap().size());
   }
 
   @Override
@@ -73,12 +73,13 @@ public class LocalMetadataCache extends BaseMetadataCache {
     }
   }
 
-  int size() {
-    return tableMetadataCache.asMap().size();
-  }
-
   @Override
   protected TableMetadata doGetTableMetadata(TableIdentifier tableIdentifier) {
     return tableMetadataCache.getIfPresent(tableIdentifier);
+  }
+
+  @VisibleForTesting
+  int size() {
+    return tableMetadataCache.asMap().size();
   }
 }
