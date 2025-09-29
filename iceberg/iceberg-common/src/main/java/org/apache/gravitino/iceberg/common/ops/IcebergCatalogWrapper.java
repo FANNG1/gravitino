@@ -348,7 +348,9 @@ public class IcebergCatalogWrapper implements AutoCloseable {
 
     MetadataCache cache = ClassUtils.loadClass(impl);
     int capacity = config.get(IcebergConfig.TABLE_METADATA_CACHE_CAPACITY);
-    cache.initialize(capacity, config.getAllConfig(), (SupportsMetadataLocation) catalog);
+    int expireMinutes = config.get(IcebergConfig.TABLE_METADATA_CACHE_EXPIRE_MINUTES);
+    cache.initialize(
+        capacity, expireMinutes, config.getAllConfig(), (SupportsMetadataLocation) catalog);
     return cache;
   }
 }

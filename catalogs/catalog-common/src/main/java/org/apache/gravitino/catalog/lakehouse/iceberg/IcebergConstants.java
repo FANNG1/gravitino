@@ -96,4 +96,6 @@ public class IcebergConstants {
 
   public static final String TABLE_METADATA_CACHE_IMPL = "table-metadata-cache-impl";
   public static final String TABLE_METADATA_CACHE_CAPACITY = "table-metadata-cache-capacity";
+  public static final String TABLE_METADATA_CACHE_EXPIRE_MINUTES =
+      "table-metadata-cache-expire-minutes";
 }

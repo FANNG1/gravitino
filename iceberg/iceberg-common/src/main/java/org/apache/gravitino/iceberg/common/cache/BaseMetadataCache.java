@@ -24,18 +24,37 @@ import org.apache.iceberg.catalog.TableIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Abstract base class implementing {@link MetadataCache} that provides core metadata caching
+ * functionality with validation of metadata location against the latest version.
+ */
 public abstract class BaseMetadataCache implements MetadataCache {
 
   public static final Logger LOG = LoggerFactory.getLogger(BaseMetadataCache.class);
-
-  protected abstract TableMetadata doGetTableMetadata(TableIdentifier tableIdentifier);
-
+  /** Component to retrieve the latest metadata location for a table, used for validation. */
   private SupportsMetadataLocation supportsMetadataLocation;
+
+  /**
+   * Abstract method to retrieve cached {@link TableMetadata} for a table. Subclasses must implement
+   * this to provide actual cache retrieval logic.
+   *
+   * @param tableIdentifier Identifier of the table to retrieve cached metadata for
+   * @return Cached {@link TableMetadata}, or {@code null} if not found in cache
+   */
+  protected abstract TableMetadata doGetTableMetadata(TableIdentifier tableIdentifier);
 
   protected void initialize(SupportsMetadataLocation supportsMetadataLocation) {
     this.supportsMetadataLocation = supportsMetadataLocation;
   }
 
+  /**
+   * Retrieves and validates cached table metadata by comparing the cached metadata's location with
+   * the latest known location. Invalidates the cache if locations mismatch.
+   *
+   * @param tableIdentifier Identifier of the table to retrieve metadata for
+   * @return Valid {@link TableMetadata} if cache is valid and locations match; {@code null} if
+   *     cache miss, location is invalid, or locations mismatch (after invalidation)
+   */
   @Override
   public TableMetadata getTableMetadata(TableIdentifier tableIdentifier) {
     TableMetadata tableMetadata = doGetTableMetadata(tableIdentifier);

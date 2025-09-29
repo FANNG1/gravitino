@@ -23,6 +23,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.slf4j.Logger;
@@ -35,10 +36,16 @@ public class LocalMetadataCache extends BaseMetadataCache {
   @Override
   public void initialize(
       int capacity,
+      int expireMinutes,
       Map<String, String> catalogProperties,
       SupportsMetadataLocation supportsMetadataLocation) {
     super.initialize(supportsMetadataLocation);
-    this.tableMetadataCache = Caffeine.newBuilder().maximumSize(capacity).build();
+    this.tableMetadataCache =
+        Caffeine.newBuilder()
+            .maximumSize(capacity)
+            .expireAfterAccess(expireMinutes, TimeUnit.MINUTES)
+            .build();
+    LOG.info("Local metadata cache capacity: {}", tableMetadataCache.asMap().size());
   }
 
   @Override
@@ -54,6 +61,8 @@ public class LocalMetadataCache extends BaseMetadataCache {
         tableIdentifier,
         tableMetadata.metadataFileLocation());
     tableMetadataCache.put(tableIdentifier, tableMetadata);
+    // Clean up expired entries
+    tableMetadataCache.cleanUp();
   }
 
   @Override

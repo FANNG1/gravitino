@@ -20,17 +20,25 @@
 package org.apache.gravitino.iceberg.common.cache;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.Map;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.catalog.TableIdentifier;
 
+/**
+ * A cache interface for managing {@link TableMetadata} objects, providing methods for
+ * initialization, retrieval, update, invalidation, and resource cleanup.
+ */
 public interface MetadataCache extends Closeable {
+  /**
+   * A no-op (dummy) implementation of {@link MetadataCache} that performs no actual caching. Useful
+   * for scenarios where caching functionality is not required.
+   */
   MetadataCache DUMMY =
       new MetadataCache() {
         @Override
         public void initialize(
             int capacity,
+            int expireMinutes,
             Map<String, String> catalogProperties,
             SupportsMetadataLocation supportsMetadataLocation) {}
 
@@ -47,17 +55,44 @@ public interface MetadataCache extends Closeable {
             TableIdentifier tableIdentifier, TableMetadata tableMetadata) {}
 
         @Override
-        public void close() throws IOException {}
+        public void close() {}
       };
 
+  /**
+   * Initializes the metadata cache with specified configuration.
+   *
+   * @param capacity Maximum number of entries the cache can hold
+   * @param catalogProperties Catalog-specific properties that may influence cache behavior
+   * @param supportsMetadataLocation Component to resolve the latest metadata location for
+   *     validation
+   */
   void initialize(
       int capacity,
+      int expireMinutes,
       Map<String, String> catalogProperties,
       SupportsMetadataLocation supportsMetadataLocation);
 
+  /**
+   * Removes the cached metadata entry for the specified table from the cache.
+   *
+   * @param tableIdentifier Identifier of the table whose cached metadata should be invalidated
+   */
   void invalidate(TableIdentifier tableIdentifier);
 
+  /**
+   * Retrieves the latest {@link TableMetadata} for the specified table.
+   *
+   * @param tableIdentifier Identifier of the table to retrieve metadata for
+   * @return Cached {@link TableMetadata}, or {@code null} if no valid entry exists in the cache or
+   *     the cache is not latest.
+   */
   TableMetadata getTableMetadata(TableIdentifier tableIdentifier);
 
+  /**
+   * Updates the cache with new {@link TableMetadata} for the specified table.
+   *
+   * @param tableIdentifier Identifier of the table to update metadata for
+   * @param tableMetadata New {@link TableMetadata} to store in the cache
+   */
   void updateTableMetadata(TableIdentifier tableIdentifier, TableMetadata tableMetadata);
 }
