@@ -1,0 +1,85 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+package org.apache.gravitino.maintenance.optimizer.recommender.strategy;
+
+import com.google.common.annotations.VisibleForTesting;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import org.apache.gravitino.maintenance.optimizer.api.common.Strategy;
+import org.apache.gravitino.policy.Policy;
+import org.apache.gravitino.policy.PolicyContent;
+
+public class GravitinoStrategy implements Strategy {
+
+  @VisibleForTesting public static final String STRATEGY_TYPE_KEY = "gravitino.policy.type";
+
+  @VisibleForTesting
+  public static final String JOB_TEMPLATE_NAME_KEY = "gravitino.policy.job.template-name";
+
+  private static final String JOB_ROLE_PREFIX = "job.";
+
+  private final Policy policy;
+
+  public GravitinoStrategy(Policy policy) {
+    this.policy = policy;
+  }
+
+  @Override
+  public String name() {
+    return policy.name();
+  }
+
+  @Override
+  public String strategyType() {
+    return policy.content().properties().get(STRATEGY_TYPE_KEY);
+  }
+
+  @Override
+  public Map<String, String> properties() {
+    return policy.content().properties();
+  }
+
+  @Override
+  public Map<String, Object> rules() {
+    PolicyContent content = policy.content();
+    Map<String, Object> rules = content.rules();
+    return rules == null ? Map.of() : rules;
+  }
+
+  @Override
+  public Map<String, String> jobOptions() {
+    Map<String, String> jobOptions = new HashMap<>();
+    rules()
+        .forEach(
+            (key, value) -> {
+              if (key.startsWith(JOB_ROLE_PREFIX)) {
+                jobOptions.put(key.substring(JOB_ROLE_PREFIX.length()), String.valueOf(value));
+              }
+            });
+    return jobOptions;
+  }
+
+  @Override
+  public String jobTemplateName() {
+    return Optional.ofNullable(policy.content().properties().get(JOB_TEMPLATE_NAME_KEY))
+        .orElseThrow(() -> new IllegalArgumentException("job.template-name is not set"));
+  }
+}

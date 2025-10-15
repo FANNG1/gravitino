@@ -19,6 +19,7 @@
 
 package org.apache.gravitino.maintenance.optimizer.recommender;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
@@ -44,7 +44,6 @@ import org.apache.gravitino.maintenance.optimizer.api.recommender.StrategyHandle
 import org.apache.gravitino.maintenance.optimizer.api.recommender.StrategyProvider;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.SupportTableStatistics;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.TableMetadataProvider;
-import org.apache.gravitino.maintenance.optimizer.common.CloseableGroup;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
 import org.apache.gravitino.maintenance.optimizer.common.util.ProviderUtils;
@@ -71,17 +70,16 @@ import org.slf4j.LoggerFactory;
  *       {@link JobSubmitter}.
  * </ol>
  */
-public class Recommender implements AutoCloseable {
+public class Recommender {
   private static final Logger LOG = LoggerFactory.getLogger(Recommender.class);
   private final StrategyProvider strategyProvider;
   private final StatisticsProvider statisticsProvider;
   private final TableMetadataProvider tableMetadataProvider;
   private final JobSubmitter jobSubmitter;
-  private final CloseableGroup closeableGroup = new CloseableGroup();
 
   /**
    * Create a recommender whose providers and submitter are resolved from the optimizer
-   * configuration. All components are initialized eagerly and closed together via {@link #close()}.
+   * configuration. All components are initialized eagerly.
    *
    * @param optimizerEnv shared optimizer environment supplying configuration
    */
@@ -101,11 +99,18 @@ public class Recommender implements AutoCloseable {
     this.statisticsProvider.initialize(optimizerEnv);
     this.tableMetadataProvider.initialize(optimizerEnv);
     this.jobSubmitter.initialize(optimizerEnv);
+  }
 
-    closeableGroup.register(strategyProvider, "strategy provider");
-    closeableGroup.register(statisticsProvider, "statistics provider");
-    closeableGroup.register(tableMetadataProvider, "table metadata provider");
-    closeableGroup.register(jobSubmitter, "job submitter");
+  @VisibleForTesting
+  Recommender(
+      StrategyProvider strategyProvider,
+      StatisticsProvider statisticsProvider,
+      TableMetadataProvider tableMetadataProvider,
+      JobSubmitter jobSubmitter) {
+    this.strategyProvider = strategyProvider;
+    this.statisticsProvider = statisticsProvider;
+    this.tableMetadataProvider = tableMetadataProvider;
+    this.jobSubmitter = jobSubmitter;
   }
 
   /**
@@ -137,13 +142,8 @@ public class Recommender implements AutoCloseable {
     }
   }
 
-  /** Close all registered providers and job submitter, suppressing secondary failures. */
-  @Override
-  public void close() throws Exception {
-    closeableGroup.close();
-  }
-
-  private List<JobExecutionContext> recommendForOneStrategy(
+  @VisibleForTesting
+  public List<JobExecutionContext> recommendForOneStrategy(
       List<NameIdentifier> identifiers, String strategyName) {
     LOG.info("Recommend strategy {} for identifiers {}", strategyName, identifiers);
     Strategy strategy = strategyProvider.strategy(strategyName);
@@ -164,9 +164,11 @@ public class Recommender implements AutoCloseable {
       scoreQueue.add(evaluation);
     }
 
-    return scoreQueue.stream()
-        .map(StrategyEvaluation::jobExecutionContext)
-        .collect(Collectors.toList());
+    List<JobExecutionContext> jobContexts = new ArrayList<>(scoreQueue.size());
+    while (!scoreQueue.isEmpty()) {
+      jobContexts.add(scoreQueue.poll().jobExecutionContext());
+    }
+    return jobContexts;
   }
 
   private StrategyHandler loadStrategyHandler(Strategy strategy, NameIdentifier nameIdentifier) {
@@ -207,7 +209,8 @@ public class Recommender implements AutoCloseable {
     return strategyHandler;
   }
 
-  private StrategyHandler createStrategyHandler(String strategyType) {
+  @VisibleForTesting
+  protected StrategyHandler createStrategyHandler(String strategyType) {
     String strategyHandlerClassName = getStrategyHandlerClassName(strategyType);
     Preconditions.checkArgument(
         StringUtils.isNotBlank(strategyHandlerClassName),

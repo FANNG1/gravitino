@@ -1,0 +1,68 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+package org.apache.gravitino.maintenance.optimizer.common.util;
+
+import com.google.common.base.Preconditions;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.Namespace;
+
+public class IdentifierUtils {
+
+  public static NameIdentifier normalizeTableIdentifier(
+      NameIdentifier tableIdentifier, String defaultCatalogName) {
+    Preconditions.checkArgument(tableIdentifier != null, "tableIdentifier must not be null");
+    Namespace namespace = tableIdentifier.namespace();
+    Preconditions.checkArgument(namespace != null, "Identifier must include a namespace");
+    Preconditions.checkArgument(
+        namespace.levels().length == 1 || namespace.levels().length == 2,
+        "Identifier must be schema.table or catalog.schema.table");
+    if (namespace.levels().length == 2) {
+      return tableIdentifier;
+    }
+
+    Preconditions.checkArgument(
+        StringUtils.isNotBlank(defaultCatalogName),
+        "Default catalog name is required when identifier has no catalog");
+    return NameIdentifier.of(defaultCatalogName, namespace.levels()[0], tableIdentifier.name());
+  }
+
+  public static NameIdentifier removeCatalogFromIdentifier(NameIdentifier tableIdentifier) {
+    Namespace namespace = tableIdentifier.namespace();
+    Preconditions.checkArgument(
+        namespace != null && (namespace.levels().length == 1 || namespace.levels().length == 2));
+    if (namespace.levels().length == 1) {
+      return tableIdentifier;
+    }
+
+    return NameIdentifier.of(namespace.levels()[1], tableIdentifier.name());
+  }
+
+  public static String getCatalogNameFromTableIdentifier(
+      NameIdentifier tableIdentifier, String defaultCatalogName) {
+    Namespace namespace = tableIdentifier.namespace();
+    Preconditions.checkArgument(namespace != null && namespace.levels().length >= 1);
+    if (namespace.levels().length == 1) {
+      return defaultCatalogName;
+    }
+
+    return namespace.levels()[0];
+  }
+}
