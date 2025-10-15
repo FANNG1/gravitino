@@ -674,7 +674,7 @@ public class TableOperationDispatcher extends OperationDispatcher implements Tab
   private Pair<Boolean, List<ColumnEntity>> updateColumnsIfNecessary(
       Table tableFromCatalog, TableEntity tableFromGravitino) {
     if (tableFromCatalog == null || tableFromGravitino == null) {
-      LOG.warn(
+      LOG.debug(
           "Cannot update columns for table when altering because table or table entity is "
               + "null");
       return Pair.of(false, Collections.emptyList());

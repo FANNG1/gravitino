@@ -24,16 +24,18 @@ plugins {
   id("idea")
 }
 
-val scalaVersion: String =
-  project.properties["scalaVersion"] as? String ?: extra["defaultScalaVersion"].toString()
-val sparkVersion: String = libs.versions.spark33.get()
+val scalaVersion: String = project.properties["scalaVersion"] as? String ?: extra["defaultScalaVersion"].toString()
+val sparkVersion: String = libs.versions.spark34.get()
 val sparkMajorVersion: String = sparkVersion.substringBeforeLast(".")
 val icebergVersion: String = libs.versions.iceberg4connector.get()
+val scalaCollectionCompatVersion: String = libs.versions.scala.collection.compat.get()
 
 dependencies {
   implementation(project(":api"))
   implementation(project(":catalogs:catalog-common"))
+  implementation(project(":catalogs:catalog-lakehouse-iceberg"))
   implementation(project(":clients:client-java"))
+  implementation(project(":server-common"))
   implementation(project(":core")) {
     exclude("*")
   }
@@ -41,11 +43,24 @@ dependencies {
     exclude("*")
   }
   implementation(libs.bundles.log4j)
+  implementation(libs.bundles.iceberg)
   implementation(libs.commons.lang3)
+  implementation(libs.commons.cli.new)
   implementation(libs.jackson.databind)
   implementation(libs.jackson.annotations)
   implementation(libs.guava)
   implementation(libs.ql.expression)
+  implementation(libs.h2db)
+  implementation(libs.ql.expression)
+  implementation(libs.aws.s3)
+  implementation(libs.bundles.jersey)
+  compileOnly("org.apache.spark:spark-sql_$scalaVersion:$sparkVersion") {
+    exclude("org.apache.avro")
+    exclude("org.apache.hadoop")
+    exclude("org.apache.zookeeper")
+    exclude("io.dropwizard.metrics")
+    exclude("org.rocksdb")
+  }
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)
@@ -83,6 +98,32 @@ dependencies {
   testImplementation(libs.testcontainers)
   testAnnotationProcessor(libs.lombok)
   testCompileOnly(libs.lombok)
+  testImplementation(project(":iceberg:iceberg-common"))
+  testImplementation(project(":integration-test-common", "testArtifacts"))
+  testImplementation(project(":server"))
+
+  testImplementation("org.apache.iceberg:iceberg-spark-runtime-${sparkMajorVersion}_$scalaVersion:$icebergVersion")
+  testImplementation("org.apache.spark:spark-sql_$scalaVersion:$sparkVersion") {
+    exclude("org.apache.avro")
+    exclude("org.apache.hadoop")
+    exclude("org.apache.zookeeper")
+    exclude("io.dropwizard.metrics")
+    exclude("org.rocksdb")
+  }
+
+  testImplementation(libs.jersey.test.framework.core) {
+    exclude(group = "org.junit.jupiter")
+  }
+  testImplementation(libs.jersey.test.framework.provider.jetty) {
+    exclude(group = "org.junit.jupiter")
+  }
+  testImplementation(libs.junit.jupiter.api)
+  testImplementation(libs.junit.jupiter.params)
+  testImplementation(libs.postgresql.driver)
+  testImplementation(libs.mockito.core)
+  testImplementation(libs.sqlite.jdbc)
+  testImplementation(libs.slf4j.api)
+  testImplementation(libs.testcontainers)
 
   testRuntimeOnly(libs.junit.jupiter.engine)
 }
@@ -106,6 +147,9 @@ tasks {
     from("src/main/resources")
     into("$rootDir/distribution/package/optimizer/conf")
 
+    include("core-site.xml.template")
+    include("hdfs-site.xml.template")
+
     rename { original ->
       if (original.endsWith(".template")) {
         original.replace(".template", "")
@@ -117,8 +161,18 @@ tasks {
     fileMode = 0b111101101
   }
 
+  register("copyBin", Copy::class) {
+    from("bin")
+    into("$rootDir/distribution/package/optimizer/bin")
+    fileMode = 0b111101101
+  }
+
   register("copyLibAndConfigs", Copy::class) {
-    dependsOn("copyLibs", "copyConfigs")
+    dependsOn("copyLibs", "copyConfigs", "copyBin")
+  }
+
+  named<JavaCompile>("compileJava") {
+    dependsOn(":catalogs:catalog-lakehouse-iceberg:runtimeJars")
   }
 }
 
@@ -134,7 +188,13 @@ tasks.test {
   } else {
     dependsOn(tasks.jar)
     dependsOn(":server:jar")
+    dependsOn(":catalogs:catalog-lakehouse-iceberg:jar")
+    dependsOn(":catalogs:catalog-lakehouse-generic:jar")
   }
+}
+
+tasks.clean {
+  delete("spark-warehouse")
 }
 
 tasks.getByName("generateMetadataFileForMavenJavaPublication") {

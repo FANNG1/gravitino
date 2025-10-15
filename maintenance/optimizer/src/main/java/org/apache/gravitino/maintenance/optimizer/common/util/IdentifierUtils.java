@@ -20,6 +20,7 @@
 package org.apache.gravitino.maintenance.optimizer.common.util;
 
 import com.google.common.base.Preconditions;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.Namespace;
 
@@ -70,5 +71,23 @@ public class IdentifierUtils {
     Namespace namespace = tableIdentifier.namespace();
     Preconditions.checkArgument(
         namespace != null && namespace.levels().length == 2, NORMALIZED_IDENTIFIER_MESSAGE);
+  }
+
+  public static NameIdentifier normalizeTableIdentifier(
+      NameIdentifier tableIdentifier, String defaultCatalogName) {
+    Preconditions.checkArgument(tableIdentifier != null, "tableIdentifier must not be null");
+    Namespace namespace = tableIdentifier.namespace();
+    Preconditions.checkArgument(namespace != null, "Identifier must include a namespace");
+    Preconditions.checkArgument(
+        namespace.levels().length == 1 || namespace.levels().length == 2,
+        "Identifier must be schema.table or catalog.schema.table");
+    if (namespace.levels().length == 2) {
+      return tableIdentifier;
+    }
+
+    Preconditions.checkArgument(
+        StringUtils.isNotBlank(defaultCatalogName),
+        "Default catalog name is required when identifier has no catalog");
+    return NameIdentifier.of(defaultCatalogName, namespace.levels()[0], tableIdentifier.name());
   }
 }

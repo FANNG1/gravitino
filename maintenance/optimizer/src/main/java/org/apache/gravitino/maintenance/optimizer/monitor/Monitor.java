@@ -20,12 +20,15 @@
 package org.apache.gravitino.maintenance.optimizer.monitor;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Splitter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalLong;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.maintenance.optimizer.api.common.MetricSample;
@@ -167,6 +170,33 @@ public class Monitor implements AutoCloseable {
     }
   }
 
+  public long latestMetricTimestampSeconds(
+      NameIdentifier tableIdentifier,
+      long actionTime,
+      long rangeSeconds,
+      Optional<PartitionPath> partitionPath) {
+    Pair<Long, Long> timeRange = getTimeRange(actionTime, rangeSeconds);
+    Map<String, List<MetricSample>> tableMetrics =
+        partitionPath
+            .map(
+                path ->
+                    metricsProvider.getPartitionMetrics(
+                        tableIdentifier, path, timeRange.getLeft(), timeRange.getRight()))
+            .orElseGet(
+                () ->
+                    metricsProvider.getTableMetrics(
+                        tableIdentifier, timeRange.getLeft(), timeRange.getRight()));
+    long maxTimestamp = maxTimestamp(tableMetrics);
+
+    List<NameIdentifier> jobs = jobProvider.getJobNames(tableIdentifier);
+    for (NameIdentifier job : jobs) {
+      Map<String, List<MetricSample>> jobMetrics =
+          metricsProvider.getJobMetrics(job, timeRange.getLeft(), timeRange.getRight());
+      maxTimestamp = Math.max(maxTimestamp, maxTimestamp(jobMetrics));
+    }
+    return maxTimestamp;
+  }
+
   private EvaluationResult evaluateTableMetrics(
       MetricsEvaluator evaluator,
       NameIdentifier tableIdentifier,
@@ -174,6 +204,7 @@ public class Monitor implements AutoCloseable {
       long rangeSeconds,
       Optional<PartitionPath> partitionPath) {
     Pair<Long, Long> timeRange = timeRange(actionTimeSeconds, rangeSeconds);
+
     Map<String, List<MetricSample>> metrics =
         partitionPath
             .map(
@@ -313,5 +344,14 @@ public class Monitor implements AutoCloseable {
   @Override
   public void close() throws Exception {
     closeableGroup.close();
+  }
+
+  private static long maxTimestamp(Map<String, List<MetricSample>> metrics) {
+    if (metrics == null || metrics.isEmpty()) {
+      return 0L;
+    }
+    OptionalLong max =
+        metrics.values().stream().flatMap(List::stream).mapToLong(MetricSample::timestamp).max();
+    return max.orElse(0L);
   }
 }

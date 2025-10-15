@@ -251,7 +251,8 @@ public class Recommender implements AutoCloseable {
     return strategyHandler;
   }
 
-  private StrategyHandler createStrategyHandler(String strategyType) {
+  @VisibleForTesting
+  protected StrategyHandler createStrategyHandler(String strategyType) {
     String strategyHandlerClassName = getStrategyHandlerClassName(strategyType);
     Preconditions.checkArgument(
         StringUtils.isNotBlank(strategyHandlerClassName),
@@ -285,7 +286,11 @@ public class Recommender implements AutoCloseable {
     Map<String, List<NameIdentifier>> identifiersByStrategyName = new LinkedHashMap<>();
     for (NameIdentifier nameIdentifier : nameIdentifiers) {
       strategyProvider.strategies(nameIdentifier).stream()
-          .filter(strategy -> strategy.strategyType().equals(strategyType))
+          .filter(
+              strategy -> {
+                String resolvedType = strategy.strategyType();
+                return resolvedType != null && resolvedType.equals(strategyType);
+              })
           .forEach(
               strategy ->
                   identifiersByStrategyName
