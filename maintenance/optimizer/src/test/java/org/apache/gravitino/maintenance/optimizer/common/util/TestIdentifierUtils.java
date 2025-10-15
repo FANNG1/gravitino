@@ -73,7 +73,6 @@ class TestIdentifierUtils {
     NameIdentifier identifier = NameIdentifier.of(namespace, "tableName");
 
     String result = IdentifierUtils.getCatalogNameFromTableIdentifier(identifier);
-
     Assertions.assertEquals("catalog", result);
   }
 

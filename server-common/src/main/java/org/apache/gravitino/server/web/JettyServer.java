@@ -42,6 +42,7 @@ import org.apache.gravitino.GravitinoEnv;
 import org.apache.gravitino.metrics.MetricsSystem;
 import org.apache.gravitino.server.authentication.AuthenticationFilter;
 import org.eclipse.jetty.server.ConnectionFactory;
+import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
@@ -343,6 +344,18 @@ public final class JettyServer {
     } else {
       return serverConfig.getHttpPort();
     }
+  }
+
+  public synchronized int getLocalPort() {
+    if (server == null) {
+      return -1;
+    }
+    for (Connector connector : server.getConnectors()) {
+      if (connector instanceof ServerConnector) {
+        return ((ServerConnector) connector).getLocalPort();
+      }
+    }
+    return -1;
   }
 
   @SuppressWarnings("deprecation")
