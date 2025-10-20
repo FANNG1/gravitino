@@ -28,7 +28,7 @@ public interface PolicyActor {
 
   String policyType();
 
-  int score();
+  long score();
   // Whether to trigger a job to run the policy
   boolean shouldTrigger();
   // The job configuration to run the policy
