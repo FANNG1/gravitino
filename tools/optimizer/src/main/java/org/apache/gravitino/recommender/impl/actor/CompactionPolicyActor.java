@@ -1,8 +1,13 @@
 package org.apache.gravitino.recommender.impl.actor;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.apache.gravitino.policy.Policy;
 import org.apache.gravitino.recommender.api.PolicyActor;
+import org.apache.gravitino.recommender.impl.util.ExpressionEvaluator;
+import org.apache.gravitino.recommender.impl.util.PolicyUtiles;
+import org.apache.gravitino.recommender.impl.util.StatsUtils;
 import org.apache.gravitino.rel.Table;
 import org.apache.gravitino.stats.PartitionStatistics;
 import org.apache.gravitino.stats.Statistic;
@@ -13,6 +18,7 @@ public class CompactionPolicyActor
         PolicyActor.requirePartitionStats,
         PolicyActor.requireTableStats,
         PolicyActor.requireTableMetadata {
+  private ExpressionEvaluator expressionEvaluator;
   private Policy policy;
   private List<Statistic> tableStats;
   private List<PartitionStatistics> partitionStats;
@@ -30,12 +36,13 @@ public class CompactionPolicyActor
 
   @Override
   // Todo using policy expression to compute the score
-  public int score() {
+  public long score() {
     if (!isPartitioned()) {
-      // return datafile size mse from table stats
-      return 0;
+      Map<String, Object> context = buildExpressionContext();
+      String scoreExpression = PolicyUtiles.getScoreExpression(policy);
+      return expressionEvaluator.evaluateLong(scoreExpression, context);
     }
-    // choose the partitions with the largest datafile size
+    // todo choose the partitions with the largest datafile size
     return 0;
   }
 
@@ -43,7 +50,9 @@ public class CompactionPolicyActor
   public boolean shouldTrigger() {
     // Todo using policy trigger expression to compute the trigger.
     // check whether the data size mse > xx
-    return false;
+    String triggerExpression = PolicyUtiles.getTriggerExpression(policy);
+    Map<String, Object> context = buildExpressionContext();
+    return expressionEvaluator.evaluateBool(triggerExpression, context);
   }
 
   @Override
@@ -73,5 +82,12 @@ public class CompactionPolicyActor
 
   private boolean isPartitioned() {
     return tableMetadata.partitioning().length > 0;
+  }
+
+  private Map<String, Object> buildExpressionContext() {
+    Map<String, Object> context = new HashMap<>();
+    context.putAll(StatsUtils.buildTableStatsContext(tableStats));
+    context.putAll(policy.content().properties());
+    return context;
   }
 }

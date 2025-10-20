@@ -29,7 +29,8 @@ public class Recommender {
     Policy policy = policyProvider.getPolicy(policyName);
 
     // Set table metadata and stats
-    PriorityQueue<PolicyActor> scoreQueue = new PriorityQueue<>((a, b) -> b.score() - a.score());
+    PriorityQueue<PolicyActor> scoreQueue =
+        new PriorityQueue<>((a, b) -> Long.compare(b.score(), a.score()));
     for (NameIdentifier tableIdentifier : tableIdentifiers) {
       PolicyActor policyActor = loadPolicyActor(policy, tableIdentifier);
 

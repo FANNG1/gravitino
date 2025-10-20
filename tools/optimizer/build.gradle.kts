@@ -59,6 +59,7 @@ dependencies {
   implementation(libs.jackson.datatype.jdk8)
   implementation(libs.jackson.datatype.jsr310)
   implementation(libs.metrics.jersey2)
+  implementation(libs.ql.expression)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)
