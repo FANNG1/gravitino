@@ -1,12 +1,15 @@
 package org.apache.gravitino.recommender.impl.actor;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.policy.Policy;
 import org.apache.gravitino.recommender.api.PolicyActor;
 import org.apache.gravitino.recommender.impl.util.ExpressionEvaluator;
-import org.apache.gravitino.recommender.impl.util.PolicyUtiles;
+import org.apache.gravitino.recommender.impl.util.PolicyUtils;
+import org.apache.gravitino.recommender.impl.util.QLExpressionEvaluator;
 import org.apache.gravitino.recommender.impl.util.StatsUtils;
 import org.apache.gravitino.rel.Table;
 import org.apache.gravitino.stats.PartitionStatistics;
@@ -23,10 +26,13 @@ public class CompactionPolicyActor
   private List<Statistic> tableStats;
   private List<PartitionStatistics> partitionStats;
   private Table tableMetadata;
+  private NameIdentifier nameIdentifier;
 
   @Override
-  public void setPolicy(Policy policy) {
+  public void initialize(NameIdentifier nameIdentifier, Policy policy) {
+    this.nameIdentifier = nameIdentifier;
     this.policy = policy;
+    this.expressionEvaluator = new QLExpressionEvaluator();
   }
 
   @Override
@@ -35,11 +41,10 @@ public class CompactionPolicyActor
   }
 
   @Override
-  // Todo using policy expression to compute the score
   public long score() {
     if (!isPartitioned()) {
-      Map<String, Object> context = buildExpressionContext();
-      String scoreExpression = PolicyUtiles.getScoreExpression(policy);
+      Map<String, Object> context = buildExpressionContext(policy, tableStats);
+      String scoreExpression = PolicyUtils.getScoreExpression(policy);
       return expressionEvaluator.evaluateLong(scoreExpression, context);
     }
     // todo choose the partitions with the largest datafile size
@@ -48,19 +53,16 @@ public class CompactionPolicyActor
 
   @Override
   public boolean shouldTrigger() {
-    // Todo using policy trigger expression to compute the trigger.
     // check whether the data size mse > xx
-    String triggerExpression = PolicyUtiles.getTriggerExpression(policy);
-    Map<String, Object> context = buildExpressionContext();
-    return expressionEvaluator.evaluateBool(triggerExpression, context);
+    return shouldTriggerCompaction(policy, tableStats, expressionEvaluator);
   }
 
   @Override
-  public JobConfig jobConfig() {
-    // for non partition table, return the properties like table name, target-filesize
+  public JobExecuteContext jobConfig() {
     if (!isPartitioned()) {
-      return null;
+      return getJobConfigFromPolicy(nameIdentifier, policy, tableMetadata);
     }
+    // todo : choose the partitions with the topN datafile_msg size
     // for partition table, return the partition names additionally
     return null;
   }
@@ -80,14 +82,41 @@ public class CompactionPolicyActor
     this.tableStats = tableStats;
   }
 
+  @VisibleForTesting
+  static boolean shouldTriggerCompaction(
+      Policy policy, List<Statistic> stats, ExpressionEvaluator evaluator) {
+    String triggerExpression = PolicyUtils.getTriggerExpression(policy);
+    Map<String, Object> context = buildExpressionContext(policy, stats);
+    return evaluator.evaluateBool(triggerExpression, context);
+  }
+
   private boolean isPartitioned() {
     return tableMetadata.partitioning().length > 0;
   }
 
-  private Map<String, Object> buildExpressionContext() {
+  @SuppressWarnings("EmptyCatch")
+  private static Map<String, Object> buildExpressionContext(Policy policy, List<Statistic> stats) {
     Map<String, Object> context = new HashMap<>();
-    context.putAll(StatsUtils.buildTableStatsContext(tableStats));
-    context.putAll(policy.content().properties());
+    context.putAll(StatsUtils.buildStatsContext(stats));
+    policy
+        .content()
+        // Todo: use rules not properties after https://github.com/apache/gravitino/issues/8863 is
+        // merged
+        .properties()
+        .forEach(
+            (k, v) -> {
+              try {
+                context.put(k, Long.parseLong(v));
+              } catch (Exception e) {
+              }
+            });
     return context;
+  }
+
+  @VisibleForTesting
+  static JobExecuteContext getJobConfigFromPolicy(
+      NameIdentifier nameIdentifier, Policy policy, Table tableMetadata) {
+    Map<String, Object> jobConfig = PolicyUtils.getJobConfigFromPolicy(policy);
+    return new CompactionJobContext(nameIdentifier, jobConfig, policy, tableMetadata);
   }
 }

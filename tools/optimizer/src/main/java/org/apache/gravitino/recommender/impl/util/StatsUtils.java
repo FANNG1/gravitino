@@ -7,10 +7,10 @@ import org.apache.gravitino.stats.Statistic;
 
 public class StatsUtils {
 
-  public static Map<String, Object> buildTableStatsContext(List<Statistic> tableStats) {
+  public static Map<String, Object> buildStatsContext(List<Statistic> tableStats) {
     Map<String, Object> context = new HashMap<>();
     for (Statistic stat : tableStats) {
-      context.put(stat.name(), stat.value());
+      stat.value().ifPresent(value -> context.put(stat.name(), value.value()));
     }
     return context;
   }

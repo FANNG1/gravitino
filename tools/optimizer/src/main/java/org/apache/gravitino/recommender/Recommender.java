@@ -7,9 +7,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.policy.Policy;
-import org.apache.gravitino.recommender.api.JobSubmiter;
+import org.apache.gravitino.recommender.api.JobSubmitter;
 import org.apache.gravitino.recommender.api.PolicyActor;
-import org.apache.gravitino.recommender.api.PolicyActor.JobConfig;
+import org.apache.gravitino.recommender.api.PolicyActor.JobExecuteContext;
 import org.apache.gravitino.recommender.api.PolicyProvider;
 import org.apache.gravitino.recommender.api.TableMetadataProvider;
 import org.apache.gravitino.recommender.api.TableStatsProvider;
@@ -23,7 +23,7 @@ public class Recommender {
   private PolicyProvider policyProvider;
   private TableStatsProvider statsProvider;
   private TableMetadataProvider tableMetadataProvider;
-  private JobSubmiter jobSubmiter;
+  private JobSubmitter jobSubmitter;
 
   public void recommendForOnePolicy(List<NameIdentifier> tableIdentifiers, String policyName) {
     Policy policy = policyProvider.getPolicy(policyName);
@@ -42,8 +42,8 @@ public class Recommender {
 
     for (int i = 0; i < 10 && !scoreQueue.isEmpty(); i++) {
       PolicyActor actor = scoreQueue.poll();
-      JobConfig jobConfig = actor.jobConfig();
-      jobSubmiter.submitJob(actor.policyType(), jobConfig);
+      JobExecuteContext jobConfig = actor.jobConfig();
+      jobSubmitter.submitJob(actor.policyType(), jobConfig);
     }
   }
 
@@ -57,7 +57,7 @@ public class Recommender {
   private PolicyActor loadPolicyActor(Policy policy, NameIdentifier tableIdentifier) {
     PolicyActor policyActor = getPolicyActor(policy.policyType());
 
-    policyActor.setPolicy(policy);
+    policyActor.initialize(tableIdentifier, policy);
 
     if (policyActor instanceof PolicyActor.requireTableMetadata) {
       Table tableMetadata = tableMetadataProvider.getTableMetadata(tableIdentifier);
