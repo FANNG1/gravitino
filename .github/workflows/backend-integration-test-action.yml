@@ -22,10 +22,10 @@ on:
         type: string
 
 jobs:
-  start-runner:
+  BackendIT:
     name: JDK${{ inputs.java-version }}-${{ inputs.test-mode }}-${{ inputs.backend }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 90
+    runs-on: [self-hosted, linux, x64, ubuntu-latest, xlarge]
+    timeout-minutes: 120
     env:
       PLATFORM: ${{ inputs.architecture }}
     steps:
