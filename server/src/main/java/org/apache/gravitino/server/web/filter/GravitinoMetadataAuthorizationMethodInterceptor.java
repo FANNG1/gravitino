@@ -22,8 +22,8 @@ package org.apache.gravitino.server.web.filter;
 import java.lang.reflect.Parameter;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.gravitino.Entity;
 import org.apache.gravitino.Entity.EntityType;
-import org.apache.gravitino.MetadataObject;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.server.authorization.annotations.AuthorizationMetadata;
 import org.apache.gravitino.utils.NameIdentifierUtil;
@@ -38,8 +38,8 @@ public class GravitinoMetadataAuthorizationMethodInterceptor
   @Override
   Map<EntityType, NameIdentifier> extractNameIdentifierFromParameters(
       Parameter[] parameters, Object[] args) {
-    Map<EntityType, String> metadatas = new HashMap<>();
-    Map<EntityType, NameIdentifier> nameIdentifierMap = new HashMap<>();
+    Map<Entity.EntityType, String> entities = new HashMap<>();
+    Map<Entity.EntityType, NameIdentifier> nameIdentifierMap = new HashMap<>();
     for (int i = 0; i < parameters.length; i++) {
       Parameter parameter = parameters[i];
       AuthorizationMetadata authorizeResource =
@@ -47,46 +47,65 @@ public class GravitinoMetadataAuthorizationMethodInterceptor
       if (authorizeResource == null) {
         continue;
       }
-      MetadataObject.Type type = authorizeResource.type();
-      metadatas.put(EntityType.valueOf(type.name()), String.valueOf(args[i]));
+      Entity.EntityType type = authorizeResource.type();
+      entities.put(type, String.valueOf(args[i]));
     }
-    String metalake = metadatas.get(EntityType.METALAKE);
-    String catalog = metadatas.get(EntityType.CATALOG);
-    String schema = metadatas.get(EntityType.SCHEMA);
-    String table = metadatas.get(EntityType.TABLE);
-    String topic = metadatas.get(EntityType.TOPIC);
-    String fileset = metadatas.get(EntityType.FILESET);
-    metadatas.forEach(
+    String metalake = entities.get(Entity.EntityType.METALAKE);
+    String catalog = entities.get(Entity.EntityType.CATALOG);
+    String schema = entities.get(Entity.EntityType.SCHEMA);
+    String table = entities.get(Entity.EntityType.TABLE);
+    String topic = entities.get(Entity.EntityType.TOPIC);
+    String fileset = entities.get(Entity.EntityType.FILESET);
+    entities.forEach(
         (type, metadata) -> {
           switch (type) {
             case CATALOG:
               nameIdentifierMap.put(
-                  EntityType.CATALOG, NameIdentifierUtil.ofCatalog(metalake, catalog));
+                  Entity.EntityType.CATALOG, NameIdentifierUtil.ofCatalog(metalake, catalog));
               break;
             case SCHEMA:
               nameIdentifierMap.put(
-                  EntityType.SCHEMA, NameIdentifierUtil.ofSchema(metalake, catalog, schema));
+                  Entity.EntityType.SCHEMA, NameIdentifierUtil.ofSchema(metalake, catalog, schema));
               break;
             case TABLE:
               nameIdentifierMap.put(
-                  EntityType.TABLE, NameIdentifierUtil.ofTable(metalake, catalog, schema, table));
+                  Entity.EntityType.TABLE,
+                  NameIdentifierUtil.ofTable(metalake, catalog, schema, table));
               break;
             case TOPIC:
               nameIdentifierMap.put(
-                  EntityType.TOPIC, NameIdentifierUtil.ofTopic(metalake, catalog, schema, topic));
+                  Entity.EntityType.TOPIC,
+                  NameIdentifierUtil.ofTopic(metalake, catalog, schema, topic));
               break;
             case FILESET:
               nameIdentifierMap.put(
-                  EntityType.FILESET,
+                  Entity.EntityType.FILESET,
                   NameIdentifierUtil.ofFileset(metalake, catalog, schema, fileset));
               break;
             case MODEL:
-              String model = metadatas.get(EntityType.MODEL);
+              String model = entities.get(Entity.EntityType.MODEL);
               nameIdentifierMap.put(
-                  EntityType.MODEL, NameIdentifierUtil.ofModel(metadata, catalog, schema, model));
+                  Entity.EntityType.MODEL,
+                  NameIdentifierUtil.ofModel(metalake, catalog, schema, model));
               break;
             case METALAKE:
-              nameIdentifierMap.put(EntityType.METALAKE, NameIdentifierUtil.ofMetalake(metalake));
+              nameIdentifierMap.put(
+                  Entity.EntityType.METALAKE, NameIdentifierUtil.ofMetalake(metalake));
+              break;
+            case USER:
+              nameIdentifierMap.put(
+                  Entity.EntityType.USER,
+                  NameIdentifierUtil.ofUser(metadata, entities.get(Entity.EntityType.USER)));
+              break;
+            case GROUP:
+              nameIdentifierMap.put(
+                  Entity.EntityType.GROUP,
+                  NameIdentifierUtil.ofGroup(metalake, entities.get(Entity.EntityType.GROUP)));
+              break;
+            case ROLE:
+              nameIdentifierMap.put(
+                  Entity.EntityType.ROLE,
+                  NameIdentifierUtil.ofRole(metalake, entities.get(Entity.EntityType.ROLE)));
               break;
             default:
               break;

@@ -66,7 +66,6 @@ public class IcebergAuthorizationIT extends BaseIT {
 
   protected static final String SUPER_USER = "super";
 
-  // Iceberg doesn't support passing simple username for Iceberg 1.6
   // todo: use a valid username after using Iceberg 1.9
   protected static final String NORMAL_USER = AuthConstants.ANONYMOUS_USER;
 
@@ -159,7 +158,10 @@ public class IcebergAuthorizationIT extends BaseIT {
             GRAVITINO_ICEBERG_REST_PREFIX + IcebergConstants.GRAVITINO_METALAKE,
             METALAKE_NAME,
             GRAVITINO_ICEBERG_REST_PREFIX + IcebergConstants.GRAVITINO_SIMPLE_USERNAME,
-            SUPER_USER));
+            SUPER_USER,
+            GRAVITINO_ICEBERG_REST_PREFIX
+                + IcebergConstants.ICEBERG_REST_DEFAULT_DYNAMIC_CATALOG_NAME,
+            CATALOG_NAME));
     super.startIntegrationTest();
   }
 

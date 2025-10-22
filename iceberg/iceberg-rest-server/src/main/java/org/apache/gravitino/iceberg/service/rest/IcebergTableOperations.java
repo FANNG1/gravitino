@@ -41,6 +41,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.gravitino.Entity;
 import org.apache.gravitino.MetadataObject;
 import org.apache.gravitino.iceberg.service.IcebergExceptionMapper;
 import org.apache.gravitino.iceberg.service.IcebergObjectMapper;
@@ -125,10 +126,10 @@ public class IcebergTableOperations {
           "ANY(OWNER, METALAKE, CATALOG) || "
               + "SCHEMA_OWNER_WITH_USE_CATALOG || "
               + "ANY_USE_CATALOG && ANY_USE_SCHEMA && ANY_CREATE_TABLE",
-      accessMetadataType = MetadataObject.Type.TABLE)
+      accessMetadataType = MetadataObject.Type.SCHEMA)
   public Response createTable(
-      @AuthorizationMetadata(type = MetadataObject.Type.CATALOG) @PathParam("prefix") String prefix,
-      @AuthorizationMetadata(type = MetadataObject.Type.SCHEMA) @Encoded() @PathParam("namespace")
+      @AuthorizationMetadata(type = Entity.EntityType.CATALOG) @PathParam("prefix") String prefix,
+      @AuthorizationMetadata(type = Entity.EntityType.SCHEMA) @Encoded() @PathParam("namespace")
           String namespace,
       @IcebergAuthorizationMetadata(type = RequestType.CREATE_TABLE)
           CreateTableRequest createTableRequest,

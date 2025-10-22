@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.gravitino.Entity;
 import org.apache.gravitino.Entity.EntityType;
-import org.apache.gravitino.MetadataObject;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.iceberg.service.IcebergRestUtils;
 import org.apache.gravitino.iceberg.service.authorization.IcebergAuthorizationContext;
@@ -73,7 +72,7 @@ public class IcebergMetadataAuthorizationMethodInterceptor
       if (authorizeResource == null) {
         continue;
       }
-      MetadataObject.Type type = authorizeResource.type();
+      Entity.EntityType type = authorizeResource.type();
       String value = String.valueOf(args[i]);
       switch (type) {
         case CATALOG:

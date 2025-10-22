@@ -21,15 +21,17 @@ package org.apache.gravitino.server.web.filter;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.util.HashMap;
 import java.util.Map;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Response;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.gravitino.Entity;
-import org.apache.gravitino.Entity.EntityType;
 import org.apache.gravitino.MetadataObject;
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.authorization.AuthorizationRequestContext;
 import org.apache.gravitino.server.authorization.annotations.AuthorizationExpression;
 import org.apache.gravitino.server.authorization.expression.AuthorizationExpressionEvaluator;
 import org.apache.gravitino.server.web.Utils;
@@ -66,12 +68,14 @@ public abstract class BaseMetadataAuthorizationMethodInterceptor implements Meth
       if (expressionAnnotation != null) {
         String expression = expressionAnnotation.expression();
         Object[] args = methodInvocation.getArguments();
-        Map<EntityType, NameIdentifier> metadataContext =
+        Map<Entity.EntityType, NameIdentifier> metadataContext =
             extractNameIdentifierFromParameters(parameters, args);
+        Map<String, Object> pathParams = extractPathParamsFromParameters(parameters, args);
         AuthorizationExpressionEvaluator authorizationExpressionEvaluator =
             new AuthorizationExpressionEvaluator(expression);
-
-        boolean authorizeResult = authorizationExpressionEvaluator.evaluate(metadataContext);
+        boolean authorizeResult =
+            authorizationExpressionEvaluator.evaluate(
+                metadataContext, pathParams, new AuthorizationRequestContext());
         if (!authorizeResult) {
           MetadataObject.Type type = expressionAnnotation.accessMetadataType();
           NameIdentifier accessMetadataName =
@@ -91,7 +95,7 @@ public abstract class BaseMetadataAuthorizationMethodInterceptor implements Meth
         }
       }
       return methodInvocation.proceed();
-    } catch (Throwable t) {
+    } catch (Exception ex) {
       String currentUser = PrincipalUtils.getCurrentUserName();
       String methodName = methodInvocation.getMethod().getName();
 
@@ -99,9 +103,9 @@ public abstract class BaseMetadataAuthorizationMethodInterceptor implements Meth
           "System internal error during authorization - User: {}, Operation: {}",
           currentUser,
           methodName,
-          t);
-      return Utils.forbidden(
-          "Authorization failed due to system internal error. Please contact administrator.", null);
+          ex);
+      return Utils.internalError(
+          "Authorization failed due to system internal error. Please contact administrator.", ex);
     }
   }
 
@@ -111,17 +115,35 @@ public abstract class BaseMetadataAuthorizationMethodInterceptor implements Meth
       String currentUser,
       String methodName) {
     String contextualMessage;
+    String accessMetadataMessage =
+        accessMetadataName != null
+            ? String.format("on metadata '%s'", accessMetadataName.name())
+            : "";
     if (StringUtils.isNotBlank(errorMessage)) {
       contextualMessage =
           String.format(
-              "User '%s' is not authorized to perform operation '%s' on metadata '%s': %s",
-              currentUser, methodName, accessMetadataName.name(), errorMessage);
+              "User '%s' is not authorized to perform operation '%s' %s: %s",
+              currentUser, methodName, accessMetadataMessage, errorMessage);
     } else {
       contextualMessage =
           String.format(
-              "User '%s' is not authorized to perform operation '%s' on metadata '%s'",
-              currentUser, methodName, accessMetadataName.name());
+              "User '%s' is not authorized to perform operation '%s' %s",
+              currentUser, methodName, accessMetadataMessage);
     }
     return Utils.forbidden(contextualMessage, null);
+  }
+
+  private Map<String, Object> extractPathParamsFromParameters(
+      Parameter[] parameters, Object[] args) {
+    Map<String, Object> pathParams = new HashMap<>();
+    for (int i = 0; i < parameters.length; i++) {
+      Parameter parameter = parameters[i];
+      PathParam pathParam = parameter.getAnnotation(PathParam.class);
+      if (pathParam == null) {
+        continue;
+      }
+      pathParams.put("p_" + pathParam.value(), args[i]);
+    }
+    return pathParams;
   }
 }
