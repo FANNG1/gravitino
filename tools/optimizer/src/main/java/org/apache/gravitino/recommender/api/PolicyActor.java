@@ -2,6 +2,7 @@ package org.apache.gravitino.recommender.api;
 
 import java.util.List;
 import java.util.Map;
+import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.policy.Policy;
 import org.apache.gravitino.rel.Table;
 import org.apache.gravitino.stats.PartitionStatistics;
@@ -20,11 +21,15 @@ public interface PolicyActor {
     void setPartitionStats(List<PartitionStatistics> partitionStats);
   }
 
-  interface JobConfig {
-    Map<String, String> config();
+  interface JobExecuteContext {
+    NameIdentifier name();
+
+    Map<String, Object> config();
+
+    Policy policy();
   }
 
-  void setPolicy(Policy policy);
+  void initialize(NameIdentifier nameIdentifier, Policy policy);
 
   String policyType();
 
@@ -32,5 +37,5 @@ public interface PolicyActor {
   // Whether to trigger a job to run the policy
   boolean shouldTrigger();
   // The job configuration to run the policy
-  JobConfig jobConfig();
+  JobExecuteContext jobConfig();
 }
