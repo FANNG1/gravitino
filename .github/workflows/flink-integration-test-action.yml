@@ -14,10 +14,10 @@ on:
         type: string
 
 jobs:
-  start-runner:
+  FlinkIT:
     name: JDK${{ inputs.java-version }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
+    runs-on: [self-hosted, linux, x64, ubuntu-latest, xlarge]
+    timeout-minutes: 60
     env:
       PLATFORM: ${{ inputs.architecture }}
     steps:
