@@ -2,12 +2,12 @@ name: Build gvfs-fuse and testing
 
 # Controls when the workflow will run
 on:
+  # Temporarily disable
+  # push:
+  #  branches: [ "main", "branch-*", "internal-*", "oss-main" ]
+  # pull_request:
+  #  branches: [ "main", "branch-*", "internal-*", "oss-main" ]
   workflow_dispatch:
-  push:
-    branches: [ "main", "branch-*", "internal-*", "oss-main" ]
-  pull_request:
-    types: [labeled]
-    branches: [ "main", "branch-*", "internal-*", "oss-main" ]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
