@@ -30,7 +30,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import org.apache.gravitino.iceberg.common.IcebergConfig;
-import org.apache.gravitino.iceberg.service.IcebergRestUtils;
+import org.apache.gravitino.iceberg.service.IcebergRESTUtils;
 import org.apache.iceberg.metrics.MetricsReport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,7 +95,7 @@ public class IcebergMetricsManager {
                 () -> {
                   Instant now = Instant.now();
                   Instant expireTime =
-                      IcebergRestUtils.calculateNewTimestamp(now, -24 * retainDays);
+                      IcebergRESTUtils.calculateNewTimestamp(now, -24 * retainDays);
                   LOG.info("Try clean Iceberg expired metrics, {}.", expireTime);
                   try {
                     icebergMetricsStore.clean(expireTime);
