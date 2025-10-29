@@ -60,6 +60,13 @@ dependencies {
   implementation(libs.jackson.datatype.jsr310)
   implementation(libs.metrics.jersey2)
   implementation(libs.ql.expression)
+  implementation("org.apache.spark:spark-sql_$scalaVersion:$sparkVersion") {
+    exclude("org.apache.avro")
+    exclude("org.apache.hadoop")
+    exclude("org.apache.zookeeper")
+    exclude("io.dropwizard.metrics")
+    exclude("org.rocksdb")
+  }
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)
@@ -73,19 +80,7 @@ dependencies {
 
   testImplementation("org.scala-lang.modules:scala-collection-compat_$scalaVersion:$scalaCollectionCompatVersion")
   testImplementation("org.apache.iceberg:iceberg-spark-runtime-${sparkMajorVersion}_$scalaVersion:$icebergVersion")
-  testImplementation("org.apache.spark:spark-sql_$scalaVersion:$sparkVersion") {
-    exclude("org.apache.avro")
-    exclude("org.apache.hadoop")
-    exclude("org.apache.zookeeper")
-    exclude("io.dropwizard.metrics")
-    exclude("org.rocksdb")
-  }
 
-  testImplementation(libs.iceberg.aws.bundle)
-  testImplementation(libs.iceberg.gcp.bundle)
-  testImplementation(libs.iceberg.azure.bundle) {
-    exclude("com.google.guava", "guava")
-  }
   testImplementation(libs.jersey.test.framework.core) {
     exclude(group = "org.junit.jupiter")
   }

@@ -5,10 +5,10 @@ import java.util.List;
 import java.util.Map;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.stats.PartitionStatistics;
-import org.apache.gravitino.stats.Statistic;
 import org.apache.gravitino.updater.api.Computer;
 import org.apache.gravitino.updater.api.MetricsComputer;
 import org.apache.gravitino.updater.api.MetricsUpdater;
+import org.apache.gravitino.updater.api.OStatistic;
 import org.apache.gravitino.updater.api.StatsComputer;
 import org.apache.gravitino.updater.api.StatsUpdater;
 import org.apache.gravitino.updater.api.SupportPartitionStats;
@@ -22,7 +22,7 @@ public class Updater {
   void updateStats(StatsComputer statsComputer, NameIdentifier tableIdentifier) {
     if (statsComputer instanceof SupportTableStats) {
       SupportTableStats supportTableStats = ((SupportTableStats) statsComputer);
-      List<Statistic> statistics = supportTableStats.computeTableStats(tableIdentifier);
+      List<OStatistic> statistics = supportTableStats.computeTableStats(tableIdentifier);
       statsUpdater.updateTableStatistics(tableIdentifier, statistics);
     }
 

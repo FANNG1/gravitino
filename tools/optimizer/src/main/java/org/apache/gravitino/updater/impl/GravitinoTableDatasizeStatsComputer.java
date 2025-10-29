@@ -3,8 +3,8 @@ package org.apache.gravitino.updater.impl;
 import java.util.List;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.monitor.api.Metrics;
-import org.apache.gravitino.stats.Statistic;
 import org.apache.gravitino.updater.api.MetricsComputer;
+import org.apache.gravitino.updater.api.OStatistic;
 import org.apache.gravitino.updater.api.SupportTableStats;
 
 public class GravitinoTableDatasizeStatsComputer implements SupportTableStats, MetricsComputer {
@@ -19,7 +19,7 @@ public class GravitinoTableDatasizeStatsComputer implements SupportTableStats, M
   }
 
   @Override
-  public List<Statistic> computeTableStats(NameIdentifier tableIdentifier) {
+  public List<OStatistic> computeTableStats(NameIdentifier tableIdentifier) {
     // generate deletefile_number, datafile_mse, total_file_number, etc from Iceberg file metadata
     // or Gravitino file stats.
     return new java.util.ArrayList<>();
