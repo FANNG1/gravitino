@@ -166,7 +166,7 @@ public class TestDynamicIcebergConfigProvider {
         DynamicIcebergConfigProvider.getIcebergConfigFromCatalogProperties(catalogProperties);
     Assertions.assertEquals(
         icebergConfig.getIcebergCatalogProperties().get("custom-k1"), "custom-v1");
-    Assertions.assertFalse(icebergConfig.getIcebergCatalogProperties().containsKey("custom-k2"));
+    Assertions.assertTrue(icebergConfig.getIcebergCatalogProperties().containsKey("custom-k2"));
     Assertions.assertEquals(
         icebergConfig.getIcebergCatalogProperties().get("catalog.backend-name"), "custom_backend");
   }
