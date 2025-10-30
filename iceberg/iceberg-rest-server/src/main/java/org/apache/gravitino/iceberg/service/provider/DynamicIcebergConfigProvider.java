@@ -30,7 +30,6 @@ import org.apache.gravitino.Catalog;
 import org.apache.gravitino.GravitinoEnv;
 import org.apache.gravitino.auth.AuthProperties;
 import org.apache.gravitino.catalog.lakehouse.iceberg.IcebergConstants;
-import org.apache.gravitino.catalog.lakehouse.iceberg.IcebergPropertiesUtils;
 import org.apache.gravitino.client.DefaultOAuth2TokenProvider;
 import org.apache.gravitino.client.GravitinoClient;
 import org.apache.gravitino.client.GravitinoClient.ClientBuilder;
@@ -108,12 +107,7 @@ public class DynamicIcebergConfigProvider implements IcebergConfigProvider {
         "lakehouse-iceberg".equals(catalog.provider()),
         String.format("%s.%s is not iceberg catalog", gravitinoMetalake, catalogName));
 
-    Map<String, String> catalogProperties = catalog.properties();
-    Map<String, String> properties = new HashMap<>();
-    properties.putAll(IcebergPropertiesUtils.toIcebergCatalogProperties(catalogProperties));
-    properties.putAll(MapUtils.getPrefixMap(catalogProperties, CATALOG_BYPASS_PREFIX));
-
-    return Optional.of(new IcebergConfig(properties));
+    return Optional.of(getIcebergConfigFromCatalogProperties(catalog.properties()));
   }
 
   @VisibleForTesting
@@ -136,6 +130,16 @@ public class DynamicIcebergConfigProvider implements IcebergConfigProvider {
   @Override
   public String getDefaultCatalogName() {
     return defaultDynamicCatalogName.orElse(IcebergConstants.ICEBERG_REST_DEFAULT_CATALOG);
+  }
+
+  @VisibleForTesting
+  static IcebergConfig getIcebergConfigFromCatalogProperties(
+      Map<String, String> catalogProperties) {
+    Map<String, String> properties = new HashMap<>();
+    properties.putAll(MapUtils.getPrefixMap(catalogProperties, CATALOG_BYPASS_PREFIX));
+    properties.putAll(catalogProperties);
+
+    return new IcebergConfig(properties);
   }
 
   // client is lazy loaded because the Gravitino server may not be started yet when the provider is
