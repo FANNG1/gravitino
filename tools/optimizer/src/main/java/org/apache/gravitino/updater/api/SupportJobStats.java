@@ -5,6 +5,6 @@ import org.apache.gravitino.NameIdentifier;
 
 // The stats provider to compute table stats, the stats will be used to update Gravitino stats store
 // or external systems.
-public interface SupportTableStats extends StatsComputer {
-  List<BaseStatistic<?>> computeTableStats(NameIdentifier tableIdentifier);
+public interface SupportJobStats extends StatsComputer {
+  List<BaseStatistic<?>> computeJobStats(NameIdentifier jobIdentifier);
 }

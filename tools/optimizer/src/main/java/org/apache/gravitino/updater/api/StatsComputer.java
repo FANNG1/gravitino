@@ -1,5 +1,17 @@
 package org.apache.gravitino.updater.api;
 
-// The stats provider to compute stats, the stats will be used to update Gravitino stats store or
-// external systems.
-public interface StatsComputer extends Computer {}
+/*
+ * The stats provider to compute stats, the stats will be used to update Gravitino stats store or external systems.
+ * Job metrics:
+ *    a. job_runtime_metrics, job_name:xx,  xx
+ *    b. job_cost_metrics, job_name:xx, xx
+ *    c. job_s3_request_metrics, job_name:xx xx
+ * Table metrics:
+ *    a. table_storage_metrics, table_name:xx, partition_name:xx xx
+ *    b. table_file_count_metrics, table_name:xx, partition_name:xx xx
+ *    c. table_delete_file_number_metrics, table_name:xx, partition_name:xx xx
+ *    d. table_datafile_mse_metrics, table_name:xx, partition_name:xx xx
+ */
+public interface StatsComputer {
+  String name();
+}

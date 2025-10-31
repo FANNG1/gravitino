@@ -1,17 +1,17 @@
 package org.apache.gravitino.updater;
 
+import com.google.common.base.Preconditions;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.stats.PartitionStatistics;
-import org.apache.gravitino.updater.api.Computer;
-import org.apache.gravitino.updater.api.MetricsComputer;
+import org.apache.gravitino.common.BaseMetrics;
+import org.apache.gravitino.monitor.api.Metrics;
+import org.apache.gravitino.updater.api.BaseStatistic;
 import org.apache.gravitino.updater.api.MetricsUpdater;
-import org.apache.gravitino.updater.api.OStatistic;
 import org.apache.gravitino.updater.api.StatsComputer;
 import org.apache.gravitino.updater.api.StatsUpdater;
-import org.apache.gravitino.updater.api.SupportPartitionStats;
+import org.apache.gravitino.updater.api.SupportJobStats;
 import org.apache.gravitino.updater.api.SupportTableStats;
 
 public class Updater {
@@ -19,35 +19,45 @@ public class Updater {
   private StatsUpdater statsUpdater;
   private MetricsUpdater metricsUpdater;
 
-  void updateStats(StatsComputer statsComputer, NameIdentifier tableIdentifier) {
-    if (statsComputer instanceof SupportTableStats) {
-      SupportTableStats supportTableStats = ((SupportTableStats) statsComputer);
-      List<OStatistic> statistics = supportTableStats.computeTableStats(tableIdentifier);
-      statsUpdater.updateTableStatistics(tableIdentifier, statistics);
-    }
-
-    if (statsComputer instanceof SupportPartitionStats) {
-      SupportPartitionStats supportPartitionStats = ((SupportPartitionStats) statsComputer);
-      List<PartitionStatistics> partitionStatistics =
-          supportPartitionStats.computePartitionStats(tableIdentifier);
-      statsUpdater.updatePartitionStatistics(tableIdentifier, partitionStatistics);
-    }
-  }
-
-  void updateMetrics(MetricsComputer metricsComputer, NameIdentifier tableIdentifier) {
-    metricsUpdater.updateMetrics(metricsComputer.computeMetrics(tableIdentifier));
-  }
-
-  void update(
-      String statsComputerName, List<NameIdentifier> tableIdentifiers, UpdateType updateType) {
-    Computer computer = getStatsComputer(statsComputerName);
-    for (NameIdentifier table : tableIdentifiers) {
-      if (updateType == UpdateType.STATS) {
-        updateStats((StatsComputer) computer, table);
-      } else if (updateType == UpdateType.METRICS) {
-        updateMetrics((MetricsComputer) computer, table);
+  public void update(
+      String statsComputerName, List<NameIdentifier> nameIdentifiers, UpdateType updateType) {
+    StatsComputer computer = getStatsComputer(statsComputerName);
+    for (NameIdentifier nameIdentifier : nameIdentifiers) {
+      if (computer instanceof SupportTableStats) {
+        SupportTableStats supportTableStats = ((SupportTableStats) computer);
+        List<BaseStatistic<?>> statistics = supportTableStats.computeTableStats(nameIdentifier);
+        updateTable(statistics, nameIdentifier, updateType);
+      } else if (computer instanceof SupportJobStats) {
+        Preconditions.checkState(
+            updateType.equals(UpdateType.METRICS), "Job stats only support metrics update");
+        SupportJobStats supportJobStats = ((SupportJobStats) computer);
+        List<BaseStatistic<?>> statistics = supportJobStats.computeJobStats(nameIdentifier);
+        updateJob(statistics, nameIdentifier);
+      } else {
+        throw new UnsupportedOperationException(
+            String.format("Stats computer %s does not support %s", statsComputerName, updateType));
       }
     }
+  }
+
+  private void updateTable(
+      List<BaseStatistic<?>> statistics, NameIdentifier tableIdentifier, UpdateType updateType) {
+    switch (updateType) {
+      case STATS:
+        statsUpdater.updateTableStatistics(tableIdentifier, statistics);
+        break;
+      case METRICS:
+        metricsUpdater.updateTableMetrics(tableIdentifier, toMetrics(statistics));
+        break;
+    }
+  }
+
+  private void updateJob(List<BaseStatistic<?>> statistics, NameIdentifier jobIdentifier) {
+    metricsUpdater.updateJobMetrics(jobIdentifier, toMetrics(statistics));
+  }
+
+  private Metrics toMetrics(List<BaseStatistic<?>> statistics) {
+    return new BaseMetrics(System.currentTimeMillis(), statistics);
   }
 
   private StatsComputer getStatsComputer(String statsComputerName) {
