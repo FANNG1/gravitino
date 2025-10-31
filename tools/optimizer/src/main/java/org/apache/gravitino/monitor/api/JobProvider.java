@@ -1,8 +1,9 @@
 package org.apache.gravitino.monitor.api;
 
+import java.util.List;
 import org.apache.gravitino.NameIdentifier;
 
-// Get upstream and downstream job names for a table
+// Get upstream and downstream jobs for a table
 public interface JobProvider {
-  String[] getJobNames(NameIdentifier tableIdentifier);
+  List<NameIdentifier> getJobNames(NameIdentifier tableIdentifier);
 }

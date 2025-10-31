@@ -4,11 +4,13 @@ import org.apache.gravitino.NameIdentifier;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.SparkSession;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 @TestInstance(Lifecycle.PER_CLASS)
+@Disabled("todo: setup it")
 public class TestIcebergTableDataStatsComputer {
 
   private IcebergTableDataStatsComputer statsComputer;

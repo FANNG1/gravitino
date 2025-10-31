@@ -1,13 +1,13 @@
 package org.apache.gravitino.updater.impl;
 
 import org.apache.gravitino.stats.StatisticValue;
-import org.apache.gravitino.updater.api.OStatistic;
+import org.apache.gravitino.updater.api.BaseStatistic;
 
-public class GravitinoStatistic implements OStatistic {
+public class SimpleStatistic<T> implements BaseStatistic<T> {
   private String name;
-  private StatisticValue<?> value;
+  private StatisticValue<T> value;
 
-  public GravitinoStatistic(String name, StatisticValue<?> value) {
+  public SimpleStatistic(String name, StatisticValue<T> value) {
     this.name = name;
     this.value = value;
   }
@@ -18,7 +18,7 @@ public class GravitinoStatistic implements OStatistic {
   }
 
   @Override
-  public StatisticValue<?> value() {
+  public StatisticValue<T> value() {
     return value;
   }
 }

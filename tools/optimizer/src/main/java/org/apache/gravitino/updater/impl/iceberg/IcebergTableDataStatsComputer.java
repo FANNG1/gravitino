@@ -6,17 +6,16 @@ import lombok.Builder;
 import lombok.Data;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.stats.StatisticValues;
-import org.apache.gravitino.updater.api.OStatistic;
-import org.apache.gravitino.updater.api.StatsComputer;
+import org.apache.gravitino.updater.api.BaseStatistic;
 import org.apache.gravitino.updater.api.SupportTableStats;
-import org.apache.gravitino.updater.impl.GravitinoStatistic;
+import org.apache.gravitino.updater.impl.SimpleStatistic;
 import org.apache.gravitino.updater.impl.util.ToStatistic;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema;
 
-public class IcebergTableDataStatsComputer implements StatsComputer, SupportTableStats {
+public class IcebergTableDataStatsComputer implements SupportTableStats {
 
   private SparkSession sparkSession;
   private String catalogName = "rest";
@@ -52,9 +51,11 @@ public class IcebergTableDataStatsComputer implements StatsComputer, SupportTabl
     this.sparkSession = sparkSession;
   }
 
-  public List<OStatistic> computeTableStats(NameIdentifier tableIdentifier) {
+  public List<BaseStatistic<?>> computeTableStats(NameIdentifier tableIdentifier) {
+    // For non-partitioned table return table stats
     TableStats tableStats = getTableStats(tableIdentifier);
     return tableStats.toStatistic();
+    // For partitioned table, return partition stats
   }
 
   @Override
@@ -112,15 +113,15 @@ public class IcebergTableDataStatsComputer implements StatsComputer, SupportTabl
     public long dataSizeMSE;
 
     @Override
-    public List<OStatistic> toStatistic() {
+    public List<BaseStatistic<?>> toStatistic() {
       return List.of(
-          new GravitinoStatistic("data_files", StatisticValues.longValue(dataFiles)),
-          new GravitinoStatistic(
+          new SimpleStatistic("data_files", StatisticValues.longValue(dataFiles)),
+          new SimpleStatistic(
               "position_delete_files", StatisticValues.longValue(positionDeleteFiles)),
-          new GravitinoStatistic(
+          new SimpleStatistic(
               "equality_delete_files", StatisticValues.longValue(equalityDeleteFiles)),
-          new GravitinoStatistic("small_files", StatisticValues.longValue(smallFiles)),
-          new GravitinoStatistic("data_size_mse", StatisticValues.longValue(dataSizeMSE)));
+          new SimpleStatistic("small_files", StatisticValues.longValue(smallFiles)),
+          new SimpleStatistic("data_size_mse", StatisticValues.longValue(dataSizeMSE)));
     }
   }
 }
