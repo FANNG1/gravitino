@@ -1,5 +1,9 @@
 package org.apache.gravitino.util;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.List;
 import org.apache.gravitino.stats.StatisticValue;
 import org.apache.gravitino.stats.StatisticValues;
@@ -92,9 +96,58 @@ class TestStatisticValueUtils {
             StatisticValues.longValue(10L),
             StatisticValues.doubleValue(20.5),
             StatisticValues.stringValue("invalid"));
+    Assertions.assertThrowsExactly(
+        IllegalArgumentException.class, () -> StatisticValueUtils.avg(values));
+  }
+
+  @Test
+  void testSerDeserEquals() {
+    StatisticValue value = StatisticValues.longValue(100L);
+    String result = StatisticValueUtils.toString(value);
+    StatisticValue deserializeValue = StatisticValueUtils.fromString(result);
+    assertEquals(value, deserializeValue);
+
+    StatisticValue doubleValue = StatisticValues.doubleValue(100.5);
+    result = StatisticValueUtils.toString(doubleValue);
+    deserializeValue = StatisticValueUtils.fromString(result);
+    assertEquals(doubleValue, deserializeValue);
+  }
+
+  @Test
+  void toStringSerializesStatisticValueCorrectly() {
+    StatisticValue value = StatisticValues.longValue(100L);
+    String result = StatisticValueUtils.toString(value);
+    assertEquals("100", result);
+
+    value = StatisticValues.doubleValue(100.5);
+    result = StatisticValueUtils.toString(value);
+    assertEquals("100.5", result);
+  }
+
+  @Test
+  void fromStringDeserializesStatisticValueCorrectly() {
+    String valueStr = "100";
+    StatisticValue result = StatisticValueUtils.fromString(valueStr);
+    assertTrue(result instanceof StatisticValues.LongValue);
+    assertEquals(100L, ((StatisticValues.LongValue) result).value());
+
+    String doubleValueStr = "100.5";
+    StatisticValue doubleResult = StatisticValueUtils.fromString(doubleValueStr);
+    assertTrue(doubleResult instanceof StatisticValues.DoubleValue);
+    assertEquals(100.5, ((StatisticValues.DoubleValue) doubleResult).value());
+  }
+
+  @Test
+  void toStringThrowsExceptionForNullValue() {
     IllegalArgumentException exception =
-        Assertions.assertThrowsExactly(
-            IllegalArgumentException.class, () -> StatisticValueUtils.avg(values));
-    Assertions.assertEquals("Value must be a number", exception.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> StatisticValueUtils.toString(null));
+    assertEquals("StatisticValue cannot be null", exception.getMessage());
+  }
+
+  @Test
+  void fromStringThrowsExceptionForNullString() {
+    IllegalArgumentException exception =
+        assertThrows(IllegalArgumentException.class, () -> StatisticValueUtils.fromString(null));
+    assertEquals("StatisticValue string cannot be null", exception.getMessage());
   }
 }

@@ -2,12 +2,13 @@ package org.apache.gravitino.util;
 
 import com.google.common.base.Preconditions;
 import java.util.List;
+import lombok.SneakyThrows;
+import org.apache.gravitino.json.JsonUtils;
 import org.apache.gravitino.rel.types.Type;
 import org.apache.gravitino.rel.types.Type.Name;
 import org.apache.gravitino.rel.types.Types;
 import org.apache.gravitino.stats.StatisticValue;
 import org.apache.gravitino.stats.StatisticValues;
-import org.apache.gravitino.stats.StatisticValues.LongValue;
 
 public class StatisticValueUtils {
 
@@ -34,7 +35,7 @@ public class StatisticValueUtils {
     if (type.name().equals(longName)) {
       long longSum = 0L;
       for (StatisticValue value : values) {
-        longSum += ((LongValue) value.value()).value();
+        longSum += ((Long) value.value()).longValue();
       }
       return StatisticValues.longValue(longSum);
     } else if (type.name().equals(doubleName)) {
@@ -55,7 +56,7 @@ public class StatisticValueUtils {
     Name longName = Types.LongType.get().name();
     Name doubleName = Types.DoubleType.get().name();
     if (type.name().equals(longName)) {
-      long longValue = ((LongValue) value.value()).value();
+      long longValue = ((Long) value.value()).longValue();
       return StatisticValues.doubleValue(longValue / divisor);
     } else if (type.name().equals(doubleName)) {
       double doubleValue = ((Number) value.value()).doubleValue();
@@ -63,6 +64,18 @@ public class StatisticValueUtils {
     } else {
       throw new IllegalArgumentException("Unsupported number type: " + type.name());
     }
+  }
+
+  @SneakyThrows
+  public static String toString(StatisticValue value) {
+    Preconditions.checkArgument(value != null, "StatisticValue cannot be null");
+    return JsonUtils.anyFieldMapper().writeValueAsString(value);
+  }
+
+  @SneakyThrows
+  public static StatisticValue fromString(String valueStr) {
+    Preconditions.checkArgument(valueStr != null, "StatisticValue string cannot be null");
+    return JsonUtils.anyFieldMapper().readValue(valueStr, StatisticValue.class);
   }
 
   private static Type getNumberType(List<StatisticValue> values) {
