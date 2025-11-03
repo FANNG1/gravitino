@@ -5,12 +5,12 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.client.GravitinoClient;
-import org.apache.gravitino.common.SinglePartition;
 import org.apache.gravitino.stats.PartitionStatisticsUpdate;
 import org.apache.gravitino.stats.StatisticValue;
 import org.apache.gravitino.updater.api.BaseStatistic;
 import org.apache.gravitino.updater.api.PartitionStatistic;
 import org.apache.gravitino.updater.api.StatsUpdater;
+import org.apache.gravitino.updater.impl.util.PartitionUtils;
 
 // todo Support column stats updater
 public class GravitinoStatsUpdater implements StatsUpdater {
@@ -53,7 +53,7 @@ public class GravitinoStatsUpdater implements StatsUpdater {
                 new PartitionStatisticsUpdate() {
                   @Override
                   public String partitionName() {
-                    return getGravitinoPartitionName(partitionStatistic.partition());
+                    return PartitionUtils.getGravitinoPartitionName(partitionStatistic.partition());
                   }
 
                   @Override
@@ -72,9 +72,5 @@ public class GravitinoStatsUpdater implements StatsUpdater {
         .loadTable(tableIdentifier)
         .supportsPartitionStatistics()
         .updatePartitionStatistics(partitionStatisticsUpdates);
-  }
-
-  private String getGravitinoPartitionName(SinglePartition partition) {
-    return partition.partitionName().replace("=", "_") + "=" + partition.partitionValue();
   }
 }
