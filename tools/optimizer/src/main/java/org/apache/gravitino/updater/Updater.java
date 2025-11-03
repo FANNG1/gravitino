@@ -58,7 +58,7 @@ public class Updater {
 
   private List<SingleMetric> toMetrics(List<BaseStatistic<?>> statistics) {
     return statistics.stream()
-        .map(stat -> new BaseMetric(System.currentTimeMillis(), stat))
+        .map(stat -> (SingleMetric) new BaseMetric(System.currentTimeMillis(), stat))
         .toList();
   }
 

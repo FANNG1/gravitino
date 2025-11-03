@@ -43,7 +43,8 @@ public class GravitinoEvaluator implements MetricsEvaluator {
     evaluateMetricsNames.stream()
         .forEach(
             metricName -> {
-              doEvaluation(beforeMetrics.get(metricName), afterMetrics.get(metricName), metricName);
+              String name = metricName.name();
+              doEvaluation(beforeMetrics.get(name), afterMetrics.get(name), metricName);
             });
     return false;
   }
