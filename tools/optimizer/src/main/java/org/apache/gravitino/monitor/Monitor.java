@@ -7,9 +7,9 @@ import java.util.Optional;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.monitor.api.JobProvider;
-import org.apache.gravitino.monitor.api.Metrics;
 import org.apache.gravitino.monitor.api.MetricsEvaluator;
 import org.apache.gravitino.monitor.api.MetricsProvider;
+import org.apache.gravitino.monitor.api.SingleMetric;
 import org.apache.gravitino.monitor.impl.GravitinoEvaluator;
 
 public class Monitor {
@@ -39,15 +39,38 @@ public class Monitor {
   void evaluateTableMetrics(
       MetricsEvaluator evaluator, NameIdentifier tableIdentifier, long time, long rangeSeconds) {
     Pair<Long, Long> timeRange = getTimeRange(time, rangeSeconds);
-    List<Metrics> metrics =
+    Map<String, List<SingleMetric>> metrics =
         metricsProvider.tableMetricDetails(
             tableIdentifier, Optional.empty(), timeRange.getLeft(), timeRange.getRight());
-    evaluator.evaluateTableMetrics(metrics);
+
+    Pair<Map<String, List<SingleMetric>>, Map<String, List<SingleMetric>>> splitMetrics =
+        splitMetrics(metrics, time);
+
+    evaluator.evaluateTableMetrics(splitMetrics.getLeft());
+  }
+
+  private Pair<Map<String, List<SingleMetric>>, Map<String, List<SingleMetric>>> splitMetrics(
+      Map<String, List<SingleMetric>> metrics, long actionTimeInSeconds) {
+    // split metrics into metrics before and after action time
+    Map<String, List<SingleMetric>> beforeMetrics = new HashMap<>();
+    Map<String, List<SingleMetric>> afterMetrics = new HashMap<>();
+    for (Map.Entry<String, List<SingleMetric>> entry : metrics.entrySet()) {
+      String metricName = entry.getKey();
+      List<SingleMetric> metricList = entry.getValue();
+      beforeMetrics.put(
+          metricName,
+          metricList.stream().filter(m -> m.timestamp() < actionTimeInSeconds).toList());
+      afterMetrics.put(
+          metricName,
+          metricList.stream().filter(m -> m.timestamp() >= actionTimeInSeconds).toList());
+    }
+    return Pair.of(beforeMetrics, afterMetrics);
   }
 
   private void evaluateJobMetrics(
       MetricsEvaluator evaluator, NameIdentifier jobIdentifier, long time, long rangeSeconds) {
-    List<Metrics> metrics = metricsProvider.jobMetricDetails(jobIdentifier, time, rangeSeconds);
+    List<SingleMetric> metrics =
+        metricsProvider.jobMetricDetails(jobIdentifier, time, rangeSeconds);
     evaluator.evaluateJobMetrics(metrics);
   }
 

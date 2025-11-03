@@ -1,11 +1,10 @@
 package org.apache.gravitino.monitor.api;
 
-import java.util.List;
 import org.apache.gravitino.updater.api.BaseStatistic;
 
-public interface Metrics {
+public interface SingleMetric {
 
   long timestamp();
 
-  List<BaseStatistic<?>> statistics();
+  BaseStatistic<?> statistic();
 }

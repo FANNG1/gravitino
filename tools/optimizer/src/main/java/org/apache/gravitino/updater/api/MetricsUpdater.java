@@ -1,7 +1,8 @@
 package org.apache.gravitino.updater.api;
 
+import java.util.List;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.monitor.api.Metrics;
+import org.apache.gravitino.monitor.api.SingleMetric;
 
 /*
  * Job metrics:
@@ -15,7 +16,7 @@ import org.apache.gravitino.monitor.api.Metrics;
  *    d. table_datafile_mse_metrics, table_name:xx, partition_name:xx xx
  */
 public interface MetricsUpdater {
-  void updateTableMetrics(NameIdentifier nameIdentifier, Metrics metrics);
+  void updateTableMetrics(NameIdentifier nameIdentifier, List<SingleMetric> metrics);
 
-  void updateJobMetrics(NameIdentifier nameIdentifier, Metrics metrics);
+  void updateJobMetrics(NameIdentifier nameIdentifier, List<SingleMetric> metrics);
 }

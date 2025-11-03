@@ -1,6 +1,7 @@
 package org.apache.gravitino.monitor.api;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.common.SinglePartition;
@@ -18,11 +19,12 @@ public interface MetricsProvider {
    *     metrics
    * @param endTime The end timestamp (in seconds) of the time range to consider when fetching
    *     metrics
-   * @return A list of {@link Metrics} objects containing the job metrics for the specified criteria
+   * @return A list of {@link SingleMetric} objects containing the job metrics for the specified
+   *     criteria
    */
-  List<Metrics> jobMetricDetails(NameIdentifier jobIdentifier, long startTime, long endTime);
+  List<SingleMetric> jobMetricDetails(NameIdentifier jobIdentifier, long startTime, long endTime);
 
-  List<Metrics> tableMetricDetails(
+  Map<String, List<SingleMetric>> tableMetricDetails(
       NameIdentifier tableIdentifier,
       Optional<SinglePartition> partition,
       long startTime,
