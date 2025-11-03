@@ -1,6 +1,7 @@
 package org.apache.gravitino.updater.impl.metrics;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.apache.gravitino.NameIdentifier;
 
@@ -12,14 +13,13 @@ public interface MetricsStorage {
       Optional<String> partition,
       StorageMetric metric);
 
-  List<StorageMetric> getTableMetrics(
+  Map<String, List<StorageMetric>> getAllTableMetrics(
       NameIdentifier nameIdentifier,
       Optional<String> partition,
       long fromTimestamp,
       long toTimestamp);
 
-  void storeJobMetrics(
-      NameIdentifier nameIdentifier, String metricName, StorageMetric metric);
+  void storeJobMetrics(NameIdentifier nameIdentifier, String metricName, StorageMetric metric);
 
   List<StorageMetric> getJobMetrics(
       NameIdentifier nameIdentifier, long fromTimestamp, long toTimestamp);

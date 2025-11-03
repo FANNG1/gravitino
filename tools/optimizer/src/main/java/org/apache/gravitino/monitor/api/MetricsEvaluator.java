@@ -1,6 +1,7 @@
 package org.apache.gravitino.monitor.api;
 
 import java.util.List;
+import java.util.Map;
 
 public interface MetricsEvaluator {
   /**
@@ -13,7 +14,8 @@ public interface MetricsEvaluator {
    */
   void initialize(long actionTime, long rangeHours);
 
-  boolean evaluateTableMetrics(List<Metrics> metrics);
+  boolean evaluateTableMetrics(
+      Map<String, List<SingleMetric>> beforeMetrics, Map<String, List<SingleMetric>> afterMetrics);
 
-  boolean evaluateJobMetrics(List<Metrics> metrics);
+  boolean evaluateJobMetrics(List<SingleMetric> metrics);
 }

@@ -1,8 +1,9 @@
 package org.apache.gravitino.updater.impl;
 
+import java.util.List;
 import java.util.Optional;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.monitor.api.Metrics;
+import org.apache.gravitino.monitor.api.SingleMetric;
 import org.apache.gravitino.updater.api.BaseStatistic;
 import org.apache.gravitino.updater.api.MetricsUpdater;
 import org.apache.gravitino.updater.api.PartitionStatistic;
@@ -21,17 +22,26 @@ public class GravitinoMetricsUpdater implements MetricsUpdater {
   }
 
   @Override
-  public void updateTableMetrics(NameIdentifier nameIdentifier, Metrics metrics) {
-    metrics
-        .statistics()
+  public void updateTableMetrics(NameIdentifier nameIdentifier, List<SingleMetric> metrics) {
+    metrics.stream()
         .forEach(
-            statistic -> {
-              doUpdateTableMetrics(nameIdentifier, metrics.timestamp(), statistic);
-            });
+            metric -> doUpdateTableMetrics(nameIdentifier, metric.timestamp(), metric.statistic()));
   }
 
   @Override
-  public void updateJobMetrics(NameIdentifier nameIdentifier, Metrics metrics) {}
+  public void updateJobMetrics(NameIdentifier nameIdentifier, List<SingleMetric> metrics) {
+    metrics.stream()
+        .forEach(
+            metric -> doUpdateJobMetrics(nameIdentifier, metric.timestamp(), metric.statistic()));
+  }
+
+  private void doUpdateJobMetrics(
+      NameIdentifier nameIdentifier, long timestamp, BaseStatistic statistic) {
+    metricsStorage.storeJobMetrics(
+        nameIdentifier,
+        statistic.name(),
+        new BaseStorageMetric(timestamp, StatisticValueUtils.toString(statistic.value())));
+  }
 
   private void doUpdateTableMetrics(
       NameIdentifier nameIdentifier, long timestamp, BaseStatistic statistic) {

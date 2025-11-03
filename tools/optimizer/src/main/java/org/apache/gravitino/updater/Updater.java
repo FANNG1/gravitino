@@ -5,8 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.common.BaseMetrics;
-import org.apache.gravitino.monitor.api.Metrics;
+import org.apache.gravitino.common.BaseMetric;
+import org.apache.gravitino.monitor.api.SingleMetric;
 import org.apache.gravitino.updater.api.BaseStatistic;
 import org.apache.gravitino.updater.api.MetricsUpdater;
 import org.apache.gravitino.updater.api.StatsComputer;
@@ -56,8 +56,10 @@ public class Updater {
     metricsUpdater.updateJobMetrics(jobIdentifier, toMetrics(statistics));
   }
 
-  private Metrics toMetrics(List<BaseStatistic<?>> statistics) {
-    return new BaseMetrics(System.currentTimeMillis(), statistics);
+  private List<SingleMetric> toMetrics(List<BaseStatistic<?>> statistics) {
+    return statistics.stream()
+        .map(stat -> new BaseMetric(System.currentTimeMillis(), stat))
+        .toList();
   }
 
   private StatsComputer getStatsComputer(String statsComputerName) {

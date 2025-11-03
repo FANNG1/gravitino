@@ -1,10 +1,9 @@
 package org.apache.gravitino.monitor.impl;
 
 import java.util.List;
-import java.util.Optional;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.gravitino.monitor.api.Metrics;
+import java.util.Map;
 import org.apache.gravitino.monitor.api.MetricsEvaluator;
+import org.apache.gravitino.monitor.api.SingleMetric;
 import org.apache.gravitino.stats.StatisticValue;
 import org.apache.gravitino.updater.api.BaseStatistic;
 import org.apache.gravitino.util.StatisticValueUtils;
@@ -38,24 +37,19 @@ public class GravitinoEvaluator implements MetricsEvaluator {
   }
 
   @Override
-  public boolean evaluateTableMetrics(List<Metrics> metrics) {
+  public boolean evaluateTableMetrics(
+      Map<String, List<SingleMetric>> beforeMetrics, Map<String, List<SingleMetric>> afterMetrics) {
     //  evaluate table storage cost, data file size, data file number, position file number, etc
-    Pair<List<Metrics>, List<Metrics>> tableMetrics = splitMetrics(metrics);
-    List<Metrics> beforeMetrics = tableMetrics.getLeft();
-    List<Metrics> afterMetrics = tableMetrics.getRight();
-
     evaluateMetricsNames.stream()
         .forEach(
             metricName -> {
-              List<SingleMetric> toBeforeMetrics = toSingleMetrics(beforeMetrics, metricName);
-              List<SingleMetric> toAfterMetrics = toSingleMetrics(afterMetrics, metricName);
-              doEvaluation(toBeforeMetrics, toAfterMetrics, metricName);
+              doEvaluation(beforeMetrics.get(metricName), afterMetrics.get(metricName), metricName);
             });
     return false;
   }
 
   @Override
-  public boolean evaluateJobMetrics(List<Metrics> metrics) {
+  public boolean evaluateJobMetrics(List<org.apache.gravitino.monitor.api.SingleMetric> metrics) {
     // evaluate job cost, duration, etc
     return false;
   }
@@ -77,10 +71,10 @@ public class GravitinoEvaluator implements MetricsEvaluator {
             metricName, actionTime, afterMetrics.stream().map(SingleMetric::toString).toList()));
 
     StatisticValue beforeAvg =
-        StatisticValueUtils.avg(beforeMetrics.stream().map(SingleMetric::value).toList());
+        StatisticValueUtils.avg(beforeMetrics.stream().map(this::toStatisticValue).toList());
 
     StatisticValue afterAvg =
-        StatisticValueUtils.avg(afterMetrics.stream().map(SingleMetric::value).toList());
+        StatisticValueUtils.avg(afterMetrics.stream().map(this::toStatisticValue).toList());
 
     LOG.info(
         String.format(
@@ -89,59 +83,8 @@ public class GravitinoEvaluator implements MetricsEvaluator {
         String.format("Metrics %s avg after action time %d: %s", metricName, actionTime, afterAvg));
   }
 
-  private Pair<List<Metrics>, List<Metrics>> splitMetrics(List<Metrics> metrics) {
-    // split metrics into metrics before and after action time
-    long actionTimeInSeconds = actionTime;
-    List<Metrics> beforeMetrics =
-        metrics.stream().filter(m -> m.timestamp() < actionTimeInSeconds).toList();
-    List<Metrics> afterMetrics =
-        metrics.stream().filter(m -> m.timestamp() >= actionTimeInSeconds).toList();
-    return Pair.of(beforeMetrics, afterMetrics);
-  }
-
-  private List<SingleMetric> toSingleMetrics(
-      List<Metrics> metricsList, BaseStatistic.Name metricName) {
-    return metricsList.stream()
-        .map(m -> SingleMetric.fromMetrics(m, metricName))
-        .filter(Optional::isPresent)
-        .map(Optional::get)
-        .toList();
-  }
-
-  static class SingleMetric {
-    private long timestamp;
-    private StatisticValue value;
-
-    private SingleMetric(long timestamp, StatisticValue value) {
-      this.timestamp = timestamp;
-      this.value = value;
-    }
-
-    public static Optional<SingleMetric> fromMetrics(
-        Metrics metrics, BaseStatistic.Name metricName) {
-      StatisticValue value =
-          metrics.statistics().stream()
-              .filter(s -> s.name().equals(metricName.name()))
-              .findFirst()
-              .map(BaseStatistic::value)
-              .orElse(null);
-      if (value == null) {
-        return Optional.empty();
-      }
-      return Optional.of(new SingleMetric(metrics.timestamp(), value));
-    }
-
-    public long timestamp() {
-      return timestamp;
-    }
-
-    public StatisticValue value() {
-      return value;
-    }
-
-    @Override
-    public String toString() {
-      return String.format("Timestamp: %d, Value: %s", timestamp, value);
-    }
+  private StatisticValue toStatisticValue(SingleMetric metric) {
+    BaseStatistic<?> statistic = metric.statistic();
+    return statistic.value();
   }
 }
