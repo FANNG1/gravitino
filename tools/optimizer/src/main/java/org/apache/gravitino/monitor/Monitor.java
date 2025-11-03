@@ -46,7 +46,7 @@ public class Monitor {
     Pair<Map<String, List<SingleMetric>>, Map<String, List<SingleMetric>>> splitMetrics =
         splitMetrics(metrics, time);
 
-    evaluator.evaluateTableMetrics(splitMetrics.getLeft());
+    evaluator.evaluateTableMetrics(splitMetrics.getLeft(), splitMetrics.getRight());
   }
 
   private Pair<Map<String, List<SingleMetric>>, Map<String, List<SingleMetric>>> splitMetrics(
