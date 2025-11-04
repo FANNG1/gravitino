@@ -5,7 +5,7 @@ import java.util.Map;
 import org.apache.gravitino.monitor.api.MetricsEvaluator;
 import org.apache.gravitino.monitor.api.SingleMetric;
 import org.apache.gravitino.stats.StatisticValue;
-import org.apache.gravitino.updater.api.BaseStatistic;
+import org.apache.gravitino.updater.api.SingleStatistic;
 import org.apache.gravitino.util.StatisticValueUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,16 +19,16 @@ public class GravitinoEvaluator implements MetricsEvaluator {
   @SuppressWarnings("UnusedVariable")
   private long rangeHours;
 
-  private List<BaseStatistic.Name> evaluateMetricsNames =
+  private List<SingleStatistic.Name> evaluateMetricsNames =
       List.of(
-          BaseStatistic.Name.TABLE_STORAGE_COST,
-          BaseStatistic.Name.DATAFILE_AVG_SIZE,
-          BaseStatistic.Name.DATAFILE_NUMBER,
-          BaseStatistic.Name.DATAFILE_SIZE_MSE,
-          BaseStatistic.Name.POSITION_DELETE_FILE_NUMBER,
-          BaseStatistic.Name.EQUAL_DELETE_FILE_NUMBER,
-          BaseStatistic.Name.JOB_COST,
-          BaseStatistic.Name.JOB_DURATION);
+          SingleStatistic.Name.TABLE_STORAGE_COST,
+          SingleStatistic.Name.DATAFILE_AVG_SIZE,
+          SingleStatistic.Name.DATAFILE_NUMBER,
+          SingleStatistic.Name.DATAFILE_SIZE_MSE,
+          SingleStatistic.Name.POSITION_DELETE_FILE_NUMBER,
+          SingleStatistic.Name.EQUAL_DELETE_FILE_NUMBER,
+          SingleStatistic.Name.JOB_COST,
+          SingleStatistic.Name.JOB_DURATION);
 
   @Override
   public void initialize(long actionTime, long rangeHours) {
@@ -58,7 +58,7 @@ public class GravitinoEvaluator implements MetricsEvaluator {
   private void doEvaluation(
       List<SingleMetric> beforeMetrics,
       List<SingleMetric> afterMetrics,
-      BaseStatistic.Name metricName) {
+      SingleStatistic.Name metricName) {
     // implement evaluation logic here, 1. print metrics before and after action time, 2 compare the
     // avg metrics before and after action time
     // 1. print metrics before and after action time
@@ -85,7 +85,7 @@ public class GravitinoEvaluator implements MetricsEvaluator {
   }
 
   private StatisticValue toStatisticValue(SingleMetric metric) {
-    BaseStatistic<?> statistic = metric.statistic();
+    SingleStatistic<?> statistic = metric.statistic();
     return statistic.value();
   }
 }

@@ -5,13 +5,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.common.BaseMetric;
+import org.apache.gravitino.common.SingleMetricImpl;
 import org.apache.gravitino.common.SinglePartition;
 import org.apache.gravitino.monitor.api.MetricsProvider;
 import org.apache.gravitino.monitor.api.SingleMetric;
-import org.apache.gravitino.updater.api.BaseStatistic;
-import org.apache.gravitino.updater.impl.SimplePartitionStatistic;
-import org.apache.gravitino.updater.impl.SimpleStatistic;
+import org.apache.gravitino.updater.api.SingleStatistic;
+import org.apache.gravitino.updater.impl.PartitionStatisticImpl;
+import org.apache.gravitino.updater.impl.SingleStatisticImpl;
 import org.apache.gravitino.updater.impl.metrics.MetricsStorage;
 import org.apache.gravitino.updater.impl.metrics.StorageMetric;
 import org.apache.gravitino.updater.impl.util.PartitionUtils;
@@ -30,13 +30,13 @@ public class GravitinoMetricsProvider implements MetricsProvider {
   @Override
   public Map<String, List<SingleMetric>> tableMetricDetails(
       NameIdentifier tableIdentifier,
-      Optional<SinglePartition> partition,
+      Optional<List<SinglePartition>> partitions,
       long startTime,
       long endTime) {
     Map<String, List<StorageMetric>> metrics =
         metricsStorage.getAllTableMetrics(
             tableIdentifier,
-            partition.map(PartitionUtils::getGravitinoPartitionName),
+            partitions.map(PartitionUtils::getGravitinoPartitionName),
             startTime,
             endTime);
 
@@ -47,22 +47,24 @@ public class GravitinoMetricsProvider implements MetricsProvider {
                 entry ->
                     entry.getValue().stream()
                         .map(
-                            storageMetric -> toBaseMetric(storageMetric, partition, entry.getKey()))
+                            storageMetric ->
+                                toSingleMetric(storageMetric, partitions, entry.getKey()))
                         .collect(Collectors.toList())));
   }
 
-  private BaseMetric toBaseMetric(
-      StorageMetric metric, Optional<SinglePartition> partition, String metricName) {
-    return new BaseMetric(metric.getTimestamp(), toBaseStatistic(metric, partition, metricName));
+  private SingleMetric toSingleMetric(
+      StorageMetric metric, Optional<List<SinglePartition>> partitions, String metricName) {
+    return new SingleMetricImpl(
+        metric.getTimestamp(), toSingleStatistic(metric, partitions, metricName));
   }
 
-  private BaseStatistic toBaseStatistic(
-      StorageMetric metric, Optional<SinglePartition> partition, String metricName) {
-    if (partition.isPresent()) {
-      SinglePartition p = partition.get();
-      return new SimplePartitionStatistic(
+  private SingleStatistic toSingleStatistic(
+      StorageMetric metric, Optional<List<SinglePartition>> partitions, String metricName) {
+    if (partitions.isPresent()) {
+      List<SinglePartition> p = partitions.get();
+      return new PartitionStatisticImpl(
           metricName, StatisticValueUtils.fromString(metric.getValue()), p);
     }
-    return new SimpleStatistic<>(metricName, StatisticValueUtils.fromString(metric.getValue()));
+    return new SingleStatisticImpl<>(metricName, StatisticValueUtils.fromString(metric.getValue()));
   }
 }

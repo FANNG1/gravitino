@@ -1,13 +1,13 @@
 package org.apache.gravitino.updater.impl;
 
 import org.apache.gravitino.stats.StatisticValue;
-import org.apache.gravitino.updater.api.BaseStatistic;
+import org.apache.gravitino.updater.api.SingleStatistic;
 
-public class SimpleStatistic<T> implements BaseStatistic<T> {
+public class SingleStatisticImpl<T> implements SingleStatistic<T> {
   private String name;
   private StatisticValue<T> value;
 
-  public SimpleStatistic(String name, StatisticValue<T> value) {
+  public SingleStatisticImpl(String name, StatisticValue<T> value) {
     this.name = name;
     this.value = value;
   }
