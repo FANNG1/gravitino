@@ -5,5 +5,5 @@ import org.apache.gravitino.NameIdentifier;
 
 // Update the statistics to Gravitino stats store or external systems.
 public interface StatsUpdater {
-  void updateTableStatistics(NameIdentifier tableIdentifier, List<BaseStatistic<?>> statistics);
+  void updateTableStatistics(NameIdentifier tableIdentifier, List<SingleStatistic<?>> statistics);
 }

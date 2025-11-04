@@ -2,7 +2,7 @@ package org.apache.gravitino.updater.api;
 
 import org.apache.gravitino.stats.StatisticValue;
 
-public interface BaseStatistic<T> {
+public interface SingleStatistic<T> {
   enum Name {
     TABLE_STORAGE_COST,
     DATAFILE_AVG_SIZE,

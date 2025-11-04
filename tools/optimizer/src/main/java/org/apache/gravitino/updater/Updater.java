@@ -5,10 +5,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.common.BaseMetric;
+import org.apache.gravitino.common.SingleMetricImpl;
 import org.apache.gravitino.monitor.api.SingleMetric;
-import org.apache.gravitino.updater.api.BaseStatistic;
 import org.apache.gravitino.updater.api.MetricsUpdater;
+import org.apache.gravitino.updater.api.SingleStatistic;
 import org.apache.gravitino.updater.api.StatsComputer;
 import org.apache.gravitino.updater.api.StatsUpdater;
 import org.apache.gravitino.updater.api.SupportJobStats;
@@ -25,13 +25,13 @@ public class Updater {
     for (NameIdentifier nameIdentifier : nameIdentifiers) {
       if (computer instanceof SupportTableStats) {
         SupportTableStats supportTableStats = ((SupportTableStats) computer);
-        List<BaseStatistic<?>> statistics = supportTableStats.computeTableStats(nameIdentifier);
+        List<SingleStatistic<?>> statistics = supportTableStats.computeTableStats(nameIdentifier);
         updateTable(statistics, nameIdentifier, updateType);
       } else if (computer instanceof SupportJobStats) {
         Preconditions.checkState(
             updateType.equals(UpdateType.METRICS), "Job stats only support metrics update");
         SupportJobStats supportJobStats = ((SupportJobStats) computer);
-        List<BaseStatistic<?>> statistics = supportJobStats.computeJobStats(nameIdentifier);
+        List<SingleStatistic<?>> statistics = supportJobStats.computeJobStats(nameIdentifier);
         updateJob(statistics, nameIdentifier);
       } else {
         throw new UnsupportedOperationException(
@@ -41,7 +41,7 @@ public class Updater {
   }
 
   private void updateTable(
-      List<BaseStatistic<?>> statistics, NameIdentifier tableIdentifier, UpdateType updateType) {
+      List<SingleStatistic<?>> statistics, NameIdentifier tableIdentifier, UpdateType updateType) {
     switch (updateType) {
       case STATS:
         statsUpdater.updateTableStatistics(tableIdentifier, statistics);
@@ -52,13 +52,13 @@ public class Updater {
     }
   }
 
-  private void updateJob(List<BaseStatistic<?>> statistics, NameIdentifier jobIdentifier) {
+  private void updateJob(List<SingleStatistic<?>> statistics, NameIdentifier jobIdentifier) {
     metricsUpdater.updateJobMetrics(jobIdentifier, toMetrics(statistics));
   }
 
-  private List<SingleMetric> toMetrics(List<BaseStatistic<?>> statistics) {
+  private List<SingleMetric> toMetrics(List<SingleStatistic<?>> statistics) {
     return statistics.stream()
-        .map(stat -> (SingleMetric) new BaseMetric(System.currentTimeMillis(), stat))
+        .map(stat -> (SingleMetric) new SingleMetricImpl(System.currentTimeMillis(), stat))
         .toList();
   }
 

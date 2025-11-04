@@ -26,7 +26,7 @@ public interface MetricsProvider {
 
   Map<String, List<SingleMetric>> tableMetricDetails(
       NameIdentifier tableIdentifier,
-      Optional<SinglePartition> partition,
+      Optional<List<SinglePartition>> partitions,
       long startTime,
       long endTime);
 }

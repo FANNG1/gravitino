@@ -1,13 +1,13 @@
 package org.apache.gravitino.common;
 
 import org.apache.gravitino.monitor.api.SingleMetric;
-import org.apache.gravitino.updater.api.BaseStatistic;
+import org.apache.gravitino.updater.api.SingleStatistic;
 
-public class BaseMetric implements SingleMetric {
+public class SingleMetricImpl implements SingleMetric {
   private long timestamp;
-  private BaseStatistic<?> statistic;
+  private SingleStatistic<?> statistic;
 
-  public BaseMetric(long timestamp, BaseStatistic<?> statistic) {
+  public SingleMetricImpl(long timestamp, SingleStatistic<?> statistic) {
     this.timestamp = timestamp;
     this.statistic = statistic;
   }
@@ -18,7 +18,7 @@ public class BaseMetric implements SingleMetric {
   }
 
   @Override
-  public BaseStatistic<?> statistic() {
+  public SingleStatistic<?> statistic() {
     return statistic;
   }
 
