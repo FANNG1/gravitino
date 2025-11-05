@@ -21,10 +21,17 @@ public class GravitinoMetricsProvider implements MetricsProvider {
 
   private MetricsStorage metricsStorage;
 
+  void initialize(MetricsStorage metricsStorage) {
+    this.metricsStorage = metricsStorage;
+  }
+
   @Override
-  public List<SingleMetric> jobMetricDetails(
+  public Map<String, List<SingleMetric>> jobMetricDetails(
       NameIdentifier jobIdentifier, long startTime, long endTime) {
-    return null;
+    Map<String, List<StorageMetric>> metrics =
+        metricsStorage.getJobMetrics(jobIdentifier, startTime, endTime);
+
+    return toSingeMetrics(metrics, Optional.empty());
   }
 
   @Override
@@ -40,6 +47,11 @@ public class GravitinoMetricsProvider implements MetricsProvider {
             startTime,
             endTime);
 
+    return toSingeMetrics(metrics, partitions);
+  }
+
+  private Map<String, List<SingleMetric>> toSingeMetrics(
+      Map<String, List<StorageMetric>> metrics, Optional<List<SinglePartition>> partitions) {
     return metrics.entrySet().stream()
         .collect(
             Collectors.toMap(

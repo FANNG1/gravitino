@@ -54,6 +54,7 @@ dependencies {
   implementation(libs.caffeine)
   implementation(libs.commons.lang3)
   implementation(libs.guava)
+  implementation(libs.h2db)
   implementation(libs.jackson.annotations)
   implementation(libs.jackson.databind)
   implementation(libs.jackson.datatype.jdk8)

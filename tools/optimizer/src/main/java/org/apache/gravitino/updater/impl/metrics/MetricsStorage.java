@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.gravitino.NameIdentifier;
 
-public interface MetricsStorage {
+public interface MetricsStorage extends AutoCloseable {
 
   void storeTableMetrics(
       NameIdentifier nameIdentifier,
@@ -21,6 +21,6 @@ public interface MetricsStorage {
 
   void storeJobMetrics(NameIdentifier nameIdentifier, String metricName, StorageMetric metric);
 
-  List<StorageMetric> getJobMetrics(
+  Map<String, List<StorageMetric>> getJobMetrics(
       NameIdentifier nameIdentifier, long fromTimestamp, long toTimestamp);
 }

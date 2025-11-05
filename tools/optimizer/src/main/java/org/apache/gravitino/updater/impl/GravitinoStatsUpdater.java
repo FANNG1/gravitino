@@ -1,9 +1,11 @@
 package org.apache.gravitino.updater.impl;
 
+import com.google.common.base.Preconditions;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.Namespace;
 import org.apache.gravitino.client.GravitinoClient;
 import org.apache.gravitino.stats.PartitionStatisticsUpdate;
 import org.apache.gravitino.stats.StatisticValue;
@@ -12,10 +14,14 @@ import org.apache.gravitino.updater.api.SingleStatistic;
 import org.apache.gravitino.updater.api.StatsUpdater;
 import org.apache.gravitino.updater.impl.util.PartitionUtils;
 
-// todo Support column stats updater
 public class GravitinoStatsUpdater implements StatsUpdater {
 
-  GravitinoClient gravitinoClient;
+  private GravitinoClient gravitinoClient;
+  private String defaultCatalogName;
+
+  void initialize(String uri, String metalakeName) {
+    this.gravitinoClient = GravitinoClient.builder(uri).withMetalake(metalakeName).build();
+  }
 
   @Override
   public void updateTableStatistics(
@@ -30,7 +36,7 @@ public class GravitinoStatsUpdater implements StatsUpdater {
       return;
     }
     gravitinoClient
-        .loadCatalog("")
+        .loadCatalog(getCatalogName(tableIdentifier))
         .asTableCatalog()
         .loadTable(tableIdentifier)
         .supportsStatistics()
@@ -69,10 +75,20 @@ public class GravitinoStatsUpdater implements StatsUpdater {
   private void doUpdatePartitionStatistics(
       NameIdentifier tableIdentifier, List<PartitionStatisticsUpdate> partitionStatisticsUpdates) {
     gravitinoClient
-        .loadCatalog("")
+        .loadCatalog(getCatalogName(tableIdentifier))
         .asTableCatalog()
         .loadTable(tableIdentifier)
         .supportsPartitionStatistics()
         .updatePartitionStatistics(partitionStatisticsUpdates);
+  }
+
+  private String getCatalogName(NameIdentifier tableIdentifier) {
+    Namespace namespace = tableIdentifier.namespace();
+    Preconditions.checkArgument(namespace != null && namespace.levels().length >= 1);
+    if (namespace.levels().length == 1) {
+      return defaultCatalogName;
+    }
+
+    return namespace.levels()[0];
   }
 }

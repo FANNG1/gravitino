@@ -2,45 +2,34 @@ package org.apache.gravitino.monitor.impl;
 
 import java.util.List;
 import java.util.Map;
-import org.apache.gravitino.monitor.api.MetricsEvaluator;
 import org.apache.gravitino.monitor.api.SingleMetric;
+import org.apache.gravitino.monitor.api.TableMetricsEvaluator;
 import org.apache.gravitino.stats.StatisticValue;
 import org.apache.gravitino.updater.api.SingleStatistic;
 import org.apache.gravitino.util.StatisticValueUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class GravitinoEvaluator implements MetricsEvaluator {
+public class GravitinoEvaluator implements TableMetricsEvaluator {
   private static final Logger LOG = LoggerFactory.getLogger(GravitinoEvaluator.class);
 
-  @SuppressWarnings("UnusedVariable")
-  private long actionTime;
-
-  @SuppressWarnings("UnusedVariable")
-  private long rangeHours;
-
-  private List<SingleStatistic.Name> evaluateMetricsNames =
+  private List<SingleStatistic.Name> evaluateTableMetricsNames =
       List.of(
           SingleStatistic.Name.TABLE_STORAGE_COST,
           SingleStatistic.Name.DATAFILE_AVG_SIZE,
           SingleStatistic.Name.DATAFILE_NUMBER,
           SingleStatistic.Name.DATAFILE_SIZE_MSE,
           SingleStatistic.Name.POSITION_DELETE_FILE_NUMBER,
-          SingleStatistic.Name.EQUAL_DELETE_FILE_NUMBER,
-          SingleStatistic.Name.JOB_COST,
-          SingleStatistic.Name.JOB_DURATION);
+          SingleStatistic.Name.EQUAL_DELETE_FILE_NUMBER);
 
-  @Override
-  public void initialize(long actionTime, long rangeHours) {
-    this.actionTime = actionTime;
-    this.rangeHours = rangeHours;
-  }
+  private List<SingleStatistic.Name> evaluateJobMetricsNames =
+      List.of(SingleStatistic.Name.JOB_COST, SingleStatistic.Name.JOB_DURATION);
 
   @Override
   public boolean evaluateTableMetrics(
       Map<String, List<SingleMetric>> beforeMetrics, Map<String, List<SingleMetric>> afterMetrics) {
     //  evaluate table storage cost, data file size, data file number, position file number, etc
-    evaluateMetricsNames.stream()
+    evaluateTableMetricsNames.stream()
         .forEach(
             metricName -> {
               String name = metricName.name();
@@ -50,8 +39,15 @@ public class GravitinoEvaluator implements MetricsEvaluator {
   }
 
   @Override
-  public boolean evaluateJobMetrics(List<org.apache.gravitino.monitor.api.SingleMetric> metrics) {
+  public boolean evaluateJobMetrics(
+      Map<String, List<SingleMetric>> beforeMetrics, Map<String, List<SingleMetric>> afterMetrics) {
     // evaluate job cost, duration, etc
+    evaluateJobMetricsNames.stream()
+        .forEach(
+            metricName -> {
+              String name = metricName.name();
+              doEvaluation(beforeMetrics.get(name), afterMetrics.get(name), metricName);
+            });
     return false;
   }
 
@@ -64,12 +60,12 @@ public class GravitinoEvaluator implements MetricsEvaluator {
     // 1. print metrics before and after action time
     LOG.info(
         String.format(
-            "Metrics %s before action time %d: %s",
-            metricName, actionTime, beforeMetrics.stream().map(SingleMetric::toString).toList()));
+            "Metrics %s before action time: %s",
+            metricName, beforeMetrics.stream().map(SingleMetric::toString).toList()));
     LOG.info(
         String.format(
-            "Metrics %s after action time %d: %s",
-            metricName, actionTime, afterMetrics.stream().map(SingleMetric::toString).toList()));
+            "Metrics %s after action time: %s",
+            metricName, afterMetrics.stream().map(SingleMetric::toString).toList()));
 
     StatisticValue beforeAvg =
         StatisticValueUtils.avg(beforeMetrics.stream().map(this::toStatisticValue).toList());
@@ -77,11 +73,8 @@ public class GravitinoEvaluator implements MetricsEvaluator {
     StatisticValue afterAvg =
         StatisticValueUtils.avg(afterMetrics.stream().map(this::toStatisticValue).toList());
 
-    LOG.info(
-        String.format(
-            "Metrics %s avg before action time %d: %s", metricName, actionTime, beforeAvg));
-    LOG.info(
-        String.format("Metrics %s avg after action time %d: %s", metricName, actionTime, afterAvg));
+    LOG.info(String.format("Metrics %s avg before action time: %s", metricName, beforeAvg));
+    LOG.info(String.format("Metrics %s avg after action time: %s", metricName, afterAvg));
   }
 
   private StatisticValue toStatisticValue(SingleMetric metric) {

@@ -7,8 +7,8 @@ import org.apache.gravitino.monitor.api.SingleMetric;
 import org.apache.gravitino.updater.api.MetricsUpdater;
 import org.apache.gravitino.updater.api.PartitionStatistic;
 import org.apache.gravitino.updater.api.SingleStatistic;
-import org.apache.gravitino.updater.impl.metrics.BaseStorageMetric;
 import org.apache.gravitino.updater.impl.metrics.MetricsStorage;
+import org.apache.gravitino.updater.impl.metrics.StorageMetricImpl;
 import org.apache.gravitino.updater.impl.util.PartitionUtils;
 import org.apache.gravitino.util.StatisticValueUtils;
 
@@ -40,7 +40,7 @@ public class GravitinoMetricsUpdater implements MetricsUpdater {
     metricsStorage.storeJobMetrics(
         nameIdentifier,
         statistic.name(),
-        new BaseStorageMetric(timestamp, StatisticValueUtils.toString(statistic.value())));
+        new StorageMetricImpl(timestamp, StatisticValueUtils.toString(statistic.value())));
   }
 
   private void doUpdateTableMetrics(
@@ -51,13 +51,13 @@ public class GravitinoMetricsUpdater implements MetricsUpdater {
           nameIdentifier,
           statistic.name(),
           Optional.of(PartitionUtils.getGravitinoPartitionName(partitionStatistic.partitions())),
-          new BaseStorageMetric(timestamp, StatisticValueUtils.toString(statistic.value())));
+          new StorageMetricImpl(timestamp, StatisticValueUtils.toString(statistic.value())));
       return;
     }
     metricsStorage.storeTableMetrics(
         nameIdentifier,
         statistic.name(),
         Optional.empty(),
-        new BaseStorageMetric(timestamp, StatisticValueUtils.toString(statistic.value())));
+        new StorageMetricImpl(timestamp, StatisticValueUtils.toString(statistic.value())));
   }
 }

@@ -1,10 +1,10 @@
 package org.apache.gravitino.updater.impl.metrics;
 
-public class BaseStorageMetric implements StorageMetric {
+public class StorageMetricImpl implements StorageMetric {
   private long timestamp;
   private String value;
 
-  public BaseStorageMetric(long timestamp, String value) {
+  public StorageMetricImpl(long timestamp, String value) {
     this.timestamp = timestamp;
     this.value = value;
   }
