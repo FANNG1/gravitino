@@ -20,6 +20,8 @@
 package org.apache.gravitino.optimizer.updater.impl.util;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import org.apache.gravitino.optimizer.common.PartitionImpl;
 import org.apache.gravitino.optimizer.common.SinglePartition;
 
 public class PartitionUtils {
@@ -31,5 +33,16 @@ public class PartitionUtils {
       sb.append("/");
     }
     return sb.toString();
+  }
+
+  public static List<SinglePartition> parseGravitinoPartitionName(String gravitinoPartitionName) {
+    // Support multi partitions by splitting with "/"
+    return List.of(gravitinoPartitionName.split("/")).stream()
+        .map(
+            partition -> {
+              String[] keyValue = partition.split("=");
+              return new PartitionImpl(keyValue[0], keyValue[1]);
+            })
+        .collect(Collectors.toList());
   }
 }

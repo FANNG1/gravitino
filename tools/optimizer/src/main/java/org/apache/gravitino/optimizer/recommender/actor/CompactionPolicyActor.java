@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.optimizer.api.common.PartitionStatistic;
 import org.apache.gravitino.optimizer.api.common.SingleStatistic;
 import org.apache.gravitino.optimizer.api.recommender.PolicyActor;
 import org.apache.gravitino.optimizer.recommender.util.ExpressionEvaluator;
@@ -32,7 +33,6 @@ import org.apache.gravitino.optimizer.recommender.util.QLExpressionEvaluator;
 import org.apache.gravitino.optimizer.recommender.util.StatsUtils;
 import org.apache.gravitino.policy.Policy;
 import org.apache.gravitino.rel.Table;
-import org.apache.gravitino.stats.PartitionStatistics;
 
 @SuppressWarnings("UnusedVariable")
 public class CompactionPolicyActor
@@ -43,7 +43,7 @@ public class CompactionPolicyActor
   private ExpressionEvaluator expressionEvaluator;
   private Policy policy;
   private List<SingleStatistic> tableStats;
-  private List<PartitionStatistics> partitionStats;
+  private List<PartitionStatistic> partitionStats;
   private Table tableMetadata;
   private NameIdentifier nameIdentifier;
 
@@ -87,7 +87,7 @@ public class CompactionPolicyActor
   }
 
   @Override
-  public void setPartitionStats(List<PartitionStatistics> partitionStats) {
+  public void setPartitionStats(List<PartitionStatistic> partitionStats) {
     this.partitionStats = partitionStats;
   }
 
