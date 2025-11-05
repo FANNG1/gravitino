@@ -22,7 +22,8 @@ public interface MetricsProvider {
    * @return A list of {@link SingleMetric} objects containing the job metrics for the specified
    *     criteria
    */
-  List<SingleMetric> jobMetricDetails(NameIdentifier jobIdentifier, long startTime, long endTime);
+  Map<String, List<SingleMetric>> jobMetricDetails(
+      NameIdentifier jobIdentifier, long startTime, long endTime);
 
   Map<String, List<SingleMetric>> tableMetricDetails(
       NameIdentifier tableIdentifier,

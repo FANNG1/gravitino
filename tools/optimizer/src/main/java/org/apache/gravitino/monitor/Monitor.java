@@ -7,28 +7,29 @@ import java.util.Optional;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.monitor.api.JobProvider;
-import org.apache.gravitino.monitor.api.MetricsEvaluator;
 import org.apache.gravitino.monitor.api.MetricsProvider;
 import org.apache.gravitino.monitor.api.SingleMetric;
+import org.apache.gravitino.monitor.api.TableMetricsEvaluator;
 import org.apache.gravitino.monitor.impl.GravitinoEvaluator;
 
 public class Monitor {
+
   private MetricsProvider metricsProvider;
   private JobProvider jobProvider;
-  private Map<String, MetricsEvaluator> evaluators = new HashMap<>();
-  private MetricsEvaluator defaultEvaluator = new GravitinoEvaluator();
+  private Map<String, TableMetricsEvaluator> evaluators = new HashMap<>();
+  private TableMetricsEvaluator defaultEvaluator = new GravitinoEvaluator();
 
   public Monitor() {
     this.metricsProvider = loadMetricsProvider();
     this.jobProvider = loadJobProvider();
   }
 
-  void run(
+  public void run(
       NameIdentifier tableIdentifier,
       long ActionTime,
       long rangeSeconds,
       Optional<String> policyType) {
-    MetricsEvaluator evaluator = getMetricsEvaluator(policyType);
+    TableMetricsEvaluator evaluator = getMetricsEvaluator(policyType);
     evaluateTableMetrics(evaluator, tableIdentifier, ActionTime, rangeSeconds);
     List<NameIdentifier> jobs = jobProvider.getJobNames(tableIdentifier);
     for (NameIdentifier job : jobs) {
@@ -37,7 +38,10 @@ public class Monitor {
   }
 
   void evaluateTableMetrics(
-      MetricsEvaluator evaluator, NameIdentifier tableIdentifier, long time, long rangeSeconds) {
+      TableMetricsEvaluator evaluator,
+      NameIdentifier tableIdentifier,
+      long time,
+      long rangeSeconds) {
     Pair<Long, Long> timeRange = getTimeRange(time, rangeSeconds);
     Map<String, List<SingleMetric>> metrics =
         metricsProvider.tableMetricDetails(
@@ -68,13 +72,15 @@ public class Monitor {
   }
 
   private void evaluateJobMetrics(
-      MetricsEvaluator evaluator, NameIdentifier jobIdentifier, long time, long rangeSeconds) {
-    List<SingleMetric> metrics =
+      TableMetricsEvaluator evaluator, NameIdentifier jobIdentifier, long time, long rangeSeconds) {
+    Map<String, List<SingleMetric>> metrics =
         metricsProvider.jobMetricDetails(jobIdentifier, time, rangeSeconds);
-    evaluator.evaluateJobMetrics(metrics);
+    Pair<Map<String, List<SingleMetric>>, Map<String, List<SingleMetric>>> splitMetrics =
+        splitMetrics(metrics, time);
+    evaluator.evaluateJobMetrics(splitMetrics.getLeft(), splitMetrics.getRight());
   }
 
-  private MetricsEvaluator getMetricsEvaluator(Optional<String> policyType) {
+  private TableMetricsEvaluator getMetricsEvaluator(Optional<String> policyType) {
     if (policyType.isPresent()) {
       return evaluators.getOrDefault(policyType.get(), defaultEvaluator);
     }
