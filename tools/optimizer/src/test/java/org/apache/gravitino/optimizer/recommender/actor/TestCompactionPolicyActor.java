@@ -24,9 +24,11 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.gravitino.Audit;
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.optimizer.api.common.SingleStatistic;
 import org.apache.gravitino.optimizer.api.recommender.PolicyActor.JobExecuteContext;
 import org.apache.gravitino.optimizer.recommender.util.ExpressionEvaluator;
 import org.apache.gravitino.optimizer.recommender.util.QLExpressionEvaluator;
+import org.apache.gravitino.optimizer.updater.impl.SingleStatisticImpl;
 import org.apache.gravitino.policy.Policy;
 import org.apache.gravitino.rel.Table;
 import org.apache.gravitino.stats.Statistic;
@@ -81,11 +83,12 @@ class TestCompactionPolicyActor {
 
   @Test
   void testShouldTriggerCompaction() {
-    List<Statistic> stats = Arrays.asList(new Stats("datafile_mse", 2000L));
+    List<SingleStatistic> stats =
+        Arrays.asList(new SingleStatisticImpl("datafile_mse", StatisticValues.longValue(2000L)));
     Assertions.assertEquals(
         true, CompactionPolicyActor.shouldTriggerCompaction(policy, stats, evaluator));
 
-    stats = Arrays.asList(new Stats("datafile_mse", 10L));
+    stats = Arrays.asList(new SingleStatisticImpl("datafile_mse", StatisticValues.longValue(10L)));
     Assertions.assertEquals(
         false, CompactionPolicyActor.shouldTriggerCompaction(policy, stats, evaluator));
 

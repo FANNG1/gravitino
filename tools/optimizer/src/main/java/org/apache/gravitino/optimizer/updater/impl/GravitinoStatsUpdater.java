@@ -38,8 +38,9 @@ public class GravitinoStatsUpdater implements StatsUpdater {
   private GravitinoClient gravitinoClient;
   private String defaultCatalogName;
 
-  void initialize(String uri, String metalakeName) {
+  public void initialize(String uri, String metalakeName, String defaultCatalogName) {
     this.gravitinoClient = GravitinoClient.builder(uri).withMetalake(metalakeName).build();
+    this.defaultCatalogName = defaultCatalogName;
   }
 
   @Override
@@ -93,6 +94,9 @@ public class GravitinoStatsUpdater implements StatsUpdater {
 
   private void doUpdatePartitionStatistics(
       NameIdentifier tableIdentifier, List<PartitionStatisticsUpdate> partitionStatisticsUpdates) {
+    if (partitionStatisticsUpdates.isEmpty()) {
+      return;
+    }
     gravitinoClient
         .loadCatalog(getCatalogName(tableIdentifier))
         .asTableCatalog()

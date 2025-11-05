@@ -114,4 +114,6 @@ public enum TestDatabaseName {
       return this.name().toLowerCase();
     }
   },
+
+  GRAVITINO_STATS_IT,
 }

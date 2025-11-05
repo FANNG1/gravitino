@@ -17,20 +17,24 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer.recommender.util;
+package org.apache.gravitino.optimizer.common;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.apache.gravitino.optimizer.api.common.SingleStatistic;
+public class PartitionImpl implements SinglePartition {
+  private String partitionName;
+  private String partitionValue;
 
-public class StatsUtils {
+  public PartitionImpl(String partitionName, String partitionValue) {
+    this.partitionName = partitionName;
+    this.partitionValue = partitionValue;
+  }
 
-  public static Map<String, Object> buildStatsContext(List<SingleStatistic> tableStats) {
-    Map<String, Object> context = new HashMap<>();
-    for (SingleStatistic stat : tableStats) {
-      context.put(stat.name(), stat.value().value());
-    }
-    return context;
+  @Override
+  public String partitionName() {
+    return partitionName;
+  }
+
+  @Override
+  public String partitionValue() {
+    return partitionValue;
   }
 }
