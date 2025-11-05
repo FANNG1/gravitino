@@ -20,15 +20,21 @@
 package org.apache.gravitino.optimizer.recommender.impl;
 
 import com.google.common.base.Preconditions;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.Namespace;
 import org.apache.gravitino.client.GravitinoClient;
+import org.apache.gravitino.optimizer.api.common.PartitionStatistic;
 import org.apache.gravitino.optimizer.api.common.SingleStatistic;
 import org.apache.gravitino.optimizer.api.recommender.TableStatsProvider;
+import org.apache.gravitino.optimizer.common.SinglePartition;
+import org.apache.gravitino.optimizer.updater.impl.PartitionStatisticImpl;
 import org.apache.gravitino.optimizer.updater.impl.SingleStatisticImpl;
+import org.apache.gravitino.optimizer.updater.impl.util.PartitionUtils;
 import org.apache.gravitino.rel.Table;
+import org.apache.gravitino.stats.PartitionRange;
 import org.apache.gravitino.stats.PartitionStatistics;
 import org.apache.gravitino.stats.Statistic;
 
@@ -57,15 +63,28 @@ public class GravitinoTableStatsProvider implements TableStatsProvider {
   }
 
   @Override
-  public List<PartitionStatistics> getPartitionStats(NameIdentifier tableIdentifier) {
+  public List<PartitionStatistic> getPartitionStats(NameIdentifier tableIdentifier) {
     Table t =
         gravitinoClient
             .loadCatalog(getCatalogName(tableIdentifier))
             .asTableCatalog()
             .loadTable(tableIdentifier);
     List<PartitionStatistics> partitionStatistics =
-        t.supportsPartitionStatistics().listPartitionStatistics(null);
-    return partitionStatistics;
+        t.supportsPartitionStatistics().listPartitionStatistics(PartitionRange.ALL_PARTITIONS);
+
+    return partitionStatistics.stream()
+        .flatMap(statistic -> toPartitionStatistics(statistic).stream())
+        .collect(Collectors.toList());
+  }
+
+  private List<PartitionStatistic> toPartitionStatistics(PartitionStatistics partitionStatistics) {
+    List<SinglePartition> partitions =
+        PartitionUtils.parseGravitinoPartitionName(partitionStatistics.partitionName());
+    return Arrays.stream(partitionStatistics.statistics())
+        .map(
+            statistic ->
+                new PartitionStatisticImpl(statistic.name(), statistic.value().get(), partitions))
+        .collect(Collectors.toList());
   }
 
   private String getCatalogName(NameIdentifier tableIdentifier) {

@@ -22,10 +22,10 @@ package org.apache.gravitino.optimizer.api.recommender;
 import java.util.List;
 import java.util.Map;
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.optimizer.api.common.PartitionStatistic;
 import org.apache.gravitino.optimizer.api.common.SingleStatistic;
 import org.apache.gravitino.policy.Policy;
 import org.apache.gravitino.rel.Table;
-import org.apache.gravitino.stats.PartitionStatistics;
 
 public interface PolicyActor {
   interface requireTableMetadata {
@@ -37,7 +37,7 @@ public interface PolicyActor {
   }
 
   interface requirePartitionStats {
-    void setPartitionStats(List<PartitionStatistics> partitionStats);
+    void setPartitionStats(List<PartitionStatistic> partitionStats);
   }
 
   interface JobExecuteContext {

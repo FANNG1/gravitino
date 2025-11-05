@@ -29,6 +29,7 @@ import org.apache.gravitino.client.GravitinoMetalake;
 import org.apache.gravitino.integration.test.container.ContainerSuite;
 import org.apache.gravitino.integration.test.util.BaseIT;
 import org.apache.gravitino.integration.test.util.TestDatabaseName;
+import org.apache.gravitino.optimizer.api.common.PartitionStatistic;
 import org.apache.gravitino.optimizer.api.common.SingleStatistic;
 import org.apache.gravitino.optimizer.api.common.SingleStatistic.Name;
 import org.apache.gravitino.optimizer.common.PartitionImpl;
@@ -112,23 +113,13 @@ public class GravitinoStatsIT extends BaseIT {
             new PartitionStatisticImpl(
                 STATS_PREFIX + "partition_row_count",
                 StatisticValues.longValue(500),
-                Arrays.asList(
-                    new PartitionImpl("col1", "1"),
-                    new PartitionImpl("col2", "2"),
-                )
-                ),
+                Arrays.asList(new PartitionImpl("col1", "1"), new PartitionImpl("col2", "2"))),
             new PartitionStatisticImpl(
                 STATS_PREFIX + "partition_size_in_bytes",
                 StatisticValues.longValue(500000),
-                Arrays.asList(
-                    new PartitionImpl("col1", "1"),
-                    new PartitionImpl("col2", "2")
-                )
-            )
-        )
-    );
+                Arrays.asList(new PartitionImpl("col1", "1"), new PartitionImpl("col2", "2")))));
 
-    List<SingleStatistic> stats =
+    List<PartitionStatistic> stats =
         statsProvider.getPartitionStats(NameIdentifier.of(TEST_SCHEMA, TEST_PARTITION_TABLE));
     Assertions.assertEquals(2, stats.size());
     stats.stream()
