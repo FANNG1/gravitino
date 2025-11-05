@@ -115,4 +115,6 @@ public enum TestDatabaseName {
     }
   },
   PG_ICEBERG_AUTHZ_IT,
+
+  GRAVITINO_STATS_IT,
 }

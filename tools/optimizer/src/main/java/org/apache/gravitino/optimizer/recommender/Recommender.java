@@ -25,6 +25,7 @@ import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.optimizer.api.common.SingleStatistic;
 import org.apache.gravitino.optimizer.api.recommender.JobSubmitter;
 import org.apache.gravitino.optimizer.api.recommender.PolicyActor;
 import org.apache.gravitino.optimizer.api.recommender.PolicyActor.JobExecuteContext;
@@ -34,7 +35,6 @@ import org.apache.gravitino.optimizer.api.recommender.TableStatsProvider;
 import org.apache.gravitino.policy.Policy;
 import org.apache.gravitino.rel.Table;
 import org.apache.gravitino.stats.PartitionStatistics;
-import org.apache.gravitino.stats.Statistic;
 
 @SuppressWarnings("UnusedVariable")
 public class Recommender {
@@ -84,7 +84,7 @@ public class Recommender {
     }
 
     if (policyActor instanceof PolicyActor.requireTableStats) {
-      List<Statistic> tableStats = statsProvider.getTableStats(tableIdentifier);
+      List<SingleStatistic> tableStats = statsProvider.getTableStats(tableIdentifier);
       ((PolicyActor.requireTableStats) policyActor).setTableStats(tableStats);
       List<PartitionStatistics> partitionStats = statsProvider.getPartitionStats(tableIdentifier);
       ((PolicyActor.requirePartitionStats) policyActor).setPartitionStats(partitionStats);

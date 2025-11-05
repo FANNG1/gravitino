@@ -49,8 +49,6 @@ dependencies {
   implementation(libs.bundles.jersey)
   implementation(libs.bundles.jwt)
   implementation(libs.bundles.log4j)
-  implementation(libs.bundles.metrics)
-  implementation(libs.bundles.prometheus)
   implementation(libs.caffeine)
   implementation(libs.commons.lang3)
   implementation(libs.guava)
@@ -72,14 +70,9 @@ dependencies {
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)
 
-  // Iceberg doesn't provide Aliyun bundle jar, use Gravitino Aliyun bundle to provide OSS packages
-  testImplementation(project(":bundles:aliyun-bundle"))
-  testImplementation(project(":bundles:aws", configuration = "shadow"))
-  testImplementation(project(":bundles:gcp", configuration = "shadow"))
-  testImplementation(project(":bundles:azure", configuration = "shadow"))
   testImplementation(project(":integration-test-common", "testArtifacts"))
+  testImplementation(project(":server"))
 
-  testImplementation("org.scala-lang.modules:scala-collection-compat_$scalaVersion:$scalaCollectionCompatVersion")
   testImplementation("org.apache.iceberg:iceberg-spark-runtime-${sparkMajorVersion}_$scalaVersion:$icebergVersion")
 
   testImplementation(libs.jersey.test.framework.core) {
@@ -90,6 +83,7 @@ dependencies {
   }
   testImplementation(libs.junit.jupiter.api)
   testImplementation(libs.junit.jupiter.params)
+  testImplementation(libs.postgresql.driver)
   testImplementation(libs.mockito.core)
   testImplementation(libs.sqlite.jdbc)
   testImplementation(libs.slf4j.api)
@@ -171,6 +165,8 @@ tasks.test {
     exclude("**/integration/test/**")
   } else {
     dependsOn(tasks.jar)
+    dependsOn(":server:jar")
+    dependsOn(":catalogs:catalog-lakehouse-iceberg:jar")
   }
 }
 
