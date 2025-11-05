@@ -1,0 +1,53 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+package org.apache.gravitino.optimizer.api.monitor;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.optimizer.api.common.SingleMetric;
+import org.apache.gravitino.optimizer.common.SinglePartition;
+
+/**
+ * Provider interface for retrieving job-related metrics. Implementations of this interface should
+ * provide specific logic to fetch metrics for a given job.
+ */
+public interface MetricsProvider {
+  /**
+   * Retrieves metrics for a specific job within a specified time range.
+   *
+   * @param jobIdentifier The identifier of the job to retrieve metrics for
+   * @param startTime The start timestamp (in seconds) of the time range to consider when fetching
+   *     metrics
+   * @param endTime The end timestamp (in seconds) of the time range to consider when fetching
+   *     metrics
+   * @return A list of {@link SingleMetric} objects containing the job metrics for the specified
+   *     criteria
+   */
+  Map<String, List<SingleMetric>> jobMetricDetails(
+      NameIdentifier jobIdentifier, long startTime, long endTime);
+
+  Map<String, List<SingleMetric>> tableMetricDetails(
+      NameIdentifier tableIdentifier,
+      Optional<List<SinglePartition>> partitions,
+      long startTime,
+      long endTime);
+}
