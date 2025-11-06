@@ -19,14 +19,6 @@
 
 package org.apache.gravitino.optimizer.api.recommender;
 
-import java.util.List;
-import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.optimizer.api.common.PartitionStatistic;
-import org.apache.gravitino.optimizer.api.common.SingleStatistic;
+import org.apache.gravitino.optimizer.api.common.Provider;
 
-// The table stats provider to get the table and partition stats from Gravitino or external systems.
-public interface TableStatsProvider {
-  List<SingleStatistic> getTableStats(NameIdentifier tableIdentifier);
-
-  List<PartitionStatistic> getPartitionStats(NameIdentifier tableIdentifier);
-}
+public interface StatsProvider extends Provider {}

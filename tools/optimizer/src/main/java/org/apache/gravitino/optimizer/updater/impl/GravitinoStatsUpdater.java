@@ -29,18 +29,30 @@ import org.apache.gravitino.client.GravitinoClient;
 import org.apache.gravitino.optimizer.api.common.PartitionStatistic;
 import org.apache.gravitino.optimizer.api.common.SingleStatistic;
 import org.apache.gravitino.optimizer.api.updater.StatsUpdater;
+import org.apache.gravitino.optimizer.common.OptimizerEnv;
+import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;
 import org.apache.gravitino.optimizer.updater.impl.util.PartitionUtils;
 import org.apache.gravitino.stats.PartitionStatisticsUpdate;
 import org.apache.gravitino.stats.StatisticValue;
 
 public class GravitinoStatsUpdater implements StatsUpdater {
 
+  private final String GRAVITINO_STATS_UPDATER_NAME = "gravitino-status-updater";
   private GravitinoClient gravitinoClient;
   private String defaultCatalogName;
 
-  public void initialize(String uri, String metalakeName, String defaultCatalogName) {
-    this.gravitinoClient = GravitinoClient.builder(uri).withMetalake(metalakeName).build();
-    this.defaultCatalogName = defaultCatalogName;
+  @Override
+  public String name() {
+    return GRAVITINO_STATS_UPDATER_NAME;
+  }
+
+  @Override
+  public void initialize(OptimizerEnv optimizerEnv) {
+    OptimizerConfig config = optimizerEnv.config();
+    String uri = config.get(OptimizerConfig.GRAVITINO_URI_CONFIG);
+    String metalake = config.get(OptimizerConfig.GRAVITINO_METALAKE_CONFIG);
+    this.gravitinoClient = GravitinoClient.builder(uri).withMetalake(metalake).build();
+    this.defaultCatalogName = config.get(OptimizerConfig.GRAVITINO_DEFAULT_CATALOG_CONFIG);
   }
 
   @Override

@@ -19,12 +19,14 @@
 
 package org.apache.gravitino.optimizer.recommender;
 
+import com.google.common.collect.ImmutableMap;
 import java.util.LinkedList;
 import java.util.List;
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;
 
 public class RecommenderCli {
-  Recommender recommender = new Recommender();
+  Recommender recommender = new Recommender(new OptimizerConfig(ImmutableMap.of()));
   /**
    * Runs the recommender with the given arguments.
    *

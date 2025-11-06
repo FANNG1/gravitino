@@ -51,11 +51,7 @@ public class CompactionPolicyForTest implements RecommenderPolicy {
 
       @Override
       public Map<String, String> properties() {
-        return ImmutableMap.of(
-            "compaction.trigger-expr",
-            "datafile_mse > min_datafile_mse",
-            "compaction.score-expr",
-            "datafile_mse * delete_file_num");
+        return ImmutableMap.of();
       }
 
       @Override
@@ -65,9 +61,9 @@ public class CompactionPolicyForTest implements RecommenderPolicy {
             1000,
             PolicyUtils.JOB_ROLE_PREFIX + RewriteDataFiles.TARGET_FILE_SIZE_BYTES,
             1024,
-            "compaction.trigger-expr",
+            PolicyUtils.TRIGGER_EXPR,
             "datafile_mse > min_datafile_mse",
-            "compaction.score-expr",
+            PolicyUtils.SCORE_EXPR,
             "datafile_mse * delete_file_num");
       }
     };

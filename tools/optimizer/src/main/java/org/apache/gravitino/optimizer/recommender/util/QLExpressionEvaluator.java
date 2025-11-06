@@ -22,10 +22,14 @@ package org.apache.gravitino.optimizer.recommender.util;
 import com.alibaba.qlexpress4.Express4Runner;
 import com.alibaba.qlexpress4.InitOptions;
 import com.alibaba.qlexpress4.QLOptions;
+import com.google.common.base.Preconditions;
 import java.math.BigDecimal;
 import java.util.Map;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 
 public class QLExpressionEvaluator implements ExpressionEvaluator {
+
   @Override
   public long evaluateLong(String expression, Map<String, Object> context) {
     return toLong(evaluate(expression, context));
@@ -37,8 +41,22 @@ public class QLExpressionEvaluator implements ExpressionEvaluator {
   }
 
   private Object evaluate(String expression, Map<String, Object> context) {
+    Preconditions.checkArgument(StringUtils.isNotBlank(expression), "expression is blank");
+    Preconditions.checkArgument(context != null, "context is null");
     Express4Runner runner = new Express4Runner(InitOptions.DEFAULT_OPTIONS);
-    return runner.execute(expression, context, QLOptions.DEFAULT_OPTIONS).getResult();
+    return runner
+        .execute(formatExpression(expression), formatContextKey(context), QLOptions.DEFAULT_OPTIONS)
+        .getResult();
+  }
+
+  private Map<String, Object> formatContextKey(Map<String, Object> context) {
+    return context.entrySet().stream()
+        .collect(
+            Collectors.toMap(entry -> formatExpression(entry.getKey()), entry -> entry.getValue()));
+  }
+
+  private String formatExpression(String expression) {
+    return expression.replaceAll("-", "_");
   }
 
   private Long toLong(Object obj) {

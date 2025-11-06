@@ -21,9 +21,10 @@ package org.apache.gravitino.optimizer.api.updater;
 
 import java.util.List;
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.optimizer.api.common.Provider;
 import org.apache.gravitino.optimizer.api.common.SingleStatistic;
 
 // Update the statistics to Gravitino stats store or external systems.
-public interface StatsUpdater {
+public interface StatsUpdater extends Provider {
   void updateTableStatistics(NameIdentifier tableIdentifier, List<SingleStatistic<?>> statistics);
 }

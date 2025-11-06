@@ -19,11 +19,10 @@
 
 package org.apache.gravitino.optimizer.api.common;
 
-import java.util.List;
+import org.apache.gravitino.optimizer.common.OptimizerEnv;
 
-public interface Metrics {
+public interface Provider {
+  String name();
 
-  String metricName();
-
-  List<SingleMetric> metricsList();
+  void initialize(OptimizerEnv optimizerEnv);
 }

@@ -26,9 +26,11 @@ import org.apache.gravitino.optimizer.api.common.policy.RecommenderPolicy;
 public class PolicyUtils {
 
   public static final String JOB_ROLE_PREFIX = "job.";
+  public static final String TRIGGER_EXPR = "trigger-expr";
+  public static final String SCORE_EXPR = "score-expr";
 
   public static String getTriggerExpression(RecommenderPolicy policy) {
-    return policy.content().properties().get("compaction.trigger-expr");
+    return policy.content().rules().get(TRIGGER_EXPR).toString();
   }
 
   public static String getJobTemplateName(RecommenderPolicy policy) {
@@ -38,7 +40,7 @@ public class PolicyUtils {
   }
 
   public static String getScoreExpression(RecommenderPolicy policy) {
-    return policy.content().properties().get("compaction.score-expr");
+    return policy.content().rules().get(SCORE_EXPR).toString();
   }
 
   @SuppressWarnings("EmptyCatch")

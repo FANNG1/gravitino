@@ -32,19 +32,41 @@ import org.apache.gravitino.optimizer.api.recommender.JobSubmitter;
 import org.apache.gravitino.optimizer.api.recommender.PolicyActor;
 import org.apache.gravitino.optimizer.api.recommender.PolicyActor.JobExecuteContext;
 import org.apache.gravitino.optimizer.api.recommender.PolicyProvider;
+import org.apache.gravitino.optimizer.api.recommender.StatsProvider;
+import org.apache.gravitino.optimizer.api.recommender.SupportTableStats;
 import org.apache.gravitino.optimizer.api.recommender.TableMetadataProvider;
-import org.apache.gravitino.optimizer.api.recommender.TableStatsProvider;
+import org.apache.gravitino.optimizer.common.OptimizerEnv;
+import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;
+import org.apache.gravitino.optimizer.common.util.ProviderUtils;
+import org.apache.gravitino.optimizer.recommender.actor.CompactionPolicyActor;
+import org.apache.gravitino.optimizer.recommender.impl.GravitinoTableMetadataProvider;
+import org.apache.gravitino.optimizer.recommender.job.NoopJobSubmitter;
 import org.apache.gravitino.rel.Table;
 
 @SuppressWarnings("UnusedVariable")
 public class Recommender {
 
+  private OptimizerEnv optimizerEnv;
   private PolicyProvider policyProvider;
-  private TableStatsProvider statsProvider;
+  private StatsProvider statsProvider;
   private TableMetadataProvider tableMetadataProvider;
   private JobSubmitter jobSubmitter;
 
-  public void recommendForOnePolicy(List<NameIdentifier> tableIdentifiers, String policyName) {
+  public Recommender(OptimizerConfig config) {
+    this.optimizerEnv = OptimizerEnv.getInstance();
+    optimizerEnv.initialize(config);
+
+    this.policyProvider = loadPolicyProvider(config);
+    policyProvider.initialize(optimizerEnv);
+    this.statsProvider = loadStatsProvider(config);
+    statsProvider.initialize(optimizerEnv);
+    this.tableMetadataProvider = loadTableMetadataProvider();
+    tableMetadataProvider.initialize(optimizerEnv);
+    this.jobSubmitter = loadJobSubmitter();
+  }
+
+  public List<JobExecuteContext> recommendForOnePolicy(
+      List<NameIdentifier> tableIdentifiers, String policyName) {
     RecommenderPolicy policy = policyProvider.getPolicy(policyName);
 
     PriorityQueue<PolicyActor> scoreQueue =
@@ -58,17 +80,19 @@ public class Recommender {
       scoreQueue.add(policyActor);
     }
 
-    for (int i = 0; i < 10 && !scoreQueue.isEmpty(); i++) {
-      PolicyActor actor = scoreQueue.poll();
-      JobExecuteContext jobConfig = actor.jobConfig();
-      jobSubmitter.submitJob(actor.policyType(), jobConfig);
-    }
+    List<JobExecuteContext> jobConfigs =
+        scoreQueue.stream().map(PolicyActor::jobConfig).collect(Collectors.toList());
+
+    return jobConfigs;
   }
 
   public void recommendForPolicyType(List<NameIdentifier> tableIdentifiers, String policyType) {
     List<String> policyNames = getPolicyNames(tableIdentifiers, policyType);
     for (String policyName : policyNames) {
-      recommendForOnePolicy(tableIdentifiers, policyName);
+      List<JobExecuteContext> jobConfigs = recommendForOnePolicy(tableIdentifiers, policyName);
+      for (JobExecuteContext jobConfig : jobConfigs) {
+        jobSubmitter.submitJob(policyType, jobConfig);
+      }
     }
   }
 
@@ -83,9 +107,11 @@ public class Recommender {
     }
 
     if (policyActor instanceof PolicyActor.requireTableStats) {
-      List<SingleStatistic> tableStats = statsProvider.getTableStats(tableIdentifier);
+      List<SingleStatistic> tableStats =
+          ((SupportTableStats) statsProvider).getTableStats(tableIdentifier);
       ((PolicyActor.requireTableStats) policyActor).setTableStats(tableStats);
-      List<PartitionStatistic> partitionStats = statsProvider.getPartitionStats(tableIdentifier);
+      List<PartitionStatistic> partitionStats =
+          ((SupportTableStats) statsProvider).getPartitionStats(tableIdentifier);
       ((PolicyActor.requirePartitionStats) policyActor).setPartitionStats(partitionStats);
     }
 
@@ -93,7 +119,7 @@ public class Recommender {
   }
 
   private PolicyActor getPolicyActor(String policyType) {
-    return null;
+    return new CompactionPolicyActor();
   }
 
   private List<String> getPolicyNames(List<NameIdentifier> tableIdentifiers, String policyType) {
@@ -109,5 +135,23 @@ public class Recommender {
               .collect(Collectors.toList()));
     }
     return policyNames.stream().toList();
+  }
+
+  private PolicyProvider loadPolicyProvider(OptimizerConfig config) {
+    String policyProviderName = config.get(OptimizerConfig.POLICY_PROVIDER_CONFIG);
+    return ProviderUtils.createPolicyProviderInstance(policyProviderName);
+  }
+
+  private StatsProvider loadStatsProvider(OptimizerConfig config) {
+    String statsProviderName = config.get(OptimizerConfig.STATS_PROVIDER_CONFIG);
+    return ProviderUtils.createStatsProviderInstance(statsProviderName);
+  }
+
+  private TableMetadataProvider loadTableMetadataProvider() {
+    return new GravitinoTableMetadataProvider();
+  }
+
+  private JobSubmitter loadJobSubmitter() {
+    return new NoopJobSubmitter();
   }
 }
