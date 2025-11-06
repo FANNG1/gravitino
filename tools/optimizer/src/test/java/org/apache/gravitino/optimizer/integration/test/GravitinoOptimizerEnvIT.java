@@ -25,11 +25,14 @@ import java.util.Map;
 import org.apache.gravitino.Catalog;
 import org.apache.gravitino.MetadataObject;
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.Schema;
 import org.apache.gravitino.catalog.lakehouse.iceberg.IcebergConstants;
 import org.apache.gravitino.client.GravitinoMetalake;
 import org.apache.gravitino.integration.test.container.ContainerSuite;
 import org.apache.gravitino.integration.test.util.BaseIT;
 import org.apache.gravitino.integration.test.util.TestDatabaseName;
+import org.apache.gravitino.optimizer.common.OptimizerEnv;
+import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;
 import org.apache.gravitino.optimizer.recommender.policy.GravitinoPolicy;
 import org.apache.gravitino.policy.PolicyContent;
 import org.apache.gravitino.policy.PolicyContents;
@@ -50,6 +53,7 @@ public class GravitinoOptimizerEnvIT extends BaseIT {
   private static ContainerSuite containerSuite = ContainerSuite.getInstance();
   protected Catalog catalogClient;
   protected GravitinoMetalake metalakeClient;
+  protected OptimizerEnv optimizerEnv;
 
   @BeforeAll
   @Override
@@ -57,6 +61,7 @@ public class GravitinoOptimizerEnvIT extends BaseIT {
     containerSuite.startPostgreSQLContainer(TestDatabaseName.GRAVITINO_STATS_IT);
     super.startIntegrationTest();
     initMetalakeAndCatalog();
+    this.optimizerEnv = initOptimizerEnv();
   }
 
   protected void createTable(String tableName) {
@@ -75,14 +80,14 @@ public class GravitinoOptimizerEnvIT extends BaseIT {
         .createTable(
             NameIdentifier.of(TEST_SCHEMA, tableName),
             new Column[] {
-              Column.of("col_1", Types.IntegerType.get(), "col1"),
+              Column.of("col1", Types.IntegerType.get(), "col1"),
               Column.of("col2", Types.IntegerType.get(), "col2"),
               Column.of("col3", Types.IntegerType.get(), "col3")
             },
             "comment",
             ImmutableMap.of(),
             new Transform[] {
-              Transforms.identity("col_1"), Transforms.bucket(8, new String[] {"col2"})
+              Transforms.identity("col1"), Transforms.bucket(8, new String[] {"col2"})
             });
   }
 
@@ -103,6 +108,28 @@ public class GravitinoOptimizerEnvIT extends BaseIT {
     Table table =
         catalogClient.asTableCatalog().loadTable(NameIdentifier.of(TEST_SCHEMA, tableName));
     table.supportsPolicies().associatePolicies(new String[] {policyName}, new String[] {});
+  }
+
+  protected void associatePoliciesToSchema(String policyName, String schemaName) {
+    Schema schema = catalogClient.asSchemas().loadSchema(schemaName);
+    schema.supportsPolicies().associatePolicies(new String[] {policyName}, new String[] {});
+  }
+
+  protected OptimizerEnv initOptimizerEnv() {
+    int gravitinoPort = getGravitinoServerPort();
+    String uri = String.format("http://127.0.0.1:%d", gravitinoPort);
+    OptimizerConfig config =
+        new OptimizerConfig(
+            ImmutableMap.of(
+                OptimizerConfig.GRAVITINO_URI,
+                uri,
+                OptimizerConfig.GRAVITINO_METALAKE,
+                METALAKE_NAME,
+                OptimizerConfig.GRAVITINO_DEFAULT_CATALOG,
+                GRAVITINO_CATALOG_NAME));
+    OptimizerEnv env = OptimizerEnv.getInstance();
+    env.initialize(config);
+    return env;
   }
 
   private void initMetalakeAndCatalog() {
@@ -128,7 +155,9 @@ public class GravitinoOptimizerEnvIT extends BaseIT {
                 IcebergConstants.WAREHOUSE,
                 "file:///tmp/"));
 
-    catalogClient.asSchemas().createSchema(TEST_SCHEMA, "comment", ImmutableMap.of());
+    if (!catalogClient.asSchemas().schemaExists(TEST_SCHEMA)) {
+      catalogClient.asSchemas().createSchema(TEST_SCHEMA, "comment", ImmutableMap.of());
+    }
   }
 
   private String getPGUri() {

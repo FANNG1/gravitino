@@ -17,13 +17,28 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer.api.recommender;
+package org.apache.gravitino.optimizer.common;
 
-import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.optimizer.api.common.Provider;
-import org.apache.gravitino.rel.Table;
+import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;
 
-// The table metadata provider to get the table metadata from Gravitino or external systems.
-public interface TableMetadataProvider extends Provider {
-  Table getTableMetadata(NameIdentifier tableIdentifier);
+public class OptimizerEnv {
+  private OptimizerConfig config;
+
+  private OptimizerEnv() {}
+
+  private static class InstanceHolder {
+    private static final OptimizerEnv INSTANCE = new OptimizerEnv();
+  }
+
+  public static OptimizerEnv getInstance() {
+    return InstanceHolder.INSTANCE;
+  }
+
+  public void initialize(OptimizerConfig config) {
+    this.config = config;
+  }
+
+  public OptimizerConfig config() {
+    return config;
+  }
 }

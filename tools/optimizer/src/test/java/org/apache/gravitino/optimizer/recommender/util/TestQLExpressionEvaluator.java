@@ -25,9 +25,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class TestQLExpressionEvaluator {
+
   private final QLExpressionEvaluator evaluator = new QLExpressionEvaluator();
 
   @Test
@@ -95,7 +97,8 @@ public class TestQLExpressionEvaluator {
 
   @Test
   void testEvaluateWithConstantExpression() {
-    evaluator.evaluateLong("1 + 1", null);
+    Assertions.assertThrowsExactly(
+        IllegalArgumentException.class, () -> evaluator.evaluateLong("1 + 1", null));
   }
 
   @Test
@@ -103,7 +106,7 @@ public class TestQLExpressionEvaluator {
     Map<String, Object> context = new HashMap<>();
 
     assertThrows(
-        NullPointerException.class,
+        IllegalArgumentException.class,
         () -> {
           evaluator.evaluateLong(null, context);
         });

@@ -19,7 +19,9 @@
 
 package org.apache.gravitino.optimizer.common.util;
 
+import com.google.common.base.Preconditions;
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
 
 public class IdentifierUtils {
@@ -32,5 +34,16 @@ public class IdentifierUtils {
    */
   public static TableIdentifier toIcebergTableIdentifier(NameIdentifier nameIdentifier) {
     return TableIdentifier.parse(nameIdentifier.toString());
+  }
+
+  public static String getCatalogNameFromTableIdentifier(
+      NameIdentifier tableIdentifier, String defaultCatalogName) {
+    Namespace namespace = tableIdentifier.namespace();
+    Preconditions.checkArgument(namespace != null && namespace.levels().length >= 1);
+    if (namespace.levels().length == 1) {
+      return defaultCatalogName;
+    }
+
+    return namespace.levels()[0];
   }
 }

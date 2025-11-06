@@ -26,7 +26,7 @@ import org.apache.gravitino.optimizer.api.common.PartitionStatistic;
 import org.apache.gravitino.optimizer.api.common.SingleStatistic;
 import org.apache.gravitino.optimizer.api.common.SingleStatistic.Name;
 import org.apache.gravitino.optimizer.common.PartitionImpl;
-import org.apache.gravitino.optimizer.recommender.impl.GravitinoTableStatsProvider;
+import org.apache.gravitino.optimizer.recommender.impl.GravitinoStatsProvider;
 import org.apache.gravitino.optimizer.updater.impl.GravitinoStatsUpdater;
 import org.apache.gravitino.optimizer.updater.impl.PartitionStatisticImpl;
 import org.apache.gravitino.optimizer.updater.impl.SingleStatisticImpl;
@@ -40,17 +40,15 @@ public class GravitinoStatsIT extends GravitinoOptimizerEnvIT {
   private static final String TEST_TABLE = "test_stats_table";
   private static final String TEST_PARTITION_TABLE = "test_stats_partition_table";
   private GravitinoStatsUpdater statsUpdater;
-  private GravitinoTableStatsProvider statsProvider;
+  private GravitinoStatsProvider statsProvider;
   private static final String STATS_PREFIX = "custom-";
 
   @BeforeAll
   void init() {
-    int gravitinoPort = getGravitinoServerPort();
-    String uri = String.format("http://127.0.0.1:%d", gravitinoPort);
     this.statsUpdater = new GravitinoStatsUpdater();
-    statsUpdater.initialize(uri, METALAKE_NAME, GRAVITINO_CATALOG_NAME);
-    this.statsProvider = new GravitinoTableStatsProvider();
-    statsProvider.initialize(uri, METALAKE_NAME, GRAVITINO_CATALOG_NAME);
+    statsUpdater.initialize(optimizerEnv);
+    this.statsProvider = new GravitinoStatsProvider();
+    statsProvider.initialize(optimizerEnv);
     createTable(TEST_TABLE);
     createPartitionTable(TEST_PARTITION_TABLE);
   }

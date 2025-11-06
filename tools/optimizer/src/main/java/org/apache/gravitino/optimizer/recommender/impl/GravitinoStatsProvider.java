@@ -19,17 +19,18 @@
 
 package org.apache.gravitino.optimizer.recommender.impl;
 
-import com.google.common.base.Preconditions;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.Namespace;
 import org.apache.gravitino.client.GravitinoClient;
 import org.apache.gravitino.optimizer.api.common.PartitionStatistic;
 import org.apache.gravitino.optimizer.api.common.SingleStatistic;
-import org.apache.gravitino.optimizer.api.recommender.TableStatsProvider;
+import org.apache.gravitino.optimizer.api.recommender.SupportTableStats;
+import org.apache.gravitino.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.optimizer.common.SinglePartition;
+import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;
+import org.apache.gravitino.optimizer.common.util.IdentifierUtils;
 import org.apache.gravitino.optimizer.updater.impl.PartitionStatisticImpl;
 import org.apache.gravitino.optimizer.updater.impl.SingleStatisticImpl;
 import org.apache.gravitino.optimizer.updater.impl.util.PartitionUtils;
@@ -38,21 +39,28 @@ import org.apache.gravitino.stats.PartitionRange;
 import org.apache.gravitino.stats.PartitionStatistics;
 import org.apache.gravitino.stats.Statistic;
 
-public class GravitinoTableStatsProvider implements TableStatsProvider {
+public class GravitinoStatsProvider implements SupportTableStats {
 
+  public static final String GRAVITINO_STATS_PROVIDER_NAME = "gravitino";
   private GravitinoClient gravitinoClient;
   private String defaultCatalogName;
 
-  public void initialize(String uri, String metalakeName, String defaultCatalogName) {
-    this.gravitinoClient = GravitinoClient.builder(uri).withMetalake(metalakeName).build();
-    this.defaultCatalogName = defaultCatalogName;
+  @Override
+  public void initialize(OptimizerEnv optimizerEnv) {
+    OptimizerConfig config = optimizerEnv.config();
+    String uri = config.get(OptimizerConfig.GRAVITINO_URI_CONFIG);
+    String metalake = config.get(OptimizerConfig.GRAVITINO_METALAKE_CONFIG);
+    this.gravitinoClient = GravitinoClient.builder(uri).withMetalake(metalake).build();
+    this.defaultCatalogName = config.get(OptimizerConfig.GRAVITINO_DEFAULT_CATALOG_CONFIG);
   }
 
   @Override
   public List<SingleStatistic> getTableStats(NameIdentifier tableIdentifier) {
     Table t =
         gravitinoClient
-            .loadCatalog(getCatalogName(tableIdentifier))
+            .loadCatalog(
+                IdentifierUtils.getCatalogNameFromTableIdentifier(
+                    tableIdentifier, defaultCatalogName))
             .asTableCatalog()
             .loadTable(tableIdentifier);
     List<Statistic> statistics = t.supportsStatistics().listStatistics();
@@ -66,7 +74,9 @@ public class GravitinoTableStatsProvider implements TableStatsProvider {
   public List<PartitionStatistic> getPartitionStats(NameIdentifier tableIdentifier) {
     Table t =
         gravitinoClient
-            .loadCatalog(getCatalogName(tableIdentifier))
+            .loadCatalog(
+                IdentifierUtils.getCatalogNameFromTableIdentifier(
+                    tableIdentifier, defaultCatalogName))
             .asTableCatalog()
             .loadTable(tableIdentifier);
     List<PartitionStatistics> partitionStatistics =
@@ -87,13 +97,8 @@ public class GravitinoTableStatsProvider implements TableStatsProvider {
         .collect(Collectors.toList());
   }
 
-  private String getCatalogName(NameIdentifier tableIdentifier) {
-    Namespace namespace = tableIdentifier.namespace();
-    Preconditions.checkArgument(namespace != null && namespace.levels().length >= 1);
-    if (namespace.levels().length == 1) {
-      return defaultCatalogName;
-    }
-
-    return namespace.levels()[0];
+  @Override
+  public String name() {
+    return GRAVITINO_STATS_PROVIDER_NAME;
   }
 }

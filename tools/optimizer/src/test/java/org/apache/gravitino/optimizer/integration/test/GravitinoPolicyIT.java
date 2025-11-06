@@ -34,10 +34,8 @@ public class GravitinoPolicyIT extends GravitinoOptimizerEnvIT {
 
   @BeforeAll
   void init() {
-    int gravitinoPort = getGravitinoServerPort();
-    String uri = String.format("http://127.0.0.1:%d", gravitinoPort);
     this.policyProvider = new GravitinoPolicyProvider();
-    policyProvider.initialize(uri, METALAKE_NAME, GRAVITINO_CATALOG_NAME);
+    policyProvider.initialize(optimizerEnv);
   }
 
   @Test

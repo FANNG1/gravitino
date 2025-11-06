@@ -17,28 +17,21 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer.monitor.impl;
+package org.apache.gravitino.optimizer.common.util;
 
-import java.util.List;
-import org.apache.gravitino.optimizer.api.common.Metrics;
-import org.apache.gravitino.optimizer.api.common.SingleMetric;
+import org.apache.gravitino.optimizer.api.recommender.PolicyProvider;
+import org.apache.gravitino.optimizer.recommender.impl.GravitinoPolicyProvider;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-public class MetricsImpl implements Metrics {
-  private final String name;
-  private final List<SingleMetric> metrics;
+public class TestProviderUtils {
 
-  public MetricsImpl(String name, List<SingleMetric> metrics) {
-    this.name = name;
-    this.metrics = metrics;
-  }
-
-  @Override
-  public String metricName() {
-    return name;
-  }
-
-  @Override
-  public List<SingleMetric> metricsList() {
-    return metrics;
+  @Test
+  public void testCreatePolicyProviderInstance_ValidClass() {
+    PolicyProvider policyProvider =
+        ProviderUtils.createPolicyProviderInstance(
+            GravitinoPolicyProvider.GRAVITINO_POLICY_PROVIDER_NAME);
+    Assertions.assertNotNull(policyProvider);
+    Assertions.assertTrue(policyProvider instanceof GravitinoPolicyProvider);
   }
 }
