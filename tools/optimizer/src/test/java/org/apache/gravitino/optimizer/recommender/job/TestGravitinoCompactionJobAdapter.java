@@ -20,15 +20,15 @@
 package org.apache.gravitino.optimizer.recommender.job;
 
 import java.util.Map;
+import java.util.Optional;
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.optimizer.api.common.policy.RecommenderPolicy;
 import org.apache.gravitino.optimizer.recommender.actor.CompactionJobContext;
-import org.apache.gravitino.policy.Policy;
 import org.apache.gravitino.policy.PolicyContent;
 import org.apache.gravitino.rel.Table;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
 public class TestGravitinoCompactionJobAdapter {
 
@@ -46,11 +46,10 @@ public class TestGravitinoCompactionJobAdapter {
   }
 
   private CompactionJobContext jobExecuteContext() {
-    Policy policy = Mockito.mock(Policy.class);
+    RecommenderPolicy policy = Mockito.mock(RecommenderPolicy.class);
     PolicyContent policyContent = Mockito.mock(PolicyContent.class);
     Mockito.when(policy.content()).thenReturn(policyContent);
-    Mockito.when(policyContent.properties())
-        .thenReturn(ImmutableMap.of("job.template-name", "compaction-job-template"));
+    Mockito.when(policy.jobTemplateName()).thenReturn(Optional.of("compaction-job-template"));
     Table table = Mockito.mock(Table.class);
     Map<String, Object> jobConfig = Map.of("target_file_size_bytes", "1073741824");
     return new CompactionJobContext(NameIdentifier.of("db", "table"), jobConfig, policy, table);

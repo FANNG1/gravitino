@@ -17,18 +17,11 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer;
+package org.apache.gravitino.optimizer.integration.test;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import org.apache.gravitino.Catalog;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.catalog.lakehouse.iceberg.IcebergConstants;
-import org.apache.gravitino.client.GravitinoMetalake;
-import org.apache.gravitino.integration.test.container.ContainerSuite;
-import org.apache.gravitino.integration.test.util.BaseIT;
-import org.apache.gravitino.integration.test.util.TestDatabaseName;
 import org.apache.gravitino.optimizer.api.common.PartitionStatistic;
 import org.apache.gravitino.optimizer.api.common.SingleStatistic;
 import org.apache.gravitino.optimizer.api.common.SingleStatistic.Name;
@@ -37,40 +30,29 @@ import org.apache.gravitino.optimizer.recommender.impl.GravitinoTableStatsProvid
 import org.apache.gravitino.optimizer.updater.impl.GravitinoStatsUpdater;
 import org.apache.gravitino.optimizer.updater.impl.PartitionStatisticImpl;
 import org.apache.gravitino.optimizer.updater.impl.SingleStatisticImpl;
-import org.apache.gravitino.rel.Column;
-import org.apache.gravitino.rel.expressions.transforms.Transform;
-import org.apache.gravitino.rel.expressions.transforms.Transforms;
-import org.apache.gravitino.rel.types.Types;
 import org.apache.gravitino.stats.StatisticValues;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
-public class GravitinoStatsIT extends BaseIT {
+public class GravitinoStatsIT extends GravitinoOptimizerEnvIT {
 
-  protected static final String METALAKE_NAME = "test_metalake";
-  protected static final String GRAVITINO_CATALOG_NAME = "iceberg";
-  private static final String TEST_SCHEMA = "test_schema";
-  private static final String TEST_TABLE = "test_table";
-  private static final String TEST_PARTITION_TABLE = "test_partition_table";
-  private static ContainerSuite containerSuite = ContainerSuite.getInstance();
-  private Catalog catalogClient;
+  private static final String TEST_TABLE = "test_stats_table";
+  private static final String TEST_PARTITION_TABLE = "test_stats_partition_table";
   private GravitinoStatsUpdater statsUpdater;
   private GravitinoTableStatsProvider statsProvider;
   private static final String STATS_PREFIX = "custom-";
 
   @BeforeAll
-  void init() throws Exception {
-    containerSuite.startPostgreSQLContainer(TestDatabaseName.GRAVITINO_STATS_IT);
-    super.startIntegrationTest();
-    initMetalakeAndCatalog();
+  void init() {
     int gravitinoPort = getGravitinoServerPort();
     String uri = String.format("http://127.0.0.1:%d", gravitinoPort);
     this.statsUpdater = new GravitinoStatsUpdater();
     statsUpdater.initialize(uri, METALAKE_NAME, GRAVITINO_CATALOG_NAME);
     this.statsProvider = new GravitinoTableStatsProvider();
     statsProvider.initialize(uri, METALAKE_NAME, GRAVITINO_CATALOG_NAME);
+    createTable(TEST_TABLE);
+    createPartitionTable(TEST_PARTITION_TABLE);
   }
 
   @Test
@@ -81,6 +63,10 @@ public class GravitinoStatsIT extends BaseIT {
             new SingleStatisticImpl(STATS_PREFIX + "row_count", StatisticValues.longValue(1000)),
             new SingleStatisticImpl(
                 STATS_PREFIX + "size_in_bytes", StatisticValues.longValue(1000000)),
+            new PartitionStatisticImpl(
+                STATS_PREFIX + "partition_row_count",
+                StatisticValues.longValue(500),
+                Arrays.asList(new PartitionImpl("col1", "1"), new PartitionImpl("col2", "2"))),
             new SingleStatisticImpl(
                 STATS_PREFIX + Name.DATAFILE_SIZE_MSE.name(),
                 StatisticValues.doubleValue(10000.1))));
@@ -110,6 +96,8 @@ public class GravitinoStatsIT extends BaseIT {
     statsUpdater.updateTableStatistics(
         NameIdentifier.of(TEST_SCHEMA, TEST_PARTITION_TABLE),
         Arrays.asList(
+            new SingleStatisticImpl(
+                STATS_PREFIX + "size_in_bytes", StatisticValues.longValue(1000000)),
             new PartitionStatisticImpl(
                 STATS_PREFIX + "partition_row_count",
                 StatisticValues.longValue(500),
@@ -134,64 +122,5 @@ public class GravitinoStatsIT extends BaseIT {
                 Assertions.fail("Unexpected statistic name: " + stat.name());
               }
             });
-  }
-
-  private void initMetalakeAndCatalog() {
-    GravitinoMetalake metalake = client.createMetalake(METALAKE_NAME, "", new HashMap<>());
-
-    this.catalogClient =
-        metalake.createCatalog(
-            GRAVITINO_CATALOG_NAME,
-            Catalog.Type.RELATIONAL,
-            "lakehouse-iceberg",
-            "comment",
-            ImmutableMap.of(
-                IcebergConstants.URI,
-                getPGUri(),
-                IcebergConstants.CATALOG_BACKEND,
-                "jdbc",
-                IcebergConstants.GRAVITINO_JDBC_DRIVER,
-                "org.postgresql.Driver",
-                IcebergConstants.GRAVITINO_JDBC_USER,
-                getPGUser(),
-                IcebergConstants.GRAVITINO_JDBC_PASSWORD,
-                getPGPassword(),
-                IcebergConstants.WAREHOUSE,
-                "file:///tmp/"));
-
-    catalogClient.asSchemas().createSchema(TEST_SCHEMA, "comment", ImmutableMap.of());
-    catalogClient
-        .asTableCatalog()
-        .createTable(
-            NameIdentifier.of(TEST_SCHEMA, TEST_TABLE),
-            new Column[] {Column.of("col_1", Types.IntegerType.get())},
-            "comment",
-            ImmutableMap.of());
-    catalogClient
-        .asTableCatalog()
-        .createTable(
-            NameIdentifier.of(TEST_SCHEMA, TEST_PARTITION_TABLE),
-            new Column[] {
-              Column.of("col_1", Types.IntegerType.get(), "col1"),
-              Column.of("col2", Types.IntegerType.get(), "col2"),
-              Column.of("col3", Types.IntegerType.get(), "col3")
-            },
-            "comment",
-            ImmutableMap.of(),
-            new Transform[] {
-              Transforms.identity("col_1"), Transforms.bucket(8, new String[] {"col2"})
-            });
-  }
-
-  private String getPGUri() {
-    return containerSuite.getPostgreSQLContainer().getJdbcUrl(TestDatabaseName.GRAVITINO_STATS_IT);
-  }
-
-  private String getPGUser() {
-    return containerSuite.getPostgreSQLContainer().getUsername();
-  }
-
-  private String getPGPassword() {
-    return containerSuite.getPostgreSQLContainer().getPassword();
   }
 }

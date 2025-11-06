@@ -27,13 +27,13 @@ import java.util.stream.Collectors;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.optimizer.api.common.PartitionStatistic;
 import org.apache.gravitino.optimizer.api.common.SingleStatistic;
+import org.apache.gravitino.optimizer.api.common.policy.RecommenderPolicy;
 import org.apache.gravitino.optimizer.api.recommender.JobSubmitter;
 import org.apache.gravitino.optimizer.api.recommender.PolicyActor;
 import org.apache.gravitino.optimizer.api.recommender.PolicyActor.JobExecuteContext;
 import org.apache.gravitino.optimizer.api.recommender.PolicyProvider;
 import org.apache.gravitino.optimizer.api.recommender.TableMetadataProvider;
 import org.apache.gravitino.optimizer.api.recommender.TableStatsProvider;
-import org.apache.gravitino.policy.Policy;
 import org.apache.gravitino.rel.Table;
 
 @SuppressWarnings("UnusedVariable")
@@ -45,9 +45,8 @@ public class Recommender {
   private JobSubmitter jobSubmitter;
 
   public void recommendForOnePolicy(List<NameIdentifier> tableIdentifiers, String policyName) {
-    Policy policy = policyProvider.getPolicy(policyName);
+    RecommenderPolicy policy = policyProvider.getPolicy(policyName);
 
-    // Set table metadata and stats
     PriorityQueue<PolicyActor> scoreQueue =
         new PriorityQueue<>((a, b) -> Long.compare(b.score(), a.score()));
     for (NameIdentifier tableIdentifier : tableIdentifiers) {
@@ -73,7 +72,7 @@ public class Recommender {
     }
   }
 
-  private PolicyActor loadPolicyActor(Policy policy, NameIdentifier tableIdentifier) {
+  private PolicyActor loadPolicyActor(RecommenderPolicy policy, NameIdentifier tableIdentifier) {
     PolicyActor policyActor = getPolicyActor(policy.policyType());
 
     policyActor.initialize(tableIdentifier, policy);
@@ -106,7 +105,7 @@ public class Recommender {
       policyNames.addAll(
           policyProvider.getTablePolicy(tableIdentifier).stream()
               .filter(policy -> policy.policyType().equals(policyType))
-              .map(Policy::name)
+              .map(RecommenderPolicy::name)
               .collect(Collectors.toList()));
     }
     return policyNames.stream().toList();

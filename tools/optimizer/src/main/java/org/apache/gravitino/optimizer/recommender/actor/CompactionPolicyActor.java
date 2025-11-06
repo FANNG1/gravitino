@@ -26,12 +26,12 @@ import java.util.Map;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.optimizer.api.common.PartitionStatistic;
 import org.apache.gravitino.optimizer.api.common.SingleStatistic;
+import org.apache.gravitino.optimizer.api.common.policy.RecommenderPolicy;
 import org.apache.gravitino.optimizer.api.recommender.PolicyActor;
 import org.apache.gravitino.optimizer.recommender.util.ExpressionEvaluator;
 import org.apache.gravitino.optimizer.recommender.util.PolicyUtils;
 import org.apache.gravitino.optimizer.recommender.util.QLExpressionEvaluator;
 import org.apache.gravitino.optimizer.recommender.util.StatsUtils;
-import org.apache.gravitino.policy.Policy;
 import org.apache.gravitino.rel.Table;
 
 @SuppressWarnings("UnusedVariable")
@@ -41,14 +41,14 @@ public class CompactionPolicyActor
         PolicyActor.requireTableStats,
         PolicyActor.requireTableMetadata {
   private ExpressionEvaluator expressionEvaluator;
-  private Policy policy;
+  private RecommenderPolicy policy;
   private List<SingleStatistic> tableStats;
   private List<PartitionStatistic> partitionStats;
   private Table tableMetadata;
   private NameIdentifier nameIdentifier;
 
   @Override
-  public void initialize(NameIdentifier nameIdentifier, Policy policy) {
+  public void initialize(NameIdentifier nameIdentifier, RecommenderPolicy policy) {
     this.nameIdentifier = nameIdentifier;
     this.policy = policy;
     this.expressionEvaluator = new QLExpressionEvaluator();
@@ -103,7 +103,7 @@ public class CompactionPolicyActor
 
   @VisibleForTesting
   static boolean shouldTriggerCompaction(
-      Policy policy, List<SingleStatistic> stats, ExpressionEvaluator evaluator) {
+      RecommenderPolicy policy, List<SingleStatistic> stats, ExpressionEvaluator evaluator) {
     String triggerExpression = PolicyUtils.getTriggerExpression(policy);
     Map<String, Object> context = buildExpressionContext(policy, stats);
     return evaluator.evaluateBool(triggerExpression, context);
@@ -115,18 +115,16 @@ public class CompactionPolicyActor
 
   @SuppressWarnings("EmptyCatch")
   private static Map<String, Object> buildExpressionContext(
-      Policy policy, List<SingleStatistic> stats) {
+      RecommenderPolicy policy, List<SingleStatistic> stats) {
     Map<String, Object> context = new HashMap<>();
     context.putAll(StatsUtils.buildStatsContext(stats));
     policy
         .content()
-        // Todo: use rules not properties after https://github.com/apache/gravitino/issues/8863 is
-        // merged
-        .properties()
+        .rules()
         .forEach(
             (k, v) -> {
               try {
-                context.put(k, Long.parseLong(v));
+                context.put(k, Long.parseLong(v.toString()));
               } catch (Exception e) {
               }
             });
@@ -135,7 +133,7 @@ public class CompactionPolicyActor
 
   @VisibleForTesting
   static JobExecuteContext getJobConfigFromPolicy(
-      NameIdentifier nameIdentifier, Policy policy, Table tableMetadata) {
+      NameIdentifier nameIdentifier, RecommenderPolicy policy, Table tableMetadata) {
     Map<String, Object> jobConfig = PolicyUtils.getJobConfigFromPolicy(policy);
     return new CompactionJobContext(nameIdentifier, jobConfig, policy, tableMetadata);
   }
