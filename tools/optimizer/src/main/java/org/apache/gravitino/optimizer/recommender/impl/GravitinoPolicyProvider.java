@@ -19,34 +19,64 @@
 
 package org.apache.gravitino.optimizer.recommender.impl;
 
+import com.google.common.base.Preconditions;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.Namespace;
 import org.apache.gravitino.client.GravitinoClient;
+import org.apache.gravitino.optimizer.api.common.policy.RecommenderPolicy;
 import org.apache.gravitino.optimizer.api.recommender.PolicyProvider;
+import org.apache.gravitino.optimizer.recommender.policy.GravitinoPolicy;
 import org.apache.gravitino.policy.Policy;
 import org.apache.gravitino.rel.Table;
 
 public class GravitinoPolicyProvider implements PolicyProvider {
 
-  GravitinoClient client;
+  private GravitinoClient gravitinoClient;
+
+  private String defaultCatalogName;
+
+  public void initialize(String uri, String metalakeName, String defaultCatalogName) {
+    this.gravitinoClient = GravitinoClient.builder(uri).withMetalake(metalakeName).build();
+    this.defaultCatalogName = defaultCatalogName;
+  }
 
   @Override
-  public List<Policy> getTablePolicy(NameIdentifier tableIdentifier) {
-    Table t = client.loadCatalog("").asTableCatalog().loadTable(tableIdentifier);
+  public List<RecommenderPolicy> getTablePolicy(NameIdentifier tableIdentifier) {
+    Table t =
+        gravitinoClient
+            .loadCatalog(getCatalogName(tableIdentifier))
+            .asTableCatalog()
+            .loadTable(tableIdentifier);
     String[] policyNames = t.supportsPolicies().listPolicies();
-    List<Policy> policies =
+    List<RecommenderPolicy> policies =
         Arrays.stream(policyNames)
             .map(t.supportsPolicies()::getPolicy)
             .filter(Objects::nonNull)
+            .map(this::toRecommenderPolicy)
             .collect(Collectors.toList());
     return policies;
   }
 
   @Override
-  public Policy getPolicy(String policyName) {
-    return client.getPolicy(policyName);
+  public RecommenderPolicy getPolicy(String policyName) {
+    return toRecommenderPolicy(gravitinoClient.getPolicy(policyName));
+  }
+
+  private String getCatalogName(NameIdentifier tableIdentifier) {
+    Namespace namespace = tableIdentifier.namespace();
+    Preconditions.checkArgument(namespace != null && namespace.levels().length >= 1);
+    if (namespace.levels().length == 1) {
+      return defaultCatalogName;
+    }
+
+    return namespace.levels()[0];
+  }
+
+  private RecommenderPolicy toRecommenderPolicy(Policy policy) {
+    return new GravitinoPolicy(policy);
   }
 }

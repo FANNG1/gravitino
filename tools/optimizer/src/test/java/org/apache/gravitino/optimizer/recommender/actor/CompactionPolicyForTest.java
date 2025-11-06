@@ -22,15 +22,14 @@ package org.apache.gravitino.optimizer.recommender.actor;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import org.apache.gravitino.Audit;
 import org.apache.gravitino.MetadataObject;
+import org.apache.gravitino.optimizer.api.common.policy.RecommenderPolicy;
 import org.apache.gravitino.optimizer.recommender.util.PolicyUtils;
-import org.apache.gravitino.policy.Policy;
 import org.apache.gravitino.policy.PolicyContent;
 import org.apache.iceberg.actions.RewriteDataFiles;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
-public class CompactionPolicyForTest implements Policy {
+public class CompactionPolicyForTest implements RecommenderPolicy {
 
   @Override
   public String name() {
@@ -40,16 +39,6 @@ public class CompactionPolicyForTest implements Policy {
   @Override
   public String policyType() {
     return "compaction";
-  }
-
-  @Override
-  public String comment() {
-    return "compaction-policy-for-test";
-  }
-
-  @Override
-  public boolean enabled() {
-    return true;
   }
 
   @Override
@@ -63,10 +52,19 @@ public class CompactionPolicyForTest implements Policy {
       @Override
       public Map<String, String> properties() {
         return ImmutableMap.of(
+            "compaction.trigger-expr",
+            "datafile_mse > min_datafile_mse",
+            "compaction.score-expr",
+            "datafile_mse * delete_file_num");
+      }
+
+      @Override
+      public Map<String, Object> rules() {
+        return ImmutableMap.of(
             "min_datafile_mse",
-            "1000",
+            1000,
             PolicyUtils.JOB_ROLE_PREFIX + RewriteDataFiles.TARGET_FILE_SIZE_BYTES,
-            "1024",
+            1024,
             "compaction.trigger-expr",
             "datafile_mse > min_datafile_mse",
             "compaction.score-expr",
@@ -76,12 +74,7 @@ public class CompactionPolicyForTest implements Policy {
   }
 
   @Override
-  public Optional<Boolean> inherited() {
+  public Optional<String> jobTemplateName() {
     return Optional.empty();
-  }
-
-  @Override
-  public Audit auditInfo() {
-    return null;
   }
 }

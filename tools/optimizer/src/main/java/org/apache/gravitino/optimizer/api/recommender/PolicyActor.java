@@ -24,7 +24,7 @@ import java.util.Map;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.optimizer.api.common.PartitionStatistic;
 import org.apache.gravitino.optimizer.api.common.SingleStatistic;
-import org.apache.gravitino.policy.Policy;
+import org.apache.gravitino.optimizer.api.common.policy.RecommenderPolicy;
 import org.apache.gravitino.rel.Table;
 
 public interface PolicyActor {
@@ -45,10 +45,10 @@ public interface PolicyActor {
 
     Map<String, Object> config();
 
-    Policy policy();
+    RecommenderPolicy policy();
   }
 
-  void initialize(NameIdentifier nameIdentifier, Policy policy);
+  void initialize(NameIdentifier nameIdentifier, RecommenderPolicy policy);
 
   String policyType();
 

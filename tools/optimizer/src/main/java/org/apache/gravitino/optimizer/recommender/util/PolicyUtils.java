@@ -21,36 +21,37 @@ package org.apache.gravitino.optimizer.recommender.util;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.gravitino.policy.Policy;
+import org.apache.gravitino.optimizer.api.common.policy.RecommenderPolicy;
 
 public class PolicyUtils {
 
   public static final String JOB_ROLE_PREFIX = "job.";
 
-  public static String getTriggerExpression(Policy policy) {
+  public static String getTriggerExpression(RecommenderPolicy policy) {
     return policy.content().properties().get("compaction.trigger-expr");
   }
 
-  public static String getJobTemplateName(Policy policy) {
-    return policy.content().properties().get("job.template-name");
+  public static String getJobTemplateName(RecommenderPolicy policy) {
+    return policy
+        .jobTemplateName()
+        .orElseThrow(() -> new IllegalArgumentException("job.template-name is not set"));
   }
 
-  public static String getScoreExpression(Policy policy) {
+  public static String getScoreExpression(RecommenderPolicy policy) {
     return policy.content().properties().get("compaction.score-expr");
   }
 
   @SuppressWarnings("EmptyCatch")
-  public static Map<String, Object> getJobConfigFromPolicy(Policy policy) {
+  public static Map<String, Object> getJobConfigFromPolicy(RecommenderPolicy policy) {
     Map<String, Object> jobConfig = new HashMap<>();
-    // Todo: get job config from rule not properties
     policy
         .content()
-        .properties()
+        .rules()
         .forEach(
             (k, v) -> {
               if (k.startsWith(JOB_ROLE_PREFIX)) {
                 try {
-                  long longValue = Long.parseLong(v);
+                  long longValue = Long.parseLong(v.toString());
                   jobConfig.put(k.substring(JOB_ROLE_PREFIX.length()), longValue);
                 } catch (NumberFormatException e) {
                 }

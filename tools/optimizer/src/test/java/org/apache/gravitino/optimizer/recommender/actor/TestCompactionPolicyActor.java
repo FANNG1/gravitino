@@ -22,17 +22,14 @@ package org.apache.gravitino.optimizer.recommender.actor;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import org.apache.gravitino.Audit;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.optimizer.api.common.SingleStatistic;
+import org.apache.gravitino.optimizer.api.common.policy.RecommenderPolicy;
 import org.apache.gravitino.optimizer.api.recommender.PolicyActor.JobExecuteContext;
 import org.apache.gravitino.optimizer.recommender.util.ExpressionEvaluator;
 import org.apache.gravitino.optimizer.recommender.util.QLExpressionEvaluator;
 import org.apache.gravitino.optimizer.updater.impl.SingleStatisticImpl;
-import org.apache.gravitino.policy.Policy;
 import org.apache.gravitino.rel.Table;
-import org.apache.gravitino.stats.Statistic;
-import org.apache.gravitino.stats.StatisticValue;
 import org.apache.gravitino.stats.StatisticValues;
 import org.apache.iceberg.actions.RewriteDataFiles;
 import org.junit.jupiter.api.Assertions;
@@ -42,42 +39,7 @@ import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
 class TestCompactionPolicyActor {
 
-  static class Stats implements Statistic {
-    private final String name;
-    private final long value;
-
-    public Stats(String name, long value) {
-      this.name = name;
-      this.value = value;
-    }
-
-    @Override
-    public Audit auditInfo() {
-      return null;
-    }
-
-    @Override
-    public String name() {
-      return name;
-    }
-
-    @Override
-    public Optional<StatisticValue<?>> value() {
-      return Optional.of(StatisticValues.longValue(value));
-    }
-
-    @Override
-    public boolean reserved() {
-      return false;
-    }
-
-    @Override
-    public boolean modifiable() {
-      return false;
-    }
-  }
-
-  private Policy policy = new CompactionPolicyForTest();
+  private RecommenderPolicy policy = new CompactionPolicyForTest();
 
   private ExpressionEvaluator evaluator = new QLExpressionEvaluator();
 

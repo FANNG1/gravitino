@@ -17,15 +17,18 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer.api.recommender;
+package org.apache.gravitino.optimizer.api.common.policy;
 
-import java.util.List;
-import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.optimizer.api.common.policy.RecommenderPolicy;
+import java.util.Optional;
+import org.apache.gravitino.policy.PolicyContent;
 
-// The policy provider to get the policies from Gravitino or external systems.
-public interface PolicyProvider {
-  List<RecommenderPolicy> getTablePolicy(NameIdentifier tableIdentifier);
+public interface RecommenderPolicy {
 
-  RecommenderPolicy getPolicy(String policyName);
+  String name();
+  // policy type is used to identify the policy to find corresponding policy actor
+  String policyType();
+
+  PolicyContent content();
+
+  Optional<String> jobTemplateName();
 }

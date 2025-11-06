@@ -24,8 +24,8 @@ import java.util.Map;
 import java.util.Optional;
 import lombok.ToString;
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.optimizer.api.common.policy.RecommenderPolicy;
 import org.apache.gravitino.optimizer.api.recommender.PolicyActor.JobExecuteContext;
-import org.apache.gravitino.policy.Policy;
 import org.apache.gravitino.rel.Table;
 import org.apache.iceberg.actions.RewriteDataFiles;
 
@@ -33,11 +33,14 @@ import org.apache.iceberg.actions.RewriteDataFiles;
 public class CompactionJobContext implements JobExecuteContext {
   private NameIdentifier name;
   private Map<String, Object> config;
-  private Policy policy;
+  private RecommenderPolicy policy;
   private Table tableMetadata;
 
   public CompactionJobContext(
-      NameIdentifier name, Map<String, Object> config, Policy policy, Table tableMetadata) {
+      NameIdentifier name,
+      Map<String, Object> config,
+      RecommenderPolicy policy,
+      Table tableMetadata) {
     this.policy = policy;
     this.name = name;
     this.config = config;
@@ -55,7 +58,7 @@ public class CompactionJobContext implements JobExecuteContext {
   }
 
   @Override
-  public Policy policy() {
+  public RecommenderPolicy policy() {
     return policy;
   }
 

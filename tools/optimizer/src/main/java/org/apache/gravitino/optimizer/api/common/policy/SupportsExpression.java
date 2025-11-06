@@ -17,15 +17,10 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer.api.recommender;
+package org.apache.gravitino.optimizer.api.common.policy;
 
-import java.util.List;
-import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.optimizer.api.common.policy.RecommenderPolicy;
+public interface SupportsExpression {
+  String triggerExpression();
 
-// The policy provider to get the policies from Gravitino or external systems.
-public interface PolicyProvider {
-  List<RecommenderPolicy> getTablePolicy(NameIdentifier tableIdentifier);
-
-  RecommenderPolicy getPolicy(String policyName);
+  String scoreExpression();
 }
