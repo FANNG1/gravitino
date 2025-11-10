@@ -26,6 +26,7 @@ import org.apache.gravitino.optimizer.api.common.PartitionStatistic;
 import org.apache.gravitino.optimizer.api.common.SingleMetric;
 import org.apache.gravitino.optimizer.api.common.SingleStatistic;
 import org.apache.gravitino.optimizer.api.updater.MetricsUpdater;
+import org.apache.gravitino.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.optimizer.common.util.StatisticValueUtils;
 import org.apache.gravitino.optimizer.updater.impl.metrics.MetricsStorage;
 import org.apache.gravitino.optimizer.updater.impl.metrics.StorageMetricImpl;
@@ -34,10 +35,19 @@ import org.apache.gravitino.optimizer.updater.impl.util.PartitionUtils;
 // Update metrics to h2
 public class GravitinoMetricsUpdater implements MetricsUpdater {
 
-  private final MetricsStorage metricsStorage;
+  public static final String GRAVITINO_METRICS_UPDATER_NAME = "gravitino-metrics-updater";
 
-  public GravitinoMetricsUpdater(MetricsStorage metricsStorage) {
-    this.metricsStorage = metricsStorage;
+  private MetricsStorage metricsStorage;
+
+  @Override
+  public String name() {
+    return GRAVITINO_METRICS_UPDATER_NAME;
+  }
+
+  @Override
+  public void initialize(OptimizerEnv optimizerEnv) {
+    // Map<String, String> properties = optimizerEnv.config().getAllConfig();
+    // this.metricsStorage.initialize(properties);
   }
 
   @Override

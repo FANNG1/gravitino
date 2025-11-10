@@ -31,12 +31,25 @@ import org.apache.gravitino.optimizer.api.updater.StatsComputer;
 import org.apache.gravitino.optimizer.api.updater.StatsUpdater;
 import org.apache.gravitino.optimizer.api.updater.SupportJobStats;
 import org.apache.gravitino.optimizer.api.updater.SupportTableStats;
+import org.apache.gravitino.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.optimizer.common.SingleMetricImpl;
+import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;
+import org.apache.gravitino.optimizer.common.util.ProviderUtils;
 
 public class Updater {
   private Map<String, StatsComputer> computers = new HashMap<>();
   private StatsUpdater statsUpdater;
   private MetricsUpdater metricsUpdater;
+  private OptimizerEnv optimizerEnv;
+
+  public Updater(OptimizerConfig config) {
+    this.optimizerEnv = OptimizerEnv.getInstance();
+    optimizerEnv.initialize(config);
+    this.statsUpdater = loadStatsUpdater(config);
+    statsUpdater.initialize(optimizerEnv);
+    this.metricsUpdater = loadMetricsUpdater(config);
+    metricsUpdater.initialize(optimizerEnv);
+  }
 
   public void update(
       String statsComputerName, List<NameIdentifier> nameIdentifiers, UpdateType updateType) {
@@ -83,5 +96,15 @@ public class Updater {
 
   private StatsComputer getStatsComputer(String statsComputerName) {
     return computers.get(statsComputerName);
+  }
+
+  private StatsUpdater loadStatsUpdater(OptimizerConfig config) {
+    String statsUpdaterName = config.get(OptimizerConfig.STATS_UPDATER_CONFIG);
+    return ProviderUtils.createStatsUpdaterInstance(statsUpdaterName);
+  }
+
+  private MetricsUpdater loadMetricsUpdater(OptimizerConfig config) {
+    String metricsUpdaterName = config.get(OptimizerConfig.METRICS_UPDATER_CONFIG);
+    return ProviderUtils.createMetricsUpdaterInstance(metricsUpdaterName);
   }
 }

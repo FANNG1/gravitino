@@ -22,6 +22,7 @@ package org.apache.gravitino.optimizer.updater;
 import java.util.LinkedList;
 import java.util.List;
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;
 
 public class UpdaterCli {
   /**
@@ -35,7 +36,8 @@ public class UpdaterCli {
   public void run(String[] args) {
     List<NameIdentifier> tableIdentifiers = new LinkedList<>();
     String statsComputerName = args[0];
-    new Updater().update(statsComputerName, tableIdentifiers, UpdateType.STATS);
+    new Updater(new OptimizerConfig())
+        .update(statsComputerName, tableIdentifiers, UpdateType.STATS);
   }
 
   public static void main(String[] args) {
