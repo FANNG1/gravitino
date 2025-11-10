@@ -26,7 +26,7 @@ import org.apache.gravitino.optimizer.api.common.PartitionStatistic;
 import org.apache.gravitino.optimizer.api.common.SingleStatistic;
 import org.apache.gravitino.optimizer.api.common.SingleStatistic.Name;
 import org.apache.gravitino.optimizer.common.PartitionImpl;
-import org.apache.gravitino.optimizer.recommender.impl.GravitinoStatsProvider;
+import org.apache.gravitino.optimizer.recommender.stats.GravitinoStatsProvider;
 import org.apache.gravitino.optimizer.updater.impl.GravitinoStatsUpdater;
 import org.apache.gravitino.optimizer.updater.impl.PartitionStatisticImpl;
 import org.apache.gravitino.optimizer.updater.impl.SingleStatisticImpl;

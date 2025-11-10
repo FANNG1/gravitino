@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer.recommender.impl;
+package org.apache.gravitino.optimizer.recommender.policy;
 
 import com.google.common.base.Preconditions;
 import java.util.Arrays;
@@ -31,7 +31,6 @@ import org.apache.gravitino.optimizer.api.common.policy.RecommenderPolicy;
 import org.apache.gravitino.optimizer.api.recommender.PolicyProvider;
 import org.apache.gravitino.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;
-import org.apache.gravitino.optimizer.recommender.policy.GravitinoPolicy;
 import org.apache.gravitino.policy.Policy;
 import org.apache.gravitino.rel.Table;
 

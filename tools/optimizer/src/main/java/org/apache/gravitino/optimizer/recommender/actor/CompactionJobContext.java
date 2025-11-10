@@ -48,7 +48,7 @@ public class CompactionJobContext implements JobExecuteContext {
   }
 
   @Override
-  public NameIdentifier name() {
+  public NameIdentifier identifier() {
     return name;
   }
 

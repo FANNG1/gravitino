@@ -41,8 +41,9 @@ public interface PolicyActor {
   }
 
   interface JobExecuteContext {
-    NameIdentifier name();
+    NameIdentifier identifier();
 
+    // The config options for the job, e.g. target_file_size_bytes
     Map<String, Object> config();
 
     RecommenderPolicy policy();

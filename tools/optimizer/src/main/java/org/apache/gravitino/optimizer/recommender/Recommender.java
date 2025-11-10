@@ -39,8 +39,7 @@ import org.apache.gravitino.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;
 import org.apache.gravitino.optimizer.common.util.ProviderUtils;
 import org.apache.gravitino.optimizer.recommender.actor.CompactionPolicyActor;
-import org.apache.gravitino.optimizer.recommender.impl.GravitinoTableMetadataProvider;
-import org.apache.gravitino.optimizer.recommender.job.NoopJobSubmitter;
+import org.apache.gravitino.optimizer.recommender.table.GravitinoTableMetadataProvider;
 import org.apache.gravitino.rel.Table;
 
 @SuppressWarnings("UnusedVariable")
@@ -62,7 +61,8 @@ public class Recommender {
     statsProvider.initialize(optimizerEnv);
     this.tableMetadataProvider = loadTableMetadataProvider();
     tableMetadataProvider.initialize(optimizerEnv);
-    this.jobSubmitter = loadJobSubmitter();
+    this.jobSubmitter = loadJobSubmitter(config);
+    jobSubmitter.initialize(optimizerEnv);
   }
 
   public List<JobExecuteContext> recommendForOnePolicy(
@@ -151,7 +151,8 @@ public class Recommender {
     return new GravitinoTableMetadataProvider();
   }
 
-  private JobSubmitter loadJobSubmitter() {
-    return new NoopJobSubmitter();
+  private JobSubmitter loadJobSubmitter(OptimizerConfig config) {
+    String jobSubmitterName = config.get(OptimizerConfig.JOB_SUBMITTER_CONFIG);
+    return ProviderUtils.createJobSubmitterInstance(jobSubmitterName);
   }
 }

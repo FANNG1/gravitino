@@ -35,7 +35,7 @@ public class TestGravitinoCompactionJobAdapter {
   @Test
   public void testJobTemplateName() {
     GravitinoCompactionJobAdapter jobAdapter = new GravitinoCompactionJobAdapter();
-    jobAdapter.initialize(jobExecuteContext());
+    jobAdapter.initialize(mockCompactionJobContext());
     Assertions.assertEquals("compaction-job-template", jobAdapter.jobTemplateName());
     Assertions.assertEquals(
         Map.of(
@@ -45,7 +45,7 @@ public class TestGravitinoCompactionJobAdapter {
         jobAdapter.jobConfig());
   }
 
-  private CompactionJobContext jobExecuteContext() {
+  private CompactionJobContext mockCompactionJobContext() {
     RecommenderPolicy policy = Mockito.mock(RecommenderPolicy.class);
     PolicyContent policyContent = Mockito.mock(PolicyContent.class);
     Mockito.when(policy.content()).thenReturn(policyContent);

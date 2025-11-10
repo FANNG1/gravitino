@@ -130,8 +130,8 @@ public class RecommenderIT extends GravitinoOptimizerEnvIT {
     Assertions.assertEquals(2, jobs.size());
 
     // policyForSmallFile will select table with small file first
-    Assertions.assertEquals(tableWithSmallFile, jobs.get(0).name().name());
-    Assertions.assertEquals(tableWithDeleteFile, jobs.get(1).name().name());
+    Assertions.assertEquals(tableWithSmallFile, jobs.get(0).identifier().name());
+    Assertions.assertEquals(tableWithDeleteFile, jobs.get(1).identifier().name());
 
     jobs =
         recommender.recommendForOnePolicy(
@@ -143,8 +143,8 @@ public class RecommenderIT extends GravitinoOptimizerEnvIT {
     Assertions.assertEquals(2, jobs.size());
 
     // policyForDelete will select table with delete file first
-    Assertions.assertEquals(tableWithDeleteFile, jobs.get(0).name().name());
-    Assertions.assertEquals(tableWithSmallFile, jobs.get(1).name().name());
+    Assertions.assertEquals(tableWithDeleteFile, jobs.get(0).identifier().name());
+    Assertions.assertEquals(tableWithSmallFile, jobs.get(1).identifier().name());
   }
 
   @Test

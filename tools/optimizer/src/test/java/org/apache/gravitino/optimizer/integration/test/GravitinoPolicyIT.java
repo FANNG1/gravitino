@@ -23,7 +23,7 @@ import com.google.common.collect.ImmutableMap;
 import java.util.List;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.optimizer.api.common.policy.RecommenderPolicy;
-import org.apache.gravitino.optimizer.recommender.impl.GravitinoPolicyProvider;
+import org.apache.gravitino.optimizer.recommender.policy.GravitinoPolicyProvider;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -67,17 +67,15 @@ public class GravitinoPolicyIT extends GravitinoOptimizerEnvIT {
         .forEach(
             policy -> {
               if (policy.name().equals("policy1")) {
-                Assertions.assertEquals("test", policies.get(0).policyType());
+                Assertions.assertEquals("test", policy.policyType());
+                Assertions.assertEquals("template-name", policy.jobTemplateName().orElse(null));
                 Assertions.assertEquals(
-                    "template-name", policies.get(0).jobTemplateName().orElse(null));
-                Assertions.assertEquals(
-                    ImmutableMap.of("rule1", "value1"), policies.get(0).content().rules());
+                    ImmutableMap.of("rule1", "value1"), policy.content().rules());
               } else if (policy.name().equals("policy2")) {
-                Assertions.assertEquals("test", policies.get(1).policyType());
+                Assertions.assertEquals("test", policy.policyType());
+                Assertions.assertEquals("template-name", policy.jobTemplateName().orElse(null));
                 Assertions.assertEquals(
-                    "template-name", policies.get(1).jobTemplateName().orElse(null));
-                Assertions.assertEquals(
-                    ImmutableMap.of("rule2", "value2"), policies.get(1).content().rules());
+                    ImmutableMap.of("rule2", "value2"), policy.content().rules());
               } else {
                 Assertions.fail("Unexpected policy name: " + policy.name());
               }

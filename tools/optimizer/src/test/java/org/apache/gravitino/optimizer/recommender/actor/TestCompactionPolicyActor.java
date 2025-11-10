@@ -67,7 +67,7 @@ class TestCompactionPolicyActor {
     Assertions.assertTrue(config instanceof CompactionJobContext);
     CompactionJobContext compactionConfig = (CompactionJobContext) config;
     Assertions.assertEquals(Optional.of(1024L), compactionConfig.targetFileSize());
-    Assertions.assertEquals(tableId, compactionConfig.name());
+    Assertions.assertEquals(tableId, compactionConfig.identifier());
     Assertions.assertEquals(
         ImmutableMap.of(RewriteDataFiles.TARGET_FILE_SIZE_BYTES, 1024L), compactionConfig.config());
     Assertions.assertEquals(Optional.empty(), compactionConfig.partitionNames());
