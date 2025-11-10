@@ -81,7 +81,7 @@ public class RecommenderIT extends GravitinoOptimizerEnvIT {
             DATAFILE_MSE + " > min_datafile_mse || " + DELETE_FILE_NUM + " > 0",
             PolicyUtils.SCORE_EXPR,
             DATAFILE_MSE + " + " + DELETE_FILE_NUM + " * 10"),
-        "test");
+        PolicyUtils.COMPACTION_POLICY_TYPE);
 
     // policy2 give more weight to delete file number
     createPolicy(
@@ -93,7 +93,7 @@ public class RecommenderIT extends GravitinoOptimizerEnvIT {
             DATAFILE_MSE + " > min_datafile_mse || " + DELETE_FILE_NUM + " > 1",
             PolicyUtils.SCORE_EXPR,
             DATAFILE_MSE + "/100 + " + DELETE_FILE_NUM + " * 100"),
-        "test");
+        PolicyUtils.COMPACTION_POLICY_TYPE);
 
     associatePoliciesToSchema(policyForSmallFile, TEST_SCHEMA);
     associatePoliciesToSchema(policyForDelete, TEST_SCHEMA);

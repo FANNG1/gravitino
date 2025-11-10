@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer.recommender.actor;
+package org.apache.gravitino.optimizer.recommender.actor.compaction;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.HashMap;
@@ -56,7 +56,7 @@ public class CompactionPolicyActor
 
   @Override
   public String policyType() {
-    return "compaction";
+    return PolicyUtils.COMPACTION_POLICY_TYPE;
   }
 
   @Override
