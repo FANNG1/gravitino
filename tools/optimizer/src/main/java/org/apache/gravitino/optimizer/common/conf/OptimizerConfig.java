@@ -28,6 +28,7 @@ import org.apache.gravitino.config.ConfigEntry;
 import org.apache.gravitino.optimizer.recommender.job.GravitinoJobSubmitter;
 import org.apache.gravitino.optimizer.recommender.policy.GravitinoPolicyProvider;
 import org.apache.gravitino.optimizer.recommender.stats.GravitinoStatsProvider;
+import org.apache.gravitino.optimizer.recommender.table.GravitinoTableMetadataProvider;
 
 public class OptimizerConfig extends Config {
 
@@ -39,6 +40,7 @@ public class OptimizerConfig extends Config {
 
   private static final String STATS_PROVIDER = RECOMMENDER_PREFIX + "stats-provider";
   private static final String POLICY_PROVIDER = RECOMMENDER_PREFIX + "policy-provider";
+  private static final String TABLE_META_PROVIDER = RECOMMENDER_PREFIX + "table-meta-provider";
   private static final String JOB_SUBMITTER = RECOMMENDER_PREFIX + "job-submitter";
 
   public static final ConfigEntry<String> STATS_PROVIDER_CONFIG =
@@ -54,6 +56,13 @@ public class OptimizerConfig extends Config {
           .version(ConfigConstants.VERSION_1_1_0)
           .stringConf()
           .createWithDefault(GravitinoPolicyProvider.GRAVITINO_POLICY_PROVIDER_NAME);
+
+  public static final ConfigEntry<String> TABLE_META_PROVIDER_CONFIG =
+      new ConfigBuilder(TABLE_META_PROVIDER)
+          .doc("The table meta provider for the recommender.")
+          .version(ConfigConstants.VERSION_1_1_0)
+          .stringConf()
+          .createWithDefault(GravitinoTableMetadataProvider.GRAVITINO_TABLE_METADATA_PROVIDER_NAME);
 
   public static final ConfigEntry<String> JOB_SUBMITTER_CONFIG =
       new ConfigBuilder(JOB_SUBMITTER)

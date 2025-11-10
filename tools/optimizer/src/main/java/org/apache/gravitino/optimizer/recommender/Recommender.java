@@ -39,7 +39,6 @@ import org.apache.gravitino.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;
 import org.apache.gravitino.optimizer.common.util.ProviderUtils;
 import org.apache.gravitino.optimizer.recommender.actor.ActorUtils;
-import org.apache.gravitino.optimizer.recommender.table.GravitinoTableMetadataProvider;
 import org.apache.gravitino.rel.Table;
 
 @SuppressWarnings("UnusedVariable")
@@ -59,7 +58,7 @@ public class Recommender {
     policyProvider.initialize(optimizerEnv);
     this.statsProvider = loadStatsProvider(config);
     statsProvider.initialize(optimizerEnv);
-    this.tableMetadataProvider = loadTableMetadataProvider();
+    this.tableMetadataProvider = loadTableMetadataProvider(config);
     tableMetadataProvider.initialize(optimizerEnv);
     this.jobSubmitter = loadJobSubmitter(config);
     jobSubmitter.initialize(optimizerEnv);
@@ -141,8 +140,9 @@ public class Recommender {
     return ProviderUtils.createStatsProviderInstance(statsProviderName);
   }
 
-  private TableMetadataProvider loadTableMetadataProvider() {
-    return new GravitinoTableMetadataProvider();
+  private TableMetadataProvider loadTableMetadataProvider(OptimizerConfig config) {
+    String tableMetadataProviderName = config.get(OptimizerConfig.TABLE_META_PROVIDER_CONFIG);
+    return ProviderUtils.createTableMetadataProviderInstance(tableMetadataProviderName);
   }
 
   private JobSubmitter loadJobSubmitter(OptimizerConfig config) {

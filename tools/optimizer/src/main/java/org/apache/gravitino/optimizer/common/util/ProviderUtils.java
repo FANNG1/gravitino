@@ -28,6 +28,7 @@ import org.apache.gravitino.optimizer.api.common.Provider;
 import org.apache.gravitino.optimizer.api.recommender.JobSubmitter;
 import org.apache.gravitino.optimizer.api.recommender.PolicyProvider;
 import org.apache.gravitino.optimizer.api.recommender.StatsProvider;
+import org.apache.gravitino.optimizer.api.recommender.TableMetadataProvider;
 
 public class ProviderUtils {
 
@@ -63,6 +64,10 @@ public class ProviderUtils {
 
   public static StatsProvider createStatsProviderInstance(String provider) {
     return createProviderInstance(StatsProvider.class, provider);
+  }
+
+  public static TableMetadataProvider createTableMetadataProviderInstance(String provider) {
+    return createProviderInstance(TableMetadataProvider.class, provider);
   }
 
   public static JobSubmitter createJobSubmitterInstance(String provider) {
