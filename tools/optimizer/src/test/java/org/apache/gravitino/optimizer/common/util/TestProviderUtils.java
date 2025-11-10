@@ -22,10 +22,12 @@ package org.apache.gravitino.optimizer.common.util;
 import org.apache.gravitino.optimizer.api.recommender.JobSubmitter;
 import org.apache.gravitino.optimizer.api.recommender.PolicyProvider;
 import org.apache.gravitino.optimizer.api.recommender.StatsProvider;
+import org.apache.gravitino.optimizer.api.recommender.TableMetadataProvider;
 import org.apache.gravitino.optimizer.recommender.job.GravitinoJobSubmitter;
 import org.apache.gravitino.optimizer.recommender.job.NoopJobSubmitter;
 import org.apache.gravitino.optimizer.recommender.policy.GravitinoPolicyProvider;
 import org.apache.gravitino.optimizer.recommender.stats.GravitinoStatsProvider;
+import org.apache.gravitino.optimizer.recommender.table.GravitinoTableMetadataProvider;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -61,5 +63,14 @@ public class TestProviderUtils {
             GravitinoStatsProvider.GRAVITINO_STATS_PROVIDER_NAME);
     Assertions.assertNotNull(statsProvider);
     Assertions.assertTrue(statsProvider instanceof GravitinoStatsProvider);
+  }
+
+  @Test
+  public void testCreateTableMetadataProviderInstance() {
+    TableMetadataProvider tableMetadataProvider =
+        ProviderUtils.createTableMetadataProviderInstance(
+            GravitinoTableMetadataProvider.GRAVITINO_TABLE_METADATA_PROVIDER_NAME);
+    Assertions.assertNotNull(tableMetadataProvider);
+    Assertions.assertTrue(tableMetadataProvider instanceof GravitinoTableMetadataProvider);
   }
 }

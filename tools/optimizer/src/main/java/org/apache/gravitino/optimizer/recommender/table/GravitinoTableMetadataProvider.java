@@ -28,7 +28,8 @@ import org.apache.gravitino.optimizer.common.util.IdentifierUtils;
 import org.apache.gravitino.rel.Table;
 
 public class GravitinoTableMetadataProvider implements TableMetadataProvider {
-  public static final String GRAVITINO_TABLE_METADATA_PROVIDER_NAME = "gravitino";
+  public static final String GRAVITINO_TABLE_METADATA_PROVIDER_NAME =
+      "gravitino-table-metadata-provider";
   private GravitinoClient gravitinoClient;
   private String defaultCatalogName;
 
