@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer.recommender.actor;
+package org.apache.gravitino.optimizer.recommender.actor.compaction;
 
 import java.util.Map;
 import java.util.Optional;

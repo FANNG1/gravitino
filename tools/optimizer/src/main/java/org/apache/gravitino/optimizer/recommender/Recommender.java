@@ -38,7 +38,7 @@ import org.apache.gravitino.optimizer.api.recommender.TableMetadataProvider;
 import org.apache.gravitino.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;
 import org.apache.gravitino.optimizer.common.util.ProviderUtils;
-import org.apache.gravitino.optimizer.recommender.actor.CompactionPolicyActor;
+import org.apache.gravitino.optimizer.recommender.actor.ActorUtils;
 import org.apache.gravitino.optimizer.recommender.table.GravitinoTableMetadataProvider;
 import org.apache.gravitino.rel.Table;
 
@@ -73,7 +73,6 @@ public class Recommender {
         new PriorityQueue<>((a, b) -> Long.compare(b.score(), a.score()));
     for (NameIdentifier tableIdentifier : tableIdentifiers) {
       PolicyActor policyActor = loadPolicyActor(policy, tableIdentifier);
-
       if (policyActor.shouldTrigger() == false) {
         continue;
       }
@@ -82,7 +81,6 @@ public class Recommender {
 
     List<JobExecuteContext> jobConfigs =
         scoreQueue.stream().map(PolicyActor::jobConfig).collect(Collectors.toList());
-
     return jobConfigs;
   }
 
@@ -98,7 +96,6 @@ public class Recommender {
 
   private PolicyActor loadPolicyActor(RecommenderPolicy policy, NameIdentifier tableIdentifier) {
     PolicyActor policyActor = getPolicyActor(policy.policyType());
-
     policyActor.initialize(tableIdentifier, policy);
 
     if (policyActor instanceof PolicyActor.requireTableMetadata) {
@@ -119,13 +116,10 @@ public class Recommender {
   }
 
   private PolicyActor getPolicyActor(String policyType) {
-    return new CompactionPolicyActor();
+    return ActorUtils.createActorInstance(policyType);
   }
 
   private List<String> getPolicyNames(List<NameIdentifier> tableIdentifiers, String policyType) {
-    // get policy names from policy provider
-    // return policyProvider.getTablePolicy(tableIdentifier);
-    // rewrite the code to flat the policy list to map the policy name to policy type
     Set<String> policyNames = new HashSet<>();
     for (NameIdentifier tableIdentifier : tableIdentifiers) {
       policyNames.addAll(
