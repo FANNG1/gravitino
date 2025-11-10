@@ -23,11 +23,15 @@ import org.apache.gravitino.optimizer.api.recommender.JobSubmitter;
 import org.apache.gravitino.optimizer.api.recommender.PolicyProvider;
 import org.apache.gravitino.optimizer.api.recommender.StatsProvider;
 import org.apache.gravitino.optimizer.api.recommender.TableMetadataProvider;
+import org.apache.gravitino.optimizer.api.updater.MetricsUpdater;
+import org.apache.gravitino.optimizer.api.updater.StatsUpdater;
 import org.apache.gravitino.optimizer.recommender.job.GravitinoJobSubmitter;
 import org.apache.gravitino.optimizer.recommender.job.NoopJobSubmitter;
 import org.apache.gravitino.optimizer.recommender.policy.GravitinoPolicyProvider;
 import org.apache.gravitino.optimizer.recommender.stats.GravitinoStatsProvider;
 import org.apache.gravitino.optimizer.recommender.table.GravitinoTableMetadataProvider;
+import org.apache.gravitino.optimizer.updater.impl.GravitinoMetricsUpdater;
+import org.apache.gravitino.optimizer.updater.impl.GravitinoStatsUpdater;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -72,5 +76,23 @@ public class TestProviderUtils {
             GravitinoTableMetadataProvider.GRAVITINO_TABLE_METADATA_PROVIDER_NAME);
     Assertions.assertNotNull(tableMetadataProvider);
     Assertions.assertTrue(tableMetadataProvider instanceof GravitinoTableMetadataProvider);
+  }
+
+  @Test
+  public void testCreateStatsUpdaterInstance() {
+    StatsUpdater statsUpdater =
+        ProviderUtils.createStatsUpdaterInstance(
+            GravitinoStatsUpdater.GRAVITINO_STATS_UPDATER_NAME);
+    Assertions.assertNotNull(statsUpdater);
+    Assertions.assertTrue(statsUpdater instanceof GravitinoStatsUpdater);
+  }
+
+  @Test
+  public void testCreateMetricsUpdaterInstance() {
+    MetricsUpdater metricsUpdater =
+        ProviderUtils.createMetricsUpdaterInstance(
+            GravitinoMetricsUpdater.GRAVITINO_METRICS_UPDATER_NAME);
+    Assertions.assertNotNull(metricsUpdater);
+    Assertions.assertTrue(metricsUpdater instanceof GravitinoMetricsUpdater);
   }
 }

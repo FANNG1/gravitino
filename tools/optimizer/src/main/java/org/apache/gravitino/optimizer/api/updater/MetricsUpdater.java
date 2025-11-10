@@ -21,6 +21,7 @@ package org.apache.gravitino.optimizer.api.updater;
 
 import java.util.List;
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.optimizer.api.common.Provider;
 import org.apache.gravitino.optimizer.api.common.SingleMetric;
 
 /*
@@ -34,7 +35,7 @@ import org.apache.gravitino.optimizer.api.common.SingleMetric;
  *    c. table_delete_file_number_metrics, table_name:xx, partition_name:xx xx
  *    d. table_datafile_mse_metrics, table_name:xx, partition_name:xx xx
  */
-public interface MetricsUpdater {
+public interface MetricsUpdater extends Provider {
   void updateTableMetrics(NameIdentifier nameIdentifier, List<SingleMetric> metrics);
 
   void updateJobMetrics(NameIdentifier nameIdentifier, List<SingleMetric> metrics);

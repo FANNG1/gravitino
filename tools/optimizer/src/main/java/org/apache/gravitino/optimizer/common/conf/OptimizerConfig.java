@@ -29,6 +29,7 @@ import org.apache.gravitino.optimizer.recommender.job.GravitinoJobSubmitter;
 import org.apache.gravitino.optimizer.recommender.policy.GravitinoPolicyProvider;
 import org.apache.gravitino.optimizer.recommender.stats.GravitinoStatsProvider;
 import org.apache.gravitino.optimizer.recommender.table.GravitinoTableMetadataProvider;
+import org.apache.gravitino.optimizer.updater.impl.GravitinoStatsUpdater;
 
 public class OptimizerConfig extends Config {
 
@@ -43,6 +44,8 @@ public class OptimizerConfig extends Config {
   private static final String TABLE_META_PROVIDER = RECOMMENDER_PREFIX + "table-meta-provider";
   private static final String JOB_SUBMITTER = RECOMMENDER_PREFIX + "job-submitter";
 
+  private static final String STATS_UPDATER = RECOMMENDER_PREFIX + "stats-updater";
+  private static final String METRICS_UPDATER = RECOMMENDER_PREFIX + "metrics-updater";
   public static final ConfigEntry<String> STATS_PROVIDER_CONFIG =
       new ConfigBuilder(STATS_PROVIDER)
           .doc("The stats provider for the recommender.")
@@ -70,6 +73,20 @@ public class OptimizerConfig extends Config {
           .version(ConfigConstants.VERSION_1_1_0)
           .stringConf()
           .createWithDefault(GravitinoJobSubmitter.GRAVITINO_JOB_SUBMITTER_NAME);
+
+  public static final ConfigEntry<String> STATS_UPDATER_CONFIG =
+      new ConfigBuilder(STATS_UPDATER)
+          .doc("The stats updater for the recommender.")
+          .version(ConfigConstants.VERSION_1_1_0)
+          .stringConf()
+          .createWithDefault(GravitinoStatsUpdater.GRAVITINO_STATS_UPDATER_NAME);
+
+  public static final ConfigEntry<String> METRICS_UPDATER_CONFIG =
+      new ConfigBuilder(METRICS_UPDATER)
+          .doc("The metrics updater for the recommender.")
+          .version(ConfigConstants.VERSION_1_1_0)
+          .stringConf()
+          .createWithDefault(GravitinoStatsProvider.GRAVITINO_STATS_PROVIDER_NAME);
 
   public static final ConfigEntry<String> GRAVITINO_URI_CONFIG =
       new ConfigBuilder(GRAVITINO_URI)

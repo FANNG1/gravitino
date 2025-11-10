@@ -21,3 +21,6 @@ org.apache.gravitino.optimizer.recommender.stats.GravitinoStatsProvider
 org.apache.gravitino.optimizer.recommender.table.GravitinoTableMetadataProvider
 org.apache.gravitino.optimizer.recommender.job.GravitinoJobSubmitter
 org.apache.gravitino.optimizer.recommender.job.NoopJobSubmitter
+
+org.apache.gravitino.optimizer.updater.impl.GravitinoMetricsUpdater
+org.apache.gravitino.optimizer.updater.impl.GravitinoStatsUpdater
