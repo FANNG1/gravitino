@@ -21,15 +21,26 @@ package org.apache.gravitino.optimizer.recommender.job;
 
 import org.apache.gravitino.optimizer.api.recommender.JobSubmitter;
 import org.apache.gravitino.optimizer.api.recommender.PolicyActor.JobExecuteContext;
+import org.apache.gravitino.optimizer.common.OptimizerEnv;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class NoopJobSubmitter implements JobSubmitter {
   private final Logger LOG = LoggerFactory.getLogger(NoopJobSubmitter.class);
 
+  public static final String NOOP_JOB_SUBMITTER_NAME = "noop";
+
   @Override
   public String submitJob(String policyType, JobExecuteContext job) {
     LOG.info("NoopJobSubmitter submitJob: policyType={}, job={}", policyType, job);
-    return "";
+    return "id";
   }
+
+  @Override
+  public String name() {
+    return NOOP_JOB_SUBMITTER_NAME;
+  }
+
+  @Override
+  public void initialize(OptimizerEnv optimizerEnv) {}
 }

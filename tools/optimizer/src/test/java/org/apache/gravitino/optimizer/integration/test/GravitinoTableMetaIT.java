@@ -20,7 +20,7 @@
 package org.apache.gravitino.optimizer.integration.test;
 
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.optimizer.recommender.impl.GravitinoTableMetadataProvider;
+import org.apache.gravitino.optimizer.recommender.table.GravitinoTableMetadataProvider;
 import org.apache.gravitino.rel.Column;
 import org.apache.gravitino.rel.Table;
 import org.apache.gravitino.rel.expressions.transforms.Transform;

@@ -32,7 +32,7 @@ public class GravitinoCompactionJobAdapter implements GravitinoJobAdapter {
 
   @Override
   public String policyType() {
-    return "compaction";
+    return PolicyUtils.COMPACTION_POLICY_TYPE;
   }
 
   @Override
@@ -52,7 +52,7 @@ public class GravitinoCompactionJobAdapter implements GravitinoJobAdapter {
   }
 
   private String getTableName() {
-    return jobContext.name().toString();
+    return jobContext.identifier().toString();
   }
 
   private String getWhereClause() {
@@ -61,7 +61,8 @@ public class GravitinoCompactionJobAdapter implements GravitinoJobAdapter {
   }
 
   private String getOptions() {
-    return convertMapToString(jobContext.config());
+    Map<String, Object> map = jobContext.config();
+    return convertMapToString(map);
   }
 
   public static String convertMapToString(Map<String, Object> map) {

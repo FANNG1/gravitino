@@ -17,11 +17,21 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer.api.recommender;
+package org.apache.gravitino.optimizer.recommender.job;
 
-import org.apache.gravitino.optimizer.api.common.Provider;
-import org.apache.gravitino.optimizer.api.recommender.PolicyActor.JobExecuteContext;
+import org.apache.gravitino.optimizer.recommender.actor.CompactionJobContext;
+import org.apache.gravitino.optimizer.recommender.util.PolicyUtils;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
-public interface JobSubmitter extends Provider {
-  String submitJob(String policyType, JobExecuteContext job);
+public class TestGravitinoJobSubmitter {
+  @Test
+  void submitJobThrowsExceptionForInvalidPolicyTyp() {
+    GravitinoJobSubmitter submitter = new GravitinoJobSubmitter();
+    CompactionJobContext compactionJobContext = Mockito.mock(CompactionJobContext.class);
+    GravitinoJobAdapter adapter =
+        submitter.loadJobAdapter(PolicyUtils.COMPACTION_POLICY_TYPE, compactionJobContext);
+    Assertions.assertTrue(adapter instanceof GravitinoCompactionJobAdapter);
+  }
 }

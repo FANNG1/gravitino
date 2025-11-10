@@ -19,20 +19,38 @@
 
 package org.apache.gravitino.optimizer.recommender.job;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import org.apache.gravitino.client.GravitinoClient;
 import org.apache.gravitino.optimizer.api.recommender.JobSubmitter;
 import org.apache.gravitino.optimizer.api.recommender.PolicyActor.JobExecuteContext;
+import org.apache.gravitino.optimizer.common.OptimizerEnv;
+import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;
+import org.apache.gravitino.optimizer.recommender.util.PolicyUtils;
 
 @SuppressWarnings("unused")
 public class GravitinoJobSubmitter implements JobSubmitter {
 
-  GravitinoClient gravitinoClient;
+  public static final String GRAVITINO_JOB_SUBMITTER_NAME = "gravitino";
 
-  private Map<String, GravitinoJobAdapter> jobAdapters;
+  private GravitinoClient gravitinoClient;
 
-  public GravitinoJobSubmitter() {
-    // get all job adapters from the classpath
+  private Map<String, Class<? extends GravitinoJobAdapter>> jobAdapters =
+      ImmutableMap.of(PolicyUtils.COMPACTION_POLICY_TYPE, GravitinoCompactionJobAdapter.class);
+
+  @Override
+  public String name() {
+    return GRAVITINO_JOB_SUBMITTER_NAME;
+  }
+
+  @Override
+  public void initialize(OptimizerEnv optimizerEnv) {
+    String uri = optimizerEnv.config().get(OptimizerConfig.GRAVITINO_URI_CONFIG);
+    String metalake = optimizerEnv.config().get(OptimizerConfig.GRAVITINO_METALAKE_CONFIG);
+    this.gravitinoClient = GravitinoClient.builder(uri).withMetalake(metalake).build();
+    // this.defaultCatalogName =
+    // optimizerEnv.config().get(OptimizerConfig.GRAVITINO_DEFAULT_CATALOG_CONFIG);
   }
 
   @Override
@@ -44,11 +62,19 @@ public class GravitinoJobSubmitter implements JobSubmitter {
     return gravitinoClient.runJob(jobAdapter.jobTemplateName(), jobAdapter.jobConfig()).jobId();
   }
 
-  private GravitinoJobAdapter loadJobAdapter(
-      String policyType, JobExecuteContext jobExecuteContext) {
-    GravitinoCompactionJobAdapter gravitinoCompactionJobAdapter =
-        new GravitinoCompactionJobAdapter();
-    gravitinoCompactionJobAdapter.initialize(jobExecuteContext);
-    return gravitinoCompactionJobAdapter;
+  @VisibleForTesting
+  GravitinoJobAdapter loadJobAdapter(String policyType, JobExecuteContext jobExecuteContext) {
+    Class<? extends GravitinoJobAdapter> jobAdapterClz = jobAdapters.get(policyType);
+    if (jobAdapterClz == null) {
+      return null;
+    }
+    try {
+      GravitinoJobAdapter jobAdapter = jobAdapterClz.getDeclaredConstructor().newInstance();
+      jobAdapter.initialize(jobExecuteContext);
+      return jobAdapter;
+    } catch (Exception e) {
+      throw new IllegalArgumentException(
+          "Failed to create job adapter for policy type: " + policyType, e);
+    }
   }
 }

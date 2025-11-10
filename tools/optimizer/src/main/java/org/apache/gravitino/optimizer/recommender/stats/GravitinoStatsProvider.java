@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer.recommender.impl;
+package org.apache.gravitino.optimizer.recommender.stats;
 
 import java.util.Arrays;
 import java.util.List;

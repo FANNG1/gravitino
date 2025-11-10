@@ -25,6 +25,8 @@ import org.apache.gravitino.optimizer.api.common.policy.RecommenderPolicy;
 
 public class PolicyUtils {
 
+  public static final String COMPACTION_POLICY_TYPE = "compaction";
+
   public static final String JOB_ROLE_PREFIX = "job.";
   public static final String TRIGGER_EXPR = "trigger-expr";
   public static final String SCORE_EXPR = "score-expr";
