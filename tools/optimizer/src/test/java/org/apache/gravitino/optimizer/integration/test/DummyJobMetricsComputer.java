@@ -17,24 +17,28 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer.updater.impl;
+package org.apache.gravitino.optimizer.integration.test;
 
+import java.util.Arrays;
 import java.util.List;
-import org.apache.gravitino.optimizer.api.common.PartitionStatistic;
-import org.apache.gravitino.optimizer.common.SinglePartition;
-import org.apache.gravitino.stats.StatisticValue;
+import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.optimizer.api.common.SingleStatistic;
+import org.apache.gravitino.optimizer.api.updater.SupportJobStats;
+import org.apache.gravitino.optimizer.updater.impl.SingleStatisticImpl;
+import org.apache.gravitino.stats.StatisticValues;
 
-public class PartitionStatisticImpl extends SingleStatisticImpl implements PartitionStatistic {
-  private List<SinglePartition> partitions;
+public class DummyJobMetricsComputer implements SupportJobStats {
 
-  public PartitionStatisticImpl(
-      String name, StatisticValue value, List<SinglePartition> partitions) {
-    super(name, value);
-    this.partitions = partitions;
+  public static final String DUMMY_JOB_METRICS = "dummy-job-metrics";
+  public static final String JOB_STAT_NAME = "dummy-job-stat-name";
+
+  @Override
+  public String name() {
+    return DUMMY_JOB_METRICS;
   }
 
   @Override
-  public List<SinglePartition> partitionName() {
-    return partitions;
+  public List<SingleStatistic<?>> computeJobStats(NameIdentifier jobIdentifier) {
+    return Arrays.asList(new SingleStatisticImpl(JOB_STAT_NAME, StatisticValues.longValue(1L)));
   }
 }

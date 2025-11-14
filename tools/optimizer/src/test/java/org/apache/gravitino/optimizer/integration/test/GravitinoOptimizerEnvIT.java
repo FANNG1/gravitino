@@ -74,6 +74,10 @@ public class GravitinoOptimizerEnvIT extends BaseIT {
             ImmutableMap.of());
   }
 
+  protected NameIdentifier getTableIdentifier(String tableName) {
+    return NameIdentifier.of(GRAVITINO_CATALOG_NAME, TEST_SCHEMA, tableName);
+  }
+
   protected void createPartitionTable(String tableName) {
     catalogClient
         .asTableCatalog()

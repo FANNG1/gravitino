@@ -36,6 +36,17 @@ public class IdentifierUtils {
     return TableIdentifier.parse(nameIdentifier.toString());
   }
 
+  public static NameIdentifier removeCatalogFromIdentifier(NameIdentifier tableIdentifier) {
+    Namespace namespace = tableIdentifier.namespace();
+    Preconditions.checkArgument(
+        namespace != null && (namespace.levels().length == 1 || namespace.levels().length == 2));
+    if (namespace.levels().length == 1) {
+      return tableIdentifier;
+    }
+
+    return NameIdentifier.of(namespace.levels()[1], tableIdentifier.name());
+  }
+
   public static String getCatalogNameFromTableIdentifier(
       NameIdentifier tableIdentifier, String defaultCatalogName) {
     Namespace namespace = tableIdentifier.namespace();
