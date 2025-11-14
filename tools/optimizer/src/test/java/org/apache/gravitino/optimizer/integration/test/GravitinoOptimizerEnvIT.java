@@ -115,21 +115,32 @@ public class GravitinoOptimizerEnvIT extends BaseIT {
     schema.supportsPolicies().associatePolicies(new String[] {policyName}, new String[] {});
   }
 
+  protected Map<String, String> getSpecifyConfigs() {
+    return Map.of();
+  }
+
   protected OptimizerEnv initOptimizerEnv() {
-    int gravitinoPort = getGravitinoServerPort();
-    String uri = String.format("http://127.0.0.1:%d", gravitinoPort);
-    OptimizerConfig config =
-        new OptimizerConfig(
-            ImmutableMap.of(
-                OptimizerConfig.GRAVITINO_URI,
-                uri,
-                OptimizerConfig.GRAVITINO_METALAKE,
-                METALAKE_NAME,
-                OptimizerConfig.GRAVITINO_DEFAULT_CATALOG,
-                GRAVITINO_CATALOG_NAME));
+    Map<String, String> configs = new HashMap<>();
+
+    configs.putAll(getGravitinoConfigs());
+    configs.putAll(getSpecifyConfigs());
+
+    OptimizerConfig config = new OptimizerConfig(configs);
     OptimizerEnv env = OptimizerEnv.getInstance();
     env.initialize(config);
     return env;
+  }
+
+  private Map<String, String> getGravitinoConfigs() {
+    int gravitinoPort = getGravitinoServerPort();
+    String uri = String.format("http://127.0.0.1:%d", gravitinoPort);
+    return ImmutableMap.of(
+        OptimizerConfig.GRAVITINO_URI,
+        uri,
+        OptimizerConfig.GRAVITINO_METALAKE,
+        METALAKE_NAME,
+        OptimizerConfig.GRAVITINO_DEFAULT_CATALOG,
+        GRAVITINO_CATALOG_NAME);
   }
 
   private void initMetalakeAndCatalog() {
