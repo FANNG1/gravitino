@@ -26,20 +26,26 @@ import org.apache.gravitino.NameIdentifier;
 
 public interface MetricsStorage extends AutoCloseable {
 
+  void initialize(Map<String, String> properties);
+
   void storeTableMetrics(
       NameIdentifier nameIdentifier,
       String metricName,
       Optional<String> partition,
       StorageMetric metric);
 
-  Map<String, List<StorageMetric>> getAllTableMetrics(
+  Map<String, List<StorageMetric>> getTableMetrics(
       NameIdentifier nameIdentifier,
       Optional<String> partition,
       long fromTimestamp,
       long toTimestamp);
 
+  int cleanupTableMetricsBefore(long timestamp);
+
   void storeJobMetrics(NameIdentifier nameIdentifier, String metricName, StorageMetric metric);
 
   Map<String, List<StorageMetric>> getJobMetrics(
       NameIdentifier nameIdentifier, long fromTimestamp, long toTimestamp);
+
+  int cleanupJobMetricsBefore(long timestamp);
 }

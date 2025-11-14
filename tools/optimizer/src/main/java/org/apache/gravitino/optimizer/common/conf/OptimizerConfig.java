@@ -46,6 +46,7 @@ public class OptimizerConfig extends Config {
   private static final String UPDATER_PREFIX = "recommender.";
   private static final String STATS_UPDATER = UPDATER_PREFIX + "stats-updater";
   private static final String METRICS_UPDATER = UPDATER_PREFIX + "metrics-updater";
+
   public static final ConfigEntry<String> STATS_PROVIDER_CONFIG =
       new ConfigBuilder(STATS_PROVIDER)
           .doc("The stats provider for the recommender.")

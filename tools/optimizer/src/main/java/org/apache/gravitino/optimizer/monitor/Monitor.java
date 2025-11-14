@@ -63,7 +63,7 @@ public class Monitor {
       long rangeSeconds) {
     Pair<Long, Long> timeRange = getTimeRange(time, rangeSeconds);
     Map<String, List<SingleMetric>> metrics =
-        metricsProvider.tableMetricDetails(
+        metricsProvider.listTableMetrics(
             tableIdentifier, Optional.empty(), timeRange.getLeft(), timeRange.getRight());
 
     Pair<Map<String, List<SingleMetric>>, Map<String, List<SingleMetric>>> splitMetrics =
@@ -93,7 +93,7 @@ public class Monitor {
   private void evaluateJobMetrics(
       TableMetricsEvaluator evaluator, NameIdentifier jobIdentifier, long time, long rangeSeconds) {
     Map<String, List<SingleMetric>> metrics =
-        metricsProvider.jobMetricDetails(jobIdentifier, time, rangeSeconds);
+        metricsProvider.listJobMetrics(jobIdentifier, time, rangeSeconds);
     Pair<Map<String, List<SingleMetric>>, Map<String, List<SingleMetric>>> splitMetrics =
         splitMetrics(metrics, time);
     evaluator.evaluateJobMetrics(splitMetrics.getLeft(), splitMetrics.getRight());

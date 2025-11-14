@@ -27,25 +27,35 @@ import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.optimizer.api.common.SingleMetric;
 import org.apache.gravitino.optimizer.api.common.SingleStatistic;
 import org.apache.gravitino.optimizer.api.monitor.MetricsProvider;
+import org.apache.gravitino.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.optimizer.common.SingleMetricImpl;
 import org.apache.gravitino.optimizer.common.SinglePartition;
 import org.apache.gravitino.optimizer.common.util.StatisticValueUtils;
 import org.apache.gravitino.optimizer.updater.impl.PartitionStatisticImpl;
 import org.apache.gravitino.optimizer.updater.impl.SingleStatisticImpl;
+import org.apache.gravitino.optimizer.updater.impl.metrics.H2MetricsStorage;
 import org.apache.gravitino.optimizer.updater.impl.metrics.MetricsStorage;
 import org.apache.gravitino.optimizer.updater.impl.metrics.StorageMetric;
 import org.apache.gravitino.optimizer.updater.impl.util.PartitionUtils;
 
 public class GravitinoMetricsProvider implements MetricsProvider {
 
+  private static final String GRAVITINO_METRICS_NAME = "gravitino-metrics-provider";
   private MetricsStorage metricsStorage;
 
-  void initialize(MetricsStorage metricsStorage) {
-    this.metricsStorage = metricsStorage;
+  @Override
+  public String name() {
+    return GRAVITINO_METRICS_NAME;
   }
 
   @Override
-  public Map<String, List<SingleMetric>> jobMetricDetails(
+  public void initialize(OptimizerEnv optimizerEnv) {
+    this.metricsStorage = new H2MetricsStorage();
+    metricsStorage.initialize(optimizerEnv.config().getAllConfig());
+  }
+
+  @Override
+  public Map<String, List<SingleMetric>> listJobMetrics(
       NameIdentifier jobIdentifier, long startTime, long endTime) {
     Map<String, List<StorageMetric>> metrics =
         metricsStorage.getJobMetrics(jobIdentifier, startTime, endTime);
@@ -54,19 +64,19 @@ public class GravitinoMetricsProvider implements MetricsProvider {
   }
 
   @Override
-  public Map<String, List<SingleMetric>> tableMetricDetails(
+  public Map<String, List<SingleMetric>> listTableMetrics(
       NameIdentifier tableIdentifier,
-      Optional<List<SinglePartition>> partitions,
+      Optional<List<SinglePartition>> partitionName,
       long startTime,
       long endTime) {
     Map<String, List<StorageMetric>> metrics =
-        metricsStorage.getAllTableMetrics(
+        metricsStorage.getTableMetrics(
             tableIdentifier,
-            partitions.map(PartitionUtils::getGravitinoPartitionName),
+            partitionName.map(PartitionUtils::getGravitinoPartitionName),
             startTime,
             endTime);
 
-    return toSingeMetrics(metrics, partitions);
+    return toSingeMetrics(metrics, partitionName);
   }
 
   private Map<String, List<SingleMetric>> toSingeMetrics(
