@@ -40,14 +40,11 @@ public class Updater {
   private Map<String, StatsComputer> computers = new HashMap<>();
   private StatsUpdater statsUpdater;
   private MetricsUpdater metricsUpdater;
-  private OptimizerEnv optimizerEnv;
 
-  public Updater(OptimizerConfig config) {
-    this.optimizerEnv = OptimizerEnv.getInstance();
-    optimizerEnv.initialize(config);
-    this.statsUpdater = loadStatsUpdater(config);
+  public Updater(OptimizerEnv optimizerEnv) {
+    this.statsUpdater = loadStatsUpdater(optimizerEnv.config());
     statsUpdater.initialize(optimizerEnv);
-    this.metricsUpdater = loadMetricsUpdater(config);
+    this.metricsUpdater = loadMetricsUpdater(optimizerEnv.config());
     metricsUpdater.initialize(optimizerEnv);
   }
 

@@ -38,14 +38,14 @@ public class OptimizerConfig extends Config {
   public static final String GRAVITINO_DEFAULT_CATALOG = "gravitino-default-catalog";
 
   private static final String RECOMMENDER_PREFIX = "recommender.";
-
   private static final String STATS_PROVIDER = RECOMMENDER_PREFIX + "stats-provider";
   private static final String POLICY_PROVIDER = RECOMMENDER_PREFIX + "policy-provider";
   private static final String TABLE_META_PROVIDER = RECOMMENDER_PREFIX + "table-meta-provider";
   private static final String JOB_SUBMITTER = RECOMMENDER_PREFIX + "job-submitter";
 
-  private static final String STATS_UPDATER = RECOMMENDER_PREFIX + "stats-updater";
-  private static final String METRICS_UPDATER = RECOMMENDER_PREFIX + "metrics-updater";
+  private static final String UPDATER_PREFIX = "recommender.";
+  private static final String STATS_UPDATER = UPDATER_PREFIX + "stats-updater";
+  private static final String METRICS_UPDATER = UPDATER_PREFIX + "metrics-updater";
   public static final ConfigEntry<String> STATS_PROVIDER_CONFIG =
       new ConfigBuilder(STATS_PROVIDER)
           .doc("The stats provider for the recommender.")

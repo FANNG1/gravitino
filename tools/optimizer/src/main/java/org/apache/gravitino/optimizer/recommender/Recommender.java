@@ -50,9 +50,9 @@ public class Recommender {
   private TableMetadataProvider tableMetadataProvider;
   private JobSubmitter jobSubmitter;
 
-  public Recommender(OptimizerConfig config) {
-    this.optimizerEnv = OptimizerEnv.getInstance();
-    optimizerEnv.initialize(config);
+  public Recommender(OptimizerEnv optimizerEnv) {
+    this.optimizerEnv = optimizerEnv;
+    OptimizerConfig config = optimizerEnv.config();
 
     this.policyProvider = loadPolicyProvider(config);
     policyProvider.initialize(optimizerEnv);

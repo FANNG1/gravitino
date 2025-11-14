@@ -23,10 +23,11 @@ import com.google.common.collect.ImmutableMap;
 import java.util.LinkedList;
 import java.util.List;
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;
 
 public class RecommenderCli {
-  Recommender recommender = new Recommender(new OptimizerConfig(ImmutableMap.of()));
+
   /**
    * Runs the recommender with the given arguments.
    *
@@ -39,6 +40,9 @@ public class RecommenderCli {
    *     tableB:xx tableC:xx
    */
   public void run(String[] args) {
+    OptimizerEnv optimizerEnv = OptimizerEnv.getInstance();
+    optimizerEnv.initialize(new OptimizerConfig(ImmutableMap.of()));
+    Recommender recommender = new Recommender(optimizerEnv);
     List<NameIdentifier> tables = new LinkedList<>();
     recommender.recommendForPolicyType(tables, "compact");
   }

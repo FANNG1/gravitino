@@ -119,7 +119,7 @@ public class RecommenderIT extends GravitinoOptimizerEnvIT {
             new SingleStatisticImpl(DELETE_FILE_NUM, StatisticValues.longValue(0)),
             new SingleStatisticImpl(DATAFILE_MSE, StatisticValues.doubleValue(0))));
 
-    Recommender recommender = new Recommender(optimizerEnv.config());
+    Recommender recommender = new Recommender(optimizerEnv);
     List<JobExecuteContext> jobs =
         recommender.recommendForOnePolicy(
             Arrays.asList(
