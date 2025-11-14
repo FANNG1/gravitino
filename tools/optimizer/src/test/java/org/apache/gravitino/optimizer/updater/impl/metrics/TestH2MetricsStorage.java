@@ -73,7 +73,7 @@ class TestH2MetricsStorage {
         metric);
 
     Map<String, List<StorageMetric>> metrics =
-        storage.getAllTableMetrics(nameIdentifier, Optional.empty(), 0, System.currentTimeMillis());
+        storage.getTableMetrics(nameIdentifier, Optional.empty(), 0, System.currentTimeMillis());
 
     Assertions.assertEquals(2, metrics.size());
 
@@ -102,7 +102,7 @@ class TestH2MetricsStorage {
     storage.storeTableMetrics(nameIdentifier, "metric2", Optional.of(partition2), metric3);
 
     Map<String, List<StorageMetric>> metrics =
-        storage.getAllTableMetrics(
+        storage.getTableMetrics(
             nameIdentifier, Optional.of(partition1), 0, System.currentTimeMillis());
 
     Assertions.assertEquals(1, metrics.size());
@@ -110,7 +110,7 @@ class TestH2MetricsStorage {
     Assertions.assertEquals(Arrays.asList("value1"), getMetricValues(metrics.get("metric")));
 
     metrics =
-        storage.getAllTableMetrics(
+        storage.getTableMetrics(
             nameIdentifier, Optional.of(partition2), 0, System.currentTimeMillis());
     Assertions.assertEquals(2, metrics.size());
     Assertions.assertTrue(metrics.containsKey("metric"));
@@ -138,21 +138,21 @@ class TestH2MetricsStorage {
     storage.storeTableMetrics(nameIdentifier, "metric1", Optional.of(partition2), metric3);
 
     Map<String, List<StorageMetric>> metrics =
-        storage.getAllTableMetrics(nameIdentifier, Optional.empty(), 0, System.currentTimeMillis());
+        storage.getTableMetrics(nameIdentifier, Optional.empty(), 0, System.currentTimeMillis());
     Assertions.assertEquals(1, metrics.size());
     Assertions.assertTrue(metrics.containsKey("metric1"));
     Assertions.assertEquals(
         Arrays.asList("value1", "value2", "value3"), getMetricValues(metrics.get("metric1")));
 
     metrics =
-        storage.getAllTableMetrics(
+        storage.getTableMetrics(
             nameIdentifier, Optional.of(partition1), 0, System.currentTimeMillis());
     Assertions.assertEquals(1, metrics.size());
     Assertions.assertTrue(metrics.containsKey("metric1"));
     Assertions.assertEquals(Arrays.asList("value1"), getMetricValues(metrics.get("metric1")));
 
     metrics =
-        storage.getAllTableMetrics(
+        storage.getTableMetrics(
             nameIdentifier, Optional.of(partition2), 0, System.currentTimeMillis());
     Assertions.assertEquals(1, metrics.size());
     Assertions.assertTrue(metrics.containsKey("metric1"));

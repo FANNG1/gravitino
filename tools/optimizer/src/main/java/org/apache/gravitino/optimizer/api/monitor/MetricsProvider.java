@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.optimizer.api.common.Provider;
 import org.apache.gravitino.optimizer.api.common.SingleMetric;
 import org.apache.gravitino.optimizer.common.SinglePartition;
 
@@ -30,7 +31,7 @@ import org.apache.gravitino.optimizer.common.SinglePartition;
  * Provider interface for retrieving job-related metrics. Implementations of this interface should
  * provide specific logic to fetch metrics for a given job.
  */
-public interface MetricsProvider {
+public interface MetricsProvider extends Provider {
   /**
    * Retrieves metrics for a specific job within a specified time range.
    *
@@ -42,12 +43,12 @@ public interface MetricsProvider {
    * @return A list of {@link SingleMetric} objects containing the job metrics for the specified
    *     criteria
    */
-  Map<String, List<SingleMetric>> jobMetricDetails(
+  Map<String, List<SingleMetric>> listJobMetrics(
       NameIdentifier jobIdentifier, long startTime, long endTime);
 
-  Map<String, List<SingleMetric>> tableMetricDetails(
+  Map<String, List<SingleMetric>> listTableMetrics(
       NameIdentifier tableIdentifier,
-      Optional<List<SinglePartition>> partitions,
+      Optional<List<SinglePartition>> partitionName,
       long startTime,
       long endTime);
 }

@@ -28,6 +28,7 @@ import org.apache.gravitino.optimizer.api.common.SingleStatistic;
 import org.apache.gravitino.optimizer.api.updater.MetricsUpdater;
 import org.apache.gravitino.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.optimizer.common.util.StatisticValueUtils;
+import org.apache.gravitino.optimizer.updater.impl.metrics.H2MetricsStorage;
 import org.apache.gravitino.optimizer.updater.impl.metrics.MetricsStorage;
 import org.apache.gravitino.optimizer.updater.impl.metrics.StorageMetricImpl;
 import org.apache.gravitino.optimizer.updater.impl.util.PartitionUtils;
@@ -46,8 +47,8 @@ public class GravitinoMetricsUpdater implements MetricsUpdater {
 
   @Override
   public void initialize(OptimizerEnv optimizerEnv) {
-    // Map<String, String> properties = optimizerEnv.config().getAllConfig();
-    // this.metricsStorage.initialize(properties);
+    this.metricsStorage = new H2MetricsStorage();
+    metricsStorage.initialize(optimizerEnv.config().getAllConfig());
   }
 
   @Override
@@ -62,6 +63,14 @@ public class GravitinoMetricsUpdater implements MetricsUpdater {
     metrics.stream()
         .forEach(
             metric -> doUpdateJobMetrics(nameIdentifier, metric.timestamp(), metric.statistic()));
+  }
+
+  public int cleanupTableMetricsBefore(long timestamp) {
+    return metricsStorage.cleanupTableMetricsBefore(timestamp);
+  }
+
+  public int cleanupJobMetricsBefore(long timestamp) {
+    return metricsStorage.cleanupJobMetricsBefore(timestamp);
   }
 
   private void doUpdateJobMetrics(

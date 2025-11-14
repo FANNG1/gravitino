@@ -33,7 +33,11 @@ import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import org.apache.gravitino.Config;
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.config.ConfigBuilder;
+import org.apache.gravitino.config.ConfigConstants;
+import org.apache.gravitino.config.ConfigEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +45,7 @@ public class H2MetricsStorage implements MetricsStorage {
 
   private static final Logger LOG = LoggerFactory.getLogger(H2MetricsStorage.class);
 
-  private static final String JDBC_URL = "jdbc:h2:file:./metrics_db;AUTO_SERVER=TRUE";
+  private static String JDBC_URL = "jdbc:h2:file:./metrics_db;AUTO_SERVER=TRUE";
   private static final String USER = "sa";
   private static final String PASSWORD = "";
 
@@ -52,6 +56,14 @@ public class H2MetricsStorage implements MetricsStorage {
     // scheduler.scheduleAtFixedRate(() -> cleanupAllMetricsBefore(System.currentTimeMillis() - 30L
     // * 24 * 60 * 60 * 1000),
     //                              calculateInitialDelay(), 24, TimeUnit.HOURS);
+  }
+
+  @Override
+  public void initialize(Map<String, String> properties) {
+    H2MetricsStorageConfig config = new H2MetricsStorageConfig(properties);
+    String path = config.get(H2MetricsStorageConfig.H2_METRICS_STORAGE_PATH_CONFIG);
+    JDBC_URL = "jdbc:h2:file:" + path + ";AUTO_SERVER=TRUE";
+    initializeDatabase();
   }
 
   private void initializeDatabase() {
@@ -116,7 +128,7 @@ public class H2MetricsStorage implements MetricsStorage {
   }
 
   @Override
-  public Map<String, List<StorageMetric>> getAllTableMetrics(
+  public Map<String, List<StorageMetric>> getTableMetrics(
       NameIdentifier nameIdentifier,
       Optional<String> partition,
       long fromTimestamp,
@@ -205,6 +217,7 @@ public class H2MetricsStorage implements MetricsStorage {
     return resultMap;
   }
 
+  @Override
   public int cleanupTableMetricsBefore(long beforeTimestamp) {
     String sql = "DELETE FROM table_metrics WHERE timestamp < ?";
 
@@ -220,6 +233,7 @@ public class H2MetricsStorage implements MetricsStorage {
     }
   }
 
+  @Override
   public int cleanupJobMetricsBefore(long beforeTimestamp) {
     String sql = "DELETE FROM job_metrics WHERE timestamp < ?";
 
@@ -252,6 +266,23 @@ public class H2MetricsStorage implements MetricsStorage {
     } catch (InterruptedException e) {
       scheduler.shutdownNow();
       Thread.currentThread().interrupt();
+    }
+  }
+
+  public static class H2MetricsStorageConfig extends Config {
+
+    public static final String H2_METRICS_STORAGE_PATH = "h2-metrics-storage-path";
+
+    public static final ConfigEntry<String> H2_METRICS_STORAGE_PATH_CONFIG =
+        new ConfigBuilder(H2_METRICS_STORAGE_PATH)
+            .doc("The path for H2 metrics storage.")
+            .version(ConfigConstants.VERSION_1_1_0)
+            .stringConf()
+            .createWithDefault("./data/metrics.db");
+
+    public H2MetricsStorageConfig(Map<String, String> properties) {
+      super(false);
+      loadFromMap(properties, k -> true);
     }
   }
 }
