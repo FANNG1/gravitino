@@ -23,5 +23,5 @@ import java.util.List;
 import org.apache.gravitino.optimizer.common.SinglePartition;
 
 public interface PartitionStatistic extends SingleStatistic {
-  List<SinglePartition> partitions();
+  List<SinglePartition> partitionName();
 }

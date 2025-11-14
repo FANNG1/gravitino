@@ -26,13 +26,11 @@ import org.apache.gravitino.optimizer.common.SinglePartition;
 
 public class PartitionUtils {
   public static String getGravitinoPartitionName(List<SinglePartition> partitions) {
-    // Support multi partitions by joining with "/"
-    StringBuilder sb = new StringBuilder();
-    for (SinglePartition partition : partitions) {
-      sb.append(partition.partitionName().replace("=", "_") + "=" + partition.partitionValue());
-      sb.append("/");
-    }
-    return sb.toString();
+    return partitions.stream()
+        .map(
+            partition ->
+                partition.partitionName().replace("=", "_") + "=" + partition.partitionValue())
+        .collect(Collectors.joining("/"));
   }
 
   public static List<SinglePartition> parseGravitinoPartitionName(String gravitinoPartitionName) {

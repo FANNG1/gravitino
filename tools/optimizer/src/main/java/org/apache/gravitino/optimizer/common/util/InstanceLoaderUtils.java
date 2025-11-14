@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer.recommender.actor;
+package org.apache.gravitino.optimizer.common.util;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Streams;
@@ -25,8 +25,9 @@ import java.util.List;
 import java.util.ServiceLoader;
 import java.util.stream.Collectors;
 import org.apache.gravitino.optimizer.api.recommender.PolicyActor;
+import org.apache.gravitino.optimizer.api.updater.StatsComputer;
 
-public class ActorUtils {
+public class InstanceLoaderUtils {
 
   public static <T extends PolicyActor> T createActorInstance(String policyType) {
     ServiceLoader<PolicyActor> loader = ServiceLoader.load(PolicyActor.class);
@@ -42,6 +43,30 @@ public class ActorUtils {
     } else if (providers.size() > 1) {
       throw new IllegalArgumentException(
           "Multiple " + PolicyActor.class.getSimpleName() + " found for: " + policyType);
+    } else {
+      Class<? extends T> providerClz = Iterables.getOnlyElement(providers);
+      try {
+        return providerClz.getDeclaredConstructor().newInstance();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
+
+  public static <T extends StatsComputer> T createStatsComputerInstance(String computerName) {
+    ServiceLoader<StatsComputer> loader = ServiceLoader.load(StatsComputer.class);
+    List<Class<? extends T>> providers =
+        Streams.stream(loader.iterator())
+            .filter(p -> p.name().equalsIgnoreCase(computerName))
+            .map(p -> (Class<? extends T>) p.getClass())
+            .collect(Collectors.toList());
+
+    if (providers.isEmpty()) {
+      throw new IllegalArgumentException(
+          "No " + StatsComputer.class.getSimpleName() + " class found for: " + computerName);
+    } else if (providers.size() > 1) {
+      throw new IllegalArgumentException(
+          "Multiple " + StatsComputer.class.getSimpleName() + " found for: " + computerName);
     } else {
       Class<? extends T> providerClz = Iterables.getOnlyElement(providers);
       try {

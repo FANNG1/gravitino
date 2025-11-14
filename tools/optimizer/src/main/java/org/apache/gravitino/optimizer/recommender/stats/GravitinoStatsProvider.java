@@ -62,7 +62,7 @@ public class GravitinoStatsProvider implements SupportTableStats {
                 IdentifierUtils.getCatalogNameFromTableIdentifier(
                     tableIdentifier, defaultCatalogName))
             .asTableCatalog()
-            .loadTable(tableIdentifier);
+            .loadTable(IdentifierUtils.removeCatalogFromIdentifier(tableIdentifier));
     List<Statistic> statistics = t.supportsStatistics().listStatistics();
     return statistics.stream()
         .filter(statistic -> statistic.value().isPresent())
@@ -78,7 +78,7 @@ public class GravitinoStatsProvider implements SupportTableStats {
                 IdentifierUtils.getCatalogNameFromTableIdentifier(
                     tableIdentifier, defaultCatalogName))
             .asTableCatalog()
-            .loadTable(tableIdentifier);
+            .loadTable(IdentifierUtils.removeCatalogFromIdentifier(tableIdentifier));
     List<PartitionStatistics> partitionStatistics =
         t.supportsPartitionStatistics().listPartitionStatistics(PartitionRange.ALL_PARTITIONS);
 

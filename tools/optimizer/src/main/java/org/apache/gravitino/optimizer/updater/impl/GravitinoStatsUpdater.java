@@ -19,18 +19,17 @@
 
 package org.apache.gravitino.optimizer.updater.impl;
 
-import com.google.common.base.Preconditions;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.Namespace;
 import org.apache.gravitino.client.GravitinoClient;
 import org.apache.gravitino.optimizer.api.common.PartitionStatistic;
 import org.apache.gravitino.optimizer.api.common.SingleStatistic;
 import org.apache.gravitino.optimizer.api.updater.StatsUpdater;
 import org.apache.gravitino.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;
+import org.apache.gravitino.optimizer.common.util.IdentifierUtils;
 import org.apache.gravitino.optimizer.updater.impl.util.PartitionUtils;
 import org.apache.gravitino.stats.PartitionStatisticsUpdate;
 import org.apache.gravitino.stats.StatisticValue;
@@ -68,9 +67,10 @@ public class GravitinoStatsUpdater implements StatsUpdater {
       return;
     }
     gravitinoClient
-        .loadCatalog(getCatalogName(tableIdentifier))
+        .loadCatalog(
+            IdentifierUtils.getCatalogNameFromTableIdentifier(tableIdentifier, defaultCatalogName))
         .asTableCatalog()
-        .loadTable(tableIdentifier)
+        .loadTable(IdentifierUtils.removeCatalogFromIdentifier(tableIdentifier))
         .supportsStatistics()
         .updateStatistics(tableStatsMap);
   }
@@ -93,7 +93,7 @@ public class GravitinoStatsUpdater implements StatsUpdater {
                   @Override
                   public String partitionName() {
                     return PartitionUtils.getGravitinoPartitionName(
-                        partitionStatistic.partitions());
+                        partitionStatistic.partitionName());
                   }
 
                   @Override
@@ -110,20 +110,11 @@ public class GravitinoStatsUpdater implements StatsUpdater {
       return;
     }
     gravitinoClient
-        .loadCatalog(getCatalogName(tableIdentifier))
+        .loadCatalog(
+            IdentifierUtils.getCatalogNameFromTableIdentifier(tableIdentifier, defaultCatalogName))
         .asTableCatalog()
-        .loadTable(tableIdentifier)
+        .loadTable(IdentifierUtils.removeCatalogFromIdentifier(tableIdentifier))
         .supportsPartitionStatistics()
         .updatePartitionStatistics(partitionStatisticsUpdates);
-  }
-
-  private String getCatalogName(NameIdentifier tableIdentifier) {
-    Namespace namespace = tableIdentifier.namespace();
-    Preconditions.checkArgument(namespace != null && namespace.levels().length >= 1);
-    if (namespace.levels().length == 1) {
-      return defaultCatalogName;
-    }
-
-    return namespace.levels()[0];
   }
 }

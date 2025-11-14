@@ -20,6 +20,7 @@
 package org.apache.gravitino.optimizer.recommender.actor;
 
 import org.apache.gravitino.optimizer.api.recommender.PolicyActor;
+import org.apache.gravitino.optimizer.common.util.InstanceLoaderUtils;
 import org.apache.gravitino.optimizer.recommender.actor.compaction.CompactionPolicyActor;
 import org.apache.gravitino.optimizer.recommender.util.PolicyUtils;
 import org.junit.jupiter.api.Assertions;
@@ -29,7 +30,7 @@ class TestActorUtils {
 
   @Test
   void createActorInstanceReturnsActorForValidPolicyType() {
-    PolicyActor actor = ActorUtils.createActorInstance(PolicyUtils.COMPACTION_POLICY_TYPE);
+    PolicyActor actor = InstanceLoaderUtils.createActorInstance(PolicyUtils.COMPACTION_POLICY_TYPE);
     Assertions.assertTrue(actor instanceof CompactionPolicyActor);
   }
 }

@@ -19,10 +19,9 @@
 
 package org.apache.gravitino.optimizer.updater;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.optimizer.api.common.SingleMetric;
 import org.apache.gravitino.optimizer.api.common.SingleStatistic;
@@ -34,10 +33,10 @@ import org.apache.gravitino.optimizer.api.updater.SupportTableStats;
 import org.apache.gravitino.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.optimizer.common.SingleMetricImpl;
 import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;
+import org.apache.gravitino.optimizer.common.util.InstanceLoaderUtils;
 import org.apache.gravitino.optimizer.common.util.ProviderUtils;
 
 public class Updater {
-  private Map<String, StatsComputer> computers = new HashMap<>();
   private StatsUpdater statsUpdater;
   private MetricsUpdater metricsUpdater;
 
@@ -69,6 +68,11 @@ public class Updater {
     }
   }
 
+  @VisibleForTesting
+  public MetricsUpdater getMetricsUpdater() {
+    return metricsUpdater;
+  }
+
   private void updateTable(
       List<SingleStatistic<?>> statistics, NameIdentifier tableIdentifier, UpdateType updateType) {
     switch (updateType) {
@@ -92,7 +96,7 @@ public class Updater {
   }
 
   private StatsComputer getStatsComputer(String statsComputerName) {
-    return computers.get(statsComputerName);
+    return InstanceLoaderUtils.createStatsComputerInstance(statsComputerName);
   }
 
   private StatsUpdater loadStatsUpdater(OptimizerConfig config) {

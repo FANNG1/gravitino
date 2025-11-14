@@ -37,8 +37,8 @@ import org.apache.gravitino.optimizer.api.recommender.SupportTableStats;
 import org.apache.gravitino.optimizer.api.recommender.TableMetadataProvider;
 import org.apache.gravitino.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;
+import org.apache.gravitino.optimizer.common.util.InstanceLoaderUtils;
 import org.apache.gravitino.optimizer.common.util.ProviderUtils;
-import org.apache.gravitino.optimizer.recommender.actor.ActorUtils;
 import org.apache.gravitino.rel.Table;
 
 @SuppressWarnings("UnusedVariable")
@@ -115,7 +115,7 @@ public class Recommender {
   }
 
   private PolicyActor getPolicyActor(String policyType) {
-    return ActorUtils.createActorInstance(policyType);
+    return InstanceLoaderUtils.createActorInstance(policyType);
   }
 
   private List<String> getPolicyNames(List<NameIdentifier> tableIdentifiers, String policyType) {

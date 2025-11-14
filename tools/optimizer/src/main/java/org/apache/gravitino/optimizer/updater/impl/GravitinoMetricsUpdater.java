@@ -88,7 +88,7 @@ public class GravitinoMetricsUpdater implements MetricsUpdater {
       metricsStorage.storeTableMetrics(
           nameIdentifier,
           statistic.name(),
-          Optional.of(PartitionUtils.getGravitinoPartitionName(partitionStatistic.partitions())),
+          Optional.of(PartitionUtils.getGravitinoPartitionName(partitionStatistic.partitionName())),
           new StorageMetricImpl(timestamp, StatisticValueUtils.toString(statistic.value())));
       return;
     }

@@ -29,6 +29,7 @@ import org.apache.gravitino.optimizer.recommender.job.GravitinoJobSubmitter;
 import org.apache.gravitino.optimizer.recommender.policy.GravitinoPolicyProvider;
 import org.apache.gravitino.optimizer.recommender.stats.GravitinoStatsProvider;
 import org.apache.gravitino.optimizer.recommender.table.GravitinoTableMetadataProvider;
+import org.apache.gravitino.optimizer.updater.impl.GravitinoMetricsUpdater;
 import org.apache.gravitino.optimizer.updater.impl.GravitinoStatsUpdater;
 
 public class OptimizerConfig extends Config {
@@ -87,7 +88,7 @@ public class OptimizerConfig extends Config {
           .doc("The metrics updater for the recommender.")
           .version(ConfigConstants.VERSION_1_1_0)
           .stringConf()
-          .createWithDefault(GravitinoStatsProvider.GRAVITINO_STATS_PROVIDER_NAME);
+          .createWithDefault(GravitinoMetricsUpdater.GRAVITINO_METRICS_UPDATER_NAME);
 
   public static final ConfigEntry<String> GRAVITINO_URI_CONFIG =
       new ConfigBuilder(GRAVITINO_URI)

@@ -110,7 +110,8 @@ public class GravitinoMetricsIT {
     Assertions.assertEquals(1, partitionMetrics1.size());
     Assertions.assertTrue(partitionMetrics1.get(0).statistic() instanceof PartitionStatisticImpl);
     Assertions.assertEquals(
-        partition1, ((PartitionStatisticImpl) partitionMetrics1.get(0).statistic()).partitions());
+        partition1,
+        ((PartitionStatisticImpl) partitionMetrics1.get(0).statistic()).partitionName());
     Assertions.assertEquals(1003L, partitionMetrics1.get(0).statistic().value().value());
     Assertions.assertEquals(1000, partitionMetrics1.get(0).timestamp());
 
@@ -123,7 +124,8 @@ public class GravitinoMetricsIT {
     Assertions.assertEquals(1, partitionMetrics2.size());
     Assertions.assertTrue(partitionMetrics2.get(0).statistic() instanceof PartitionStatisticImpl);
     Assertions.assertEquals(
-        partition2, ((PartitionStatisticImpl) partitionMetrics2.get(0).statistic()).partitions());
+        partition2,
+        ((PartitionStatisticImpl) partitionMetrics2.get(0).statistic()).partitionName());
     Assertions.assertEquals(1004L, partitionMetrics2.get(0).statistic().value().value());
     Assertions.assertEquals(1000, partitionMetrics2.get(0).timestamp());
   }
