@@ -27,7 +27,7 @@ import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.optimizer.api.common.PartitionStatistic;
 import org.apache.gravitino.optimizer.api.common.SingleMetric;
 import org.apache.gravitino.optimizer.api.common.SingleStatistic;
-import org.apache.gravitino.optimizer.monitor.impl.GravitinoMetricsProvider;
+import org.apache.gravitino.optimizer.monitor.metrics.GravitinoMetricsProvider;
 import org.apache.gravitino.optimizer.recommender.stats.GravitinoStatsProvider;
 import org.apache.gravitino.optimizer.updater.UpdateType;
 import org.apache.gravitino.optimizer.updater.Updater;

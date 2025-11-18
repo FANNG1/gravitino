@@ -25,6 +25,9 @@ import org.apache.gravitino.Config;
 import org.apache.gravitino.config.ConfigBuilder;
 import org.apache.gravitino.config.ConfigConstants;
 import org.apache.gravitino.config.ConfigEntry;
+import org.apache.gravitino.optimizer.monitor.evaluator.GravitinoMetricsEvaluator;
+import org.apache.gravitino.optimizer.monitor.job.DummyJobProvider;
+import org.apache.gravitino.optimizer.monitor.metrics.GravitinoMetricsProvider;
 import org.apache.gravitino.optimizer.recommender.job.GravitinoJobSubmitter;
 import org.apache.gravitino.optimizer.recommender.policy.GravitinoPolicyProvider;
 import org.apache.gravitino.optimizer.recommender.stats.GravitinoStatsProvider;
@@ -44,9 +47,14 @@ public class OptimizerConfig extends Config {
   private static final String TABLE_META_PROVIDER = RECOMMENDER_PREFIX + "table-meta-provider";
   private static final String JOB_SUBMITTER = RECOMMENDER_PREFIX + "job-submitter";
 
-  private static final String UPDATER_PREFIX = "recommender.";
+  private static final String UPDATER_PREFIX = "updater.";
   private static final String STATS_UPDATER = UPDATER_PREFIX + "stats-updater";
   private static final String METRICS_UPDATER = UPDATER_PREFIX + "metrics-updater";
+
+  private static final String MONITOR_PREFIX = "monitor.";
+  private static final String METRICS_PROVIDER = MONITOR_PREFIX + "metrics-provider";
+  public static final String JOB_PROVIDER = MONITOR_PREFIX + "job-provider";
+  public static final String METRICS_EVALUATOR = MONITOR_PREFIX + "metrics-evaluator";
 
   public static final ConfigEntry<String> STATS_PROVIDER_CONFIG =
       new ConfigBuilder(STATS_PROVIDER)
@@ -89,6 +97,27 @@ public class OptimizerConfig extends Config {
           .version(ConfigConstants.VERSION_1_1_0)
           .stringConf()
           .createWithDefault(GravitinoMetricsUpdater.GRAVITINO_METRICS_UPDATER_NAME);
+
+  public static final ConfigEntry<String> METRICS_PROVIDER_CONFIG =
+      new ConfigBuilder(METRICS_PROVIDER)
+          .doc("The metrics provider for the monitor.")
+          .version(ConfigConstants.VERSION_1_1_0)
+          .stringConf()
+          .createWithDefault(GravitinoMetricsProvider.GRAVITINO_METRICS_PROVIDER_NAME);
+
+  public static final ConfigEntry<String> JOB_PROVIDER_CONFIG =
+      new ConfigBuilder(JOB_PROVIDER)
+          .doc("The job provider for the monitor.")
+          .version(ConfigConstants.VERSION_1_1_0)
+          .stringConf()
+          .createWithDefault(DummyJobProvider.NAME);
+
+  public static final ConfigEntry<String> METRICS_EVALUATOR_CONFIG =
+      new ConfigBuilder(METRICS_EVALUATOR)
+          .doc("The metrics evaluator for the monitor.")
+          .version(ConfigConstants.VERSION_1_1_0)
+          .stringConf()
+          .createWithDefault(GravitinoMetricsEvaluator.NAME);
 
   public static final ConfigEntry<String> GRAVITINO_URI_CONFIG =
       new ConfigBuilder(GRAVITINO_URI)

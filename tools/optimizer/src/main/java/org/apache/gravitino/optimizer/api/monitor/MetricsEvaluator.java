@@ -20,10 +20,21 @@
 package org.apache.gravitino.optimizer.api.monitor;
 
 import java.util.List;
+import java.util.Map;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.optimizer.api.common.Provider;
+import org.apache.gravitino.optimizer.api.common.SingleMetric;
 
-// Get upstream and downstream jobs for a table
-public interface JobProvider extends Provider {
-  List<NameIdentifier> getJobNames(NameIdentifier tableIdentifier);
+// Evaluator interface for the table and related job metrics before and after optimization actions.
+public interface MetricsEvaluator {
+  String name();
+
+  boolean evaluateTableMetrics(
+      NameIdentifier tableIdentifier,
+      Map<String, List<SingleMetric>> beforeMetrics,
+      Map<String, List<SingleMetric>> afterMetrics);
+
+  boolean evaluateJobMetrics(
+      NameIdentifier jobIdentifier,
+      Map<String, List<SingleMetric>> beforeMetrics,
+      Map<String, List<SingleMetric>> afterMetrics);
 }

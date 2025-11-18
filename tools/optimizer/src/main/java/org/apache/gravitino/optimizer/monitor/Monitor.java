@@ -27,20 +27,25 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.optimizer.api.common.SingleMetric;
 import org.apache.gravitino.optimizer.api.monitor.JobProvider;
+import org.apache.gravitino.optimizer.api.monitor.MetricsEvaluator;
 import org.apache.gravitino.optimizer.api.monitor.MetricsProvider;
-import org.apache.gravitino.optimizer.api.monitor.TableMetricsEvaluator;
-import org.apache.gravitino.optimizer.monitor.impl.GravitinoEvaluator;
+import org.apache.gravitino.optimizer.common.OptimizerEnv;
+import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;
+import org.apache.gravitino.optimizer.common.util.InstanceLoaderUtils;
+import org.apache.gravitino.optimizer.common.util.ProviderUtils;
 
 public class Monitor {
 
   private MetricsProvider metricsProvider;
   private JobProvider jobProvider;
-  private Map<String, TableMetricsEvaluator> evaluators = new HashMap<>();
-  private TableMetricsEvaluator defaultEvaluator = new GravitinoEvaluator();
+  private MetricsEvaluator defaultMetricsEvaluator;
 
-  public Monitor() {
-    this.metricsProvider = loadMetricsProvider();
-    this.jobProvider = loadJobProvider();
+  public Monitor(OptimizerEnv optimizerEnv) {
+    this.metricsProvider = loadMetricsProvider(optimizerEnv.config());
+    metricsProvider.initialize(optimizerEnv);
+    this.jobProvider = loadJobProvider(optimizerEnv.config());
+    jobProvider.initialize(optimizerEnv);
+    this.defaultMetricsEvaluator = loadMetricsEvaluator(optimizerEnv.config());
   }
 
   public void run(
@@ -48,7 +53,7 @@ public class Monitor {
       long ActionTime,
       long rangeSeconds,
       Optional<String> policyType) {
-    TableMetricsEvaluator evaluator = getMetricsEvaluator(policyType);
+    MetricsEvaluator evaluator = getMetricsEvaluator(policyType);
     evaluateTableMetrics(evaluator, tableIdentifier, ActionTime, rangeSeconds);
     List<NameIdentifier> jobs = jobProvider.getJobNames(tableIdentifier);
     for (NameIdentifier job : jobs) {
@@ -56,11 +61,12 @@ public class Monitor {
     }
   }
 
+  public MetricsEvaluator metricsEvaluator() {
+    return defaultMetricsEvaluator;
+  }
+
   void evaluateTableMetrics(
-      TableMetricsEvaluator evaluator,
-      NameIdentifier tableIdentifier,
-      long time,
-      long rangeSeconds) {
+      MetricsEvaluator evaluator, NameIdentifier tableIdentifier, long time, long rangeSeconds) {
     Pair<Long, Long> timeRange = getTimeRange(time, rangeSeconds);
     Map<String, List<SingleMetric>> metrics =
         metricsProvider.listTableMetrics(
@@ -69,7 +75,8 @@ public class Monitor {
     Pair<Map<String, List<SingleMetric>>, Map<String, List<SingleMetric>>> splitMetrics =
         splitMetrics(metrics, time);
 
-    evaluator.evaluateTableMetrics(splitMetrics.getLeft(), splitMetrics.getRight());
+    evaluator.evaluateTableMetrics(
+        tableIdentifier, splitMetrics.getLeft(), splitMetrics.getRight());
   }
 
   private Pair<Map<String, List<SingleMetric>>, Map<String, List<SingleMetric>>> splitMetrics(
@@ -91,32 +98,42 @@ public class Monitor {
   }
 
   private void evaluateJobMetrics(
-      TableMetricsEvaluator evaluator, NameIdentifier jobIdentifier, long time, long rangeSeconds) {
+      MetricsEvaluator evaluator,
+      NameIdentifier jobIdentifier,
+      long actionTimeInSeconds,
+      long rangeSeconds) {
+    Pair<Long, Long> timeRange = getTimeRange(actionTimeInSeconds, rangeSeconds);
     Map<String, List<SingleMetric>> metrics =
-        metricsProvider.listJobMetrics(jobIdentifier, time, rangeSeconds);
+        metricsProvider.listJobMetrics(jobIdentifier, timeRange.getLeft(), timeRange.getRight());
     Pair<Map<String, List<SingleMetric>>, Map<String, List<SingleMetric>>> splitMetrics =
-        splitMetrics(metrics, time);
-    evaluator.evaluateJobMetrics(splitMetrics.getLeft(), splitMetrics.getRight());
+        splitMetrics(metrics, actionTimeInSeconds);
+    evaluator.evaluateJobMetrics(jobIdentifier, splitMetrics.getLeft(), splitMetrics.getRight());
   }
 
-  private TableMetricsEvaluator getMetricsEvaluator(Optional<String> policyType) {
-    if (policyType.isPresent()) {
-      return evaluators.getOrDefault(policyType.get(), defaultEvaluator);
-    }
-    return defaultEvaluator;
+  @SuppressWarnings("UnusedVariable")
+  private MetricsEvaluator getMetricsEvaluator(Optional<String> policyType) {
+    // TODO: use different metrics evaluator for different policy type
+    return defaultMetricsEvaluator;
   }
 
-  private Pair<Long, Long> getTimeRange(long actionTime, long rangeHours) {
-    long startTime = actionTime - rangeHours * 60 * 60;
-    long endTime = actionTime + rangeHours * 60 * 60;
+  private Pair<Long, Long> getTimeRange(long actionTime, long rangeSeconds) {
+    long startTime = actionTime - rangeSeconds;
+    long endTime = actionTime + rangeSeconds;
     return Pair.of(startTime, endTime);
   }
 
-  private MetricsProvider loadMetricsProvider() {
-    return null;
+  private MetricsProvider loadMetricsProvider(OptimizerConfig optimizerConfig) {
+    return ProviderUtils.createMetricsProviderInstance(
+        optimizerConfig.get(OptimizerConfig.METRICS_PROVIDER_CONFIG));
   }
 
-  private JobProvider loadJobProvider() {
-    return null;
+  private JobProvider loadJobProvider(OptimizerConfig optimizerConfig) {
+    return ProviderUtils.createJobProviderInstance(
+        optimizerConfig.get(OptimizerConfig.JOB_PROVIDER_CONFIG));
+  }
+
+  private MetricsEvaluator loadMetricsEvaluator(OptimizerConfig optimizerConfig) {
+    return InstanceLoaderUtils.createMetricsEvaluatorInstance(
+        optimizerConfig.get(OptimizerConfig.METRICS_EVALUATOR_CONFIG));
   }
 }

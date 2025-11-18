@@ -21,6 +21,8 @@ package org.apache.gravitino.optimizer.monitor;
 
 import java.util.Optional;
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.optimizer.common.OptimizerEnv;
+import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;
 
 public class MonitorCli {
 
@@ -39,7 +41,9 @@ public class MonitorCli {
     long time = Long.parseLong(args[1]);
     long rangeSeconds = Long.parseLong(args[2]);
     Optional<String> policyType = Optional.ofNullable(args[3]);
-    new Monitor().run(tableIdentifier, time, rangeSeconds, policyType);
+    OptimizerEnv optimizerEnv = OptimizerEnv.getInstance();
+    optimizerEnv.initialize(new OptimizerConfig());
+    new Monitor(optimizerEnv).run(tableIdentifier, time, rangeSeconds, policyType);
   }
 
   public static void main(String[] args) {

@@ -16,14 +16,5 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-org.apache.gravitino.optimizer.recommender.policy.GravitinoPolicyProvider
-org.apache.gravitino.optimizer.recommender.stats.GravitinoStatsProvider
-org.apache.gravitino.optimizer.recommender.table.GravitinoTableMetadataProvider
-org.apache.gravitino.optimizer.recommender.job.GravitinoJobSubmitter
-org.apache.gravitino.optimizer.recommender.job.NoopJobSubmitter
 
-org.apache.gravitino.optimizer.updater.impl.GravitinoMetricsUpdater
-org.apache.gravitino.optimizer.updater.impl.GravitinoStatsUpdater
-
-org.apache.gravitino.optimizer.monitor.metrics.GravitinoMetricsProvider
-org.apache.gravitino.optimizer.monitor.job.DummyJobProvider
+org.apache.gravitino.optimizer.monitor.evaluator.GravitinoMetricsEvaluator
