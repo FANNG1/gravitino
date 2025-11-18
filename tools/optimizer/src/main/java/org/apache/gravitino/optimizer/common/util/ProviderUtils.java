@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.ServiceLoader;
 import java.util.stream.Collectors;
 import org.apache.gravitino.optimizer.api.common.Provider;
+import org.apache.gravitino.optimizer.api.monitor.JobProvider;
+import org.apache.gravitino.optimizer.api.monitor.MetricsProvider;
 import org.apache.gravitino.optimizer.api.recommender.JobSubmitter;
 import org.apache.gravitino.optimizer.api.recommender.PolicyProvider;
 import org.apache.gravitino.optimizer.api.recommender.StatsProvider;
@@ -82,5 +84,13 @@ public class ProviderUtils {
 
   public static MetricsUpdater createMetricsUpdaterInstance(String provider) {
     return createProviderInstance(MetricsUpdater.class, provider);
+  }
+
+  public static MetricsProvider createMetricsProviderInstance(String provider) {
+    return createProviderInstance(MetricsProvider.class, provider);
+  }
+
+  public static JobProvider createJobProviderInstance(String provider) {
+    return createProviderInstance(JobProvider.class, provider);
   }
 }

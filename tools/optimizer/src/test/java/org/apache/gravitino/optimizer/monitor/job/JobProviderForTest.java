@@ -17,17 +17,29 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer.api.monitor;
+package org.apache.gravitino.optimizer.monitor.job;
 
 import java.util.List;
-import java.util.Map;
-import org.apache.gravitino.optimizer.api.common.SingleMetric;
+import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.optimizer.api.monitor.JobProvider;
+import org.apache.gravitino.optimizer.common.OptimizerEnv;
 
-// Evaluator interface for the table and related job metrics before and after optimization actions.
-public interface TableMetricsEvaluator {
-  boolean evaluateTableMetrics(
-      Map<String, List<SingleMetric>> beforeMetrics, Map<String, List<SingleMetric>> afterMetrics);
+public class JobProviderForTest implements JobProvider {
 
-  boolean evaluateJobMetrics(
-      Map<String, List<SingleMetric>> beforeMetrics, Map<String, List<SingleMetric>> afterMetrics);
+  public static final String NAME = "job-provider-for-test";
+  public static final NameIdentifier job1 = NameIdentifier.of("job_upstream_1");
+  public static final NameIdentifier job2 = NameIdentifier.of("job_downstream_1");
+
+  @Override
+  public String name() {
+    return NAME;
+  }
+
+  @Override
+  public void initialize(OptimizerEnv optimizerEnv) {}
+
+  @Override
+  public List<NameIdentifier> getJobNames(NameIdentifier tableIdentifier) {
+    return List.of(job1, job2);
+  }
 }

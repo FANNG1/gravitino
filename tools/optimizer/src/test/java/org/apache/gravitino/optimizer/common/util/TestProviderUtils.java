@@ -19,12 +19,16 @@
 
 package org.apache.gravitino.optimizer.common.util;
 
+import org.apache.gravitino.optimizer.api.monitor.JobProvider;
+import org.apache.gravitino.optimizer.api.monitor.MetricsProvider;
 import org.apache.gravitino.optimizer.api.recommender.JobSubmitter;
 import org.apache.gravitino.optimizer.api.recommender.PolicyProvider;
 import org.apache.gravitino.optimizer.api.recommender.StatsProvider;
 import org.apache.gravitino.optimizer.api.recommender.TableMetadataProvider;
 import org.apache.gravitino.optimizer.api.updater.MetricsUpdater;
 import org.apache.gravitino.optimizer.api.updater.StatsUpdater;
+import org.apache.gravitino.optimizer.monitor.job.DummyJobProvider;
+import org.apache.gravitino.optimizer.monitor.metrics.GravitinoMetricsProvider;
 import org.apache.gravitino.optimizer.recommender.job.GravitinoJobSubmitter;
 import org.apache.gravitino.optimizer.recommender.job.NoopJobSubmitter;
 import org.apache.gravitino.optimizer.recommender.policy.GravitinoPolicyProvider;
@@ -94,5 +98,21 @@ public class TestProviderUtils {
             GravitinoMetricsUpdater.GRAVITINO_METRICS_UPDATER_NAME);
     Assertions.assertNotNull(metricsUpdater);
     Assertions.assertTrue(metricsUpdater instanceof GravitinoMetricsUpdater);
+  }
+
+  @Test
+  public void testCreateMetricsProviderInstance() {
+    MetricsProvider metricsProvider =
+        ProviderUtils.createMetricsProviderInstance(
+            GravitinoMetricsProvider.GRAVITINO_METRICS_PROVIDER_NAME);
+    Assertions.assertNotNull(metricsProvider);
+    Assertions.assertTrue(metricsProvider instanceof GravitinoMetricsProvider);
+  }
+
+  @Test
+  public void testCreateJobsProviderInstance() {
+    JobProvider jobProvider = ProviderUtils.createJobProviderInstance(DummyJobProvider.NAME);
+    Assertions.assertNotNull(jobProvider);
+    Assertions.assertTrue(jobProvider instanceof DummyJobProvider);
   }
 }

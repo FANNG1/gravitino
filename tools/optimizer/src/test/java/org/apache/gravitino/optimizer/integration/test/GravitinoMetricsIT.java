@@ -30,7 +30,7 @@ import org.apache.gravitino.optimizer.common.PartitionImpl;
 import org.apache.gravitino.optimizer.common.SingleMetricImpl;
 import org.apache.gravitino.optimizer.common.SinglePartition;
 import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;
-import org.apache.gravitino.optimizer.monitor.impl.GravitinoMetricsProvider;
+import org.apache.gravitino.optimizer.monitor.metrics.GravitinoMetricsProvider;
 import org.apache.gravitino.optimizer.updater.impl.GravitinoMetricsUpdater;
 import org.apache.gravitino.optimizer.updater.impl.PartitionStatisticImpl;
 import org.apache.gravitino.optimizer.updater.impl.SingleStatisticImpl;

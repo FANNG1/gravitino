@@ -17,13 +17,27 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer.api.monitor;
+package org.apache.gravitino.optimizer.monitor.job;
 
 import java.util.List;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.optimizer.api.common.Provider;
+import org.apache.gravitino.optimizer.api.monitor.JobProvider;
+import org.apache.gravitino.optimizer.common.OptimizerEnv;
 
-// Get upstream and downstream jobs for a table
-public interface JobProvider extends Provider {
-  List<NameIdentifier> getJobNames(NameIdentifier tableIdentifier);
+public class DummyJobProvider implements JobProvider {
+
+  public static final String NAME = "dummy-job-provider";
+
+  @Override
+  public List<NameIdentifier> getJobNames(NameIdentifier tableIdentifier) {
+    return List.of();
+  }
+
+  @Override
+  public String name() {
+    return NAME;
+  }
+
+  @Override
+  public void initialize(OptimizerEnv optimizerEnv) {}
 }

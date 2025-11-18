@@ -36,7 +36,7 @@ import org.apache.gravitino.rel.Table;
 
 public class GravitinoPolicyProvider implements PolicyProvider {
 
-  public static final String GRAVITINO_POLICY_PROVIDER_NAME = "gravitino";
+  public static final String GRAVITINO_POLICY_PROVIDER_NAME = "gravitino-policy-provider";
   private GravitinoClient gravitinoClient;
 
   private String defaultCatalogName;

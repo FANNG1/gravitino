@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer.monitor.impl;
+package org.apache.gravitino.optimizer.monitor.metrics;
 
 import java.util.List;
 import java.util.Map;
@@ -40,12 +40,12 @@ import org.apache.gravitino.optimizer.updater.impl.util.PartitionUtils;
 
 public class GravitinoMetricsProvider implements MetricsProvider {
 
-  private static final String GRAVITINO_METRICS_NAME = "gravitino-metrics-provider";
+  public static final String GRAVITINO_METRICS_PROVIDER_NAME = "gravitino-metrics-provider";
   private MetricsStorage metricsStorage;
 
   @Override
   public String name() {
-    return GRAVITINO_METRICS_NAME;
+    return GRAVITINO_METRICS_PROVIDER_NAME;
   }
 
   @Override

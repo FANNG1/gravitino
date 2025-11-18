@@ -24,6 +24,7 @@ import com.google.common.collect.Streams;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.stream.Collectors;
+import org.apache.gravitino.optimizer.api.monitor.MetricsEvaluator;
 import org.apache.gravitino.optimizer.api.recommender.PolicyActor;
 import org.apache.gravitino.optimizer.api.updater.StatsComputer;
 
@@ -67,6 +68,31 @@ public class InstanceLoaderUtils {
     } else if (providers.size() > 1) {
       throw new IllegalArgumentException(
           "Multiple " + StatsComputer.class.getSimpleName() + " found for: " + computerName);
+    } else {
+      Class<? extends T> providerClz = Iterables.getOnlyElement(providers);
+      try {
+        return providerClz.getDeclaredConstructor().newInstance();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
+
+  public static <T extends MetricsEvaluator> T createMetricsEvaluatorInstance(
+      String evaluatorName) {
+    ServiceLoader<MetricsEvaluator> loader = ServiceLoader.load(MetricsEvaluator.class);
+    List<Class<? extends T>> providers =
+        Streams.stream(loader.iterator())
+            .filter(p -> p.name().equalsIgnoreCase(evaluatorName))
+            .map(p -> (Class<? extends T>) p.getClass())
+            .collect(Collectors.toList());
+
+    if (providers.isEmpty()) {
+      throw new IllegalArgumentException(
+          "No " + MetricsEvaluator.class.getSimpleName() + " class found for: " + evaluatorName);
+    } else if (providers.size() > 1) {
+      throw new IllegalArgumentException(
+          "Multiple " + MetricsEvaluator.class.getSimpleName() + " found for: " + evaluatorName);
     } else {
       Class<? extends T> providerClz = Iterables.getOnlyElement(providers);
       try {

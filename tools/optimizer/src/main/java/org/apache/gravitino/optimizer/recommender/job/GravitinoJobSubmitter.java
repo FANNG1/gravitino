@@ -32,7 +32,7 @@ import org.apache.gravitino.optimizer.recommender.util.PolicyUtils;
 @SuppressWarnings("unused")
 public class GravitinoJobSubmitter implements JobSubmitter {
 
-  public static final String GRAVITINO_JOB_SUBMITTER_NAME = "gravitino";
+  public static final String GRAVITINO_JOB_SUBMITTER_NAME = "gravitino-job-submitter";
 
   private GravitinoClient gravitinoClient;
 
