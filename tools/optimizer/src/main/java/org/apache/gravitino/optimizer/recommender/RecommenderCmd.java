@@ -19,7 +19,6 @@
 
 package org.apache.gravitino.optimizer.recommender;
 
-import com.google.common.base.Preconditions;
 import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.cli.CommandLine;
@@ -30,25 +29,14 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.optimizer.common.OptimizerEnv;
-import org.apache.gravitino.optimizer.common.StartMode;
-import org.apache.gravitino.optimizer.common.util.EnvUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class RecommenderCmd {
   private static final Logger LOG = LoggerFactory.getLogger(RecommenderCmd.class);
 
-  public static void main(String[] args) {
+  public static void runCli(OptimizerEnv optimizerEnv, String[] args) {
     Options options = new Options();
-    options.addOption(
-        Option.builder("mode").hasArg().required(false).desc("Run mode: cli or server").build());
-
-    options.addOption(
-        Option.builder("conf-path")
-            .hasArg()
-            .required(false)
-            .desc("Optimizer configuration path")
-            .build());
 
     options.addOption(
         Option.builder("identifiers")
@@ -62,30 +50,21 @@ public class RecommenderCmd {
         Option.builder("policy-type").hasArg().required(true).desc("Policy type").build());
 
     CommandLineParser parser = new DefaultParser();
-    StartMode mode;
     String[] identifiers;
     String policyType;
-    String confPath;
 
     try {
       CommandLine cmd = parser.parse(options, args);
-
-      String modeStr = cmd.getOptionValue("mode", StartMode.CLI.name());
-      mode = StartMode.fromString(modeStr);
-      confPath = cmd.getOptionValue("conf-path", "conf/optimizer.conf");
-
       identifiers = cmd.getOptionValues("identifiers");
       policyType = cmd.getOptionValue("policy-type");
     } catch (Exception e) {
       LOG.error("Parse command Error: ", e);
-      new HelpFormatter().printHelp("cli-app", options);
+      new HelpFormatter().printHelp("recommender", options);
       return;
     }
-    Preconditions.checkArgument(mode == StartMode.CLI, "Only CLI mode is supported currently.");
 
     List<NameIdentifier> nameIdentifiers =
         Arrays.stream(identifiers).map(NameIdentifier::parse).toList();
-    OptimizerEnv optimizerEnv = EnvUtils.getInitializedEnv(confPath);
     Recommender recommender = new Recommender(optimizerEnv);
     recommender.recommendForPolicyType(nameIdentifiers, policyType);
   }

@@ -19,7 +19,6 @@
 
 package org.apache.gravitino.optimizer.monitor;
 
-import com.google.common.base.Preconditions;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -31,8 +30,6 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.optimizer.common.OptimizerEnv;
-import org.apache.gravitino.optimizer.common.StartMode;
-import org.apache.gravitino.optimizer.common.util.EnvUtils;
 import org.apache.gravitino.optimizer.recommender.RecommenderCmd;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,17 +47,8 @@ public class MonitorCmd {
    *     and job metrics in the range of [action time - range hours*3600, action time + range
    *     hours*3600], and then compare the metrics before and after the action time.
    */
-  public static void main(String[] args) {
+  public static void runCli(OptimizerEnv optimizerEnv, String[] args) {
     Options options = new Options();
-    options.addOption(
-        Option.builder("mode").hasArg().required(false).desc("Run mode: cli or server").build());
-
-    options.addOption(
-        Option.builder("conf-path")
-            .hasArg()
-            .required(false)
-            .desc("Optimizer configuration path")
-            .build());
 
     options.addOption(
         Option.builder("identifiers")
@@ -88,19 +76,13 @@ public class MonitorCmd {
             .build());
 
     CommandLineParser parser = new DefaultParser();
-    StartMode mode;
     String[] identifiers;
     String policyType;
-    String confPath;
     long actionTime;
     long rangeSeconds;
 
     try {
       CommandLine cmd = parser.parse(options, args);
-
-      String modeStr = cmd.getOptionValue("mode", "cli");
-      mode = StartMode.fromString(modeStr);
-      confPath = cmd.getOptionValue("conf-path", "conf/optimizer.conf");
 
       actionTime = Long.parseLong(cmd.getOptionValue("action-time"));
       rangeSeconds = Long.parseLong(cmd.getOptionValue("range-seconds", "172800"));
@@ -111,11 +93,9 @@ public class MonitorCmd {
       new HelpFormatter().printHelp("cli-app", options);
       return;
     }
-    Preconditions.checkArgument(mode == StartMode.CLI, "Only CLI mode is supported currently.");
 
     List<NameIdentifier> nameIdentifiers =
         Arrays.stream(identifiers).map(NameIdentifier::parse).toList();
-    OptimizerEnv optimizerEnv = EnvUtils.getInitializedEnv(confPath);
     Monitor monitor = new Monitor(optimizerEnv);
     monitor.run(nameIdentifiers, actionTime, rangeSeconds, Optional.ofNullable(policyType));
   }

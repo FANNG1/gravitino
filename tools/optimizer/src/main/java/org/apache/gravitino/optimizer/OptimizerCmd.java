@@ -19,10 +19,14 @@
 
 package org.apache.gravitino.optimizer;
 
+import com.google.common.base.Preconditions;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
+import org.apache.gravitino.optimizer.common.OptimizerEnv;
+import org.apache.gravitino.optimizer.common.StartMode;
+import org.apache.gravitino.optimizer.common.util.EnvUtils;
 import org.apache.gravitino.optimizer.monitor.MonitorCmd;
 import org.apache.gravitino.optimizer.recommender.RecommenderCmd;
 import org.apache.gravitino.optimizer.updater.UpdaterCmd;
@@ -41,28 +45,45 @@ public class OptimizerCmd {
             .desc("Optimizer type: recommender, update_stats, update_metrics, monitor_metrics")
             .build());
 
+    options.addOption(
+        Option.builder("mode").hasArg().required(false).desc("Run mode: cli or server").build());
+
+    options.addOption(
+        Option.builder("conf-path")
+            .hasArg()
+            .required(false)
+            .desc("Optimizer configuration path")
+            .build());
+
     CommandLineParser parser = new DefaultParser();
     try {
       var cmd = parser.parse(options, args);
+
+      String modeStr = cmd.getOptionValue("mode", StartMode.CLI.name());
+      StartMode mode = StartMode.fromString(modeStr);
+      Preconditions.checkArgument(mode == StartMode.CLI, "Only CLI mode is supported currently.");
+
+      String confPath = cmd.getOptionValue("conf-path", "conf/optimizer.conf");
+      OptimizerEnv optimizerEnv = EnvUtils.getInitializedEnv(confPath);
+
       String typeStr = cmd.getOptionValue("type");
       OptimizerType type = OptimizerType.valueOf(typeStr.toUpperCase());
       switch (type) {
         case RECOMMENDER:
-          LOG.info("Running Recommender Optimizer");
-          RecommenderCmd.main(args);
+          LOG.info("Running Recommender");
+          RecommenderCmd.runCli(optimizerEnv, args);
           break;
         case UPDATE_STATS:
-          UpdaterCmd.main(args);
-          LOG.info("Running Update Stats Optimizer");
+          UpdaterCmd.runCli(optimizerEnv, args);
+          LOG.info("Running Update Stats");
           break;
         case UPDATE_METRICS:
-          UpdaterCmd.main(args);
-          LOG.info("Running Update Metrics Optimizer");
+          UpdaterCmd.runCli(optimizerEnv, args);
+          LOG.info("Running Update Metrics");
           break;
         case MONITOR_METRICS:
-          MonitorCmd.main(args);
+          MonitorCmd.runCli(optimizerEnv, args);
           LOG.info("Running Monitor Metrics Optimizer");
-          // Call Monitor Metrics optimizer logic here
           break;
         default:
           throw new IllegalArgumentException("Unsupported optimizer type: " + typeStr);
