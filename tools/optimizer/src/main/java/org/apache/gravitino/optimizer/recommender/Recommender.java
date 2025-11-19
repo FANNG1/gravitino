@@ -83,10 +83,10 @@ public class Recommender {
     return jobConfigs;
   }
 
-  public void recommendForPolicyType(List<NameIdentifier> tableIdentifiers, String policyType) {
-    List<String> policyNames = getPolicyNames(tableIdentifiers, policyType);
+  public void recommendForPolicyType(List<NameIdentifier> nameIdentifiers, String policyType) {
+    List<String> policyNames = getPolicyNames(nameIdentifiers, policyType);
     for (String policyName : policyNames) {
-      List<JobExecuteContext> jobConfigs = recommendForOnePolicy(tableIdentifiers, policyName);
+      List<JobExecuteContext> jobConfigs = recommendForOnePolicy(nameIdentifiers, policyName);
       for (JobExecuteContext jobConfig : jobConfigs) {
         jobSubmitter.submitJob(policyType, jobConfig);
       }

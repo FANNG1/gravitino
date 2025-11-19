@@ -17,19 +17,18 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer.updater;
+package org.apache.gravitino.optimizer.common;
 
-public enum UpdateType {
-  METRICS,
-  STATS;
+public enum StartMode {
+  CLI,
+  SERVER;
 
-  public static UpdateType fromString(String s) {
-    for (UpdateType m : UpdateType.values()) {
+  public static StartMode fromString(String s) {
+    for (StartMode m : values()) {
       if (m.name().equalsIgnoreCase(s)) {
         return m;
       }
     }
-    throw new IllegalArgumentException(
-        "Invalid update type: " + s + ". Allowed values: stats, metrics");
+    throw new IllegalArgumentException("Invalid mode: " + s + ". Allowed values: cli, server");
   }
 }
