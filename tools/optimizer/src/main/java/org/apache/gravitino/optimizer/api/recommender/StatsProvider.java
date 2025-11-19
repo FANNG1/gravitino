@@ -19,6 +19,9 @@
 
 package org.apache.gravitino.optimizer.api.recommender;
 
+import org.apache.gravitino.annotation.DeveloperApi;
 import org.apache.gravitino.optimizer.api.common.Provider;
 
+/** Represents a provider that provides statistics. */
+@DeveloperApi
 public interface StatsProvider extends Provider {}

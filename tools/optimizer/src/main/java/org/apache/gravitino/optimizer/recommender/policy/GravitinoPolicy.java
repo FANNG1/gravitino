@@ -21,7 +21,7 @@ package org.apache.gravitino.optimizer.recommender.policy;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
-import org.apache.gravitino.optimizer.api.common.policy.RecommenderPolicy;
+import org.apache.gravitino.optimizer.api.common.RecommenderPolicy;
 import org.apache.gravitino.policy.Policy;
 import org.apache.gravitino.policy.PolicyContent;
 

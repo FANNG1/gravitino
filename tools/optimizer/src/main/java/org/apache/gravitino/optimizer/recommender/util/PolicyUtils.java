@@ -21,7 +21,7 @@ package org.apache.gravitino.optimizer.recommender.util;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.gravitino.optimizer.api.common.policy.RecommenderPolicy;
+import org.apache.gravitino.optimizer.api.common.RecommenderPolicy;
 
 public class PolicyUtils {
 

@@ -19,8 +19,11 @@
 
 package org.apache.gravitino.optimizer.api.common;
 
+import org.apache.gravitino.annotation.DeveloperApi;
 import org.apache.gravitino.stats.StatisticValue;
 
+/** Represents a single statistic with name and value. */
+@DeveloperApi
 public interface SingleStatistic<T> {
   enum Name {
     TABLE_STORAGE_COST,

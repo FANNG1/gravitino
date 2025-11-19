@@ -22,9 +22,13 @@ package org.apache.gravitino.optimizer.api.monitor;
 import java.util.List;
 import java.util.Map;
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.annotation.DeveloperApi;
 import org.apache.gravitino.optimizer.api.common.SingleMetric;
 
-// Evaluator interface for the table and related job metrics before and after optimization actions.
+/**
+ * Evaluator interface for the table and related job metrics before and after optimization actions.
+ */
+@DeveloperApi
 public interface MetricsEvaluator {
   String name();
 

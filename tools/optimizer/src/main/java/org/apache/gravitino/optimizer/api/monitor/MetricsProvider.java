@@ -23,14 +23,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.annotation.DeveloperApi;
 import org.apache.gravitino.optimizer.api.common.Provider;
 import org.apache.gravitino.optimizer.api.common.SingleMetric;
 import org.apache.gravitino.optimizer.common.SinglePartition;
 
-/**
- * Provider interface for retrieving job-related metrics. Implementations of this interface should
- * provide specific logic to fetch metrics for a given job.
- */
+/** Represents a provider that provides table and job related metrics. */
+@DeveloperApi
 public interface MetricsProvider extends Provider {
   /**
    * Retrieves metrics for a specific job within a specified time range.

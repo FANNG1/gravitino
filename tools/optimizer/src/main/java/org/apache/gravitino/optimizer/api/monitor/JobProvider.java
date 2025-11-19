@@ -21,9 +21,11 @@ package org.apache.gravitino.optimizer.api.monitor;
 
 import java.util.List;
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.annotation.DeveloperApi;
 import org.apache.gravitino.optimizer.api.common.Provider;
 
-// Get upstream and downstream jobs for a table
+/** Represents a provider that provides job information for a table. */
+@DeveloperApi
 public interface JobProvider extends Provider {
   List<NameIdentifier> getJobNames(NameIdentifier tableIdentifier);
 }
