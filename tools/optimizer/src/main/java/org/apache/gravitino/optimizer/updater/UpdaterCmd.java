@@ -19,7 +19,6 @@
 
 package org.apache.gravitino.optimizer.updater;
 
-import com.google.common.base.Preconditions;
 import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.cli.CommandLine;
@@ -30,8 +29,6 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.optimizer.common.OptimizerEnv;
-import org.apache.gravitino.optimizer.common.StartMode;
-import org.apache.gravitino.optimizer.common.util.EnvUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,17 +43,8 @@ public class UpdaterCmd {
    *     update type (e.g., metrics or stats)
    *     <p>output: the updated stats for the tables.
    */
-  public static void main(String[] args) {
+  public static void runCli(OptimizerEnv optimizerEnv, String[] args) {
     Options options = new Options();
-    options.addOption(
-        Option.builder("mode").hasArg().required(false).desc("Run mode: cli or server").build());
-
-    options.addOption(
-        Option.builder("conf-path")
-            .hasArg()
-            .required(false)
-            .desc("Optimizer configuration path")
-            .build());
 
     options.addOption(
         Option.builder("updater-name")
@@ -81,18 +69,12 @@ public class UpdaterCmd {
             .build());
 
     CommandLineParser parser = new DefaultParser();
-    StartMode mode;
     String[] identifiers;
     UpdateType updateType;
-    String confPath;
     String updaterName;
 
     try {
       CommandLine cmd = parser.parse(options, args);
-
-      String modeStr = cmd.getOptionValue("mode", StartMode.CLI.name());
-      mode = StartMode.fromString(modeStr);
-      confPath = cmd.getOptionValue("conf-path", "conf/optimizer.conf");
 
       updaterName = cmd.getOptionValue("updater-name");
       identifiers = cmd.getOptionValues("identifiers");
@@ -102,11 +84,9 @@ public class UpdaterCmd {
       new HelpFormatter().printHelp("cli-app", options);
       return;
     }
-    Preconditions.checkArgument(mode == StartMode.CLI, "Only CLI mode is supported currently.");
 
     List<NameIdentifier> nameIdentifiers =
         Arrays.stream(identifiers).map(NameIdentifier::parse).toList();
-    OptimizerEnv optimizerEnv = EnvUtils.getInitializedEnv(confPath);
     Updater updater = new Updater(optimizerEnv);
     updater.update(updaterName, nameIdentifiers, updateType);
   }
