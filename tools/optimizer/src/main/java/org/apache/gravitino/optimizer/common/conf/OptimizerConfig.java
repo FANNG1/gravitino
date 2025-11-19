@@ -37,21 +37,24 @@ import org.apache.gravitino.optimizer.updater.impl.GravitinoStatsUpdater;
 
 public class OptimizerConfig extends Config {
 
-  public static final String GRAVITINO_URI = "gravitino-uri";
-  public static final String GRAVITINO_METALAKE = "gravitino-metalake";
-  public static final String GRAVITINO_DEFAULT_CATALOG = "gravitino-default-catalog";
+  public static final String OPTIMIZER_PREFIX = "gravitino.optimizer.";
 
-  private static final String RECOMMENDER_PREFIX = "recommender.";
+  public static final String GRAVITINO_URI = OPTIMIZER_PREFIX + "gravitino-uri";
+  public static final String GRAVITINO_METALAKE = OPTIMIZER_PREFIX + "gravitino-metalake";
+  public static final String GRAVITINO_DEFAULT_CATALOG =
+      OPTIMIZER_PREFIX + "gravitino-default-catalog";
+
+  private static final String RECOMMENDER_PREFIX = OPTIMIZER_PREFIX + "recommender.";
   private static final String STATS_PROVIDER = RECOMMENDER_PREFIX + "stats-provider";
   private static final String POLICY_PROVIDER = RECOMMENDER_PREFIX + "policy-provider";
   private static final String TABLE_META_PROVIDER = RECOMMENDER_PREFIX + "table-meta-provider";
   private static final String JOB_SUBMITTER = RECOMMENDER_PREFIX + "job-submitter";
 
-  private static final String UPDATER_PREFIX = "updater.";
+  private static final String UPDATER_PREFIX = OPTIMIZER_PREFIX + "updater.";
   private static final String STATS_UPDATER = UPDATER_PREFIX + "stats-updater";
   private static final String METRICS_UPDATER = UPDATER_PREFIX + "metrics-updater";
 
-  private static final String MONITOR_PREFIX = "monitor.";
+  private static final String MONITOR_PREFIX = OPTIMIZER_PREFIX + "monitor.";
   private static final String METRICS_PROVIDER = MONITOR_PREFIX + "metrics-provider";
   public static final String JOB_PROVIDER = MONITOR_PREFIX + "job-provider";
   public static final String METRICS_EVALUATOR = MONITOR_PREFIX + "metrics-evaluator";

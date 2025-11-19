@@ -29,9 +29,9 @@ class OptimizerConfigTest {
   void optimizerConfigLoadsPropertiesCorrectly() {
     Map<String, String> properties =
         Map.of(
-            "gravitino-uri", "http://example.com",
-            "gravitino-metalake", "example-metalake",
-            "gravitino-default-catalog", "example-catalog");
+            OptimizerConfig.GRAVITINO_URI, "http://example.com",
+            OptimizerConfig.GRAVITINO_METALAKE, "example-metalake",
+            OptimizerConfig.GRAVITINO_DEFAULT_CATALOG, "example-catalog");
     OptimizerConfig config = new OptimizerConfig(properties);
 
     Assertions.assertEquals("http://example.com", config.get(OptimizerConfig.GRAVITINO_URI_CONFIG));

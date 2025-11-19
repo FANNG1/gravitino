@@ -17,32 +17,35 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer.updater;
+package org.apache.gravitino.optimizer.common.util;
 
-import java.util.LinkedList;
-import java.util.List;
-import org.apache.gravitino.NameIdentifier;
+import java.io.File;
+import java.util.Properties;
 import org.apache.gravitino.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;
 
-public class UpdaterCli {
-  /**
-   * Computes and updates the stats for the given tables
-   *
-   * @param args The command-line arguments. Expected format: [0] - stats computer name (e.g.,
-   *     "gravitino-table-datasize") [1] - table identifiers (e.g., "db.table,db.table2") [2] -
-   *     update type (e.g., metrics or stats)
-   *     <p>output: the updated stats for the tables.
-   */
-  public void run(String[] args) {
-    List<NameIdentifier> tableIdentifiers = new LinkedList<>();
-    String statsComputerName = args[0];
+public class EnvUtils {
+  public static final String CONF_FILE = "optimizer.conf";
+
+  public static OptimizerEnv getInitializedEnv(String confPath) {
     OptimizerEnv optimizerEnv = OptimizerEnv.getInstance();
-    optimizerEnv.initialize(new OptimizerConfig());
-    new Updater(optimizerEnv).update(statsComputerName, tableIdentifiers, UpdateType.STATS);
+    OptimizerConfig optimizerConfig = loadConfig(confPath);
+    optimizerEnv.initialize(optimizerConfig);
+    return optimizerEnv;
   }
 
-  public static void main(String[] args) {
-    new UpdaterCli().run(args);
+  private static OptimizerConfig loadConfig(String confPath) {
+    OptimizerConfig optimizerConfig = new OptimizerConfig();
+    try {
+      if (confPath.isEmpty()) {
+        optimizerConfig.loadFromFile(CONF_FILE);
+      } else {
+        Properties properties = optimizerConfig.loadPropertiesFromFile(new File(confPath));
+        optimizerConfig.loadFromProperties(properties);
+      }
+    } catch (Exception exception) {
+      throw new IllegalArgumentException("Failed to load conf from file " + confPath, exception);
+    }
+    return optimizerConfig;
   }
 }

@@ -49,6 +49,16 @@ public class Monitor {
   }
 
   public void run(
+      List<NameIdentifier> tableIdentifiers,
+      long actionTime,
+      long rangeSeconds,
+      Optional<String> policyType) {
+    for (NameIdentifier tableIdentifier : tableIdentifiers) {
+      run(tableIdentifier, actionTime, rangeSeconds, policyType);
+    }
+  }
+
+  public void run(
       NameIdentifier tableIdentifier,
       long ActionTime,
       long rangeSeconds,
