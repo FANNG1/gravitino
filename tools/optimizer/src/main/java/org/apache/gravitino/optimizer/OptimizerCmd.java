@@ -34,7 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class OptimizerCmd {
-  private static final Logger LOG = LoggerFactory.getLogger(RecommenderCmd.class);
+  private static final Logger LOG = LoggerFactory.getLogger(OptimizerCmd.class);
 
   public static void main(String[] args) {
     Options options = new Options();
