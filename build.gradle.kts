@@ -685,6 +685,7 @@ tasks {
       ":authorizations:copyLibAndConfig",
       ":iceberg:iceberg-rest-server:copyLibAndConfigs",
       ":lance:lance-rest-server:copyLibAndConfigs",
+      ":tools:optimizer:copyLibAndConfigs",
       ":web:web:build"
     )
 
@@ -960,6 +961,7 @@ tasks {
         !it.name.startsWith("flink") &&
         !it.name.startsWith("iceberg") &&
         !it.name.startsWith("lance") &&
+        !it.name.startsWith("optimizer") &&
         !it.name.startsWith("spark") &&
         it.name != "hadoop-common" &&
         it.name != "hive-metastore-common" &&
@@ -995,6 +997,7 @@ tasks {
         !it.name.startsWith("integration-test") &&
         !it.name.startsWith("spark") &&
         !it.name.startsWith("trino-connector") &&
+        !it.name.startsWith("optimizer") &&
         it.name != "hive-metastore-common" &&
         it.name != "docs" &&
         it.name != "hadoop-common" &&

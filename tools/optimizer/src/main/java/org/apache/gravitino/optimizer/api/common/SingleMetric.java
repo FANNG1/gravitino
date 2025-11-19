@@ -19,7 +19,10 @@
 
 package org.apache.gravitino.optimizer.api.common;
 
-// A single metric data point with a timestamp and associated statistic.
+import org.apache.gravitino.annotation.DeveloperApi;
+
+/** Represents a single metric data point with a timestamp and associated statistic. */
+@DeveloperApi
 public interface SingleMetric {
 
   long timestamp();

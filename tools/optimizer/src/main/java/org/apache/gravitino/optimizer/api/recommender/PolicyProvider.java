@@ -21,10 +21,12 @@ package org.apache.gravitino.optimizer.api.recommender;
 
 import java.util.List;
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.annotation.DeveloperApi;
 import org.apache.gravitino.optimizer.api.common.Provider;
-import org.apache.gravitino.optimizer.api.common.policy.RecommenderPolicy;
+import org.apache.gravitino.optimizer.api.common.RecommenderPolicy;
 
-// The policy provider to get the policies from Gravitino or external systems.
+/** Represents a provider that provides policies. */
+@DeveloperApi
 public interface PolicyProvider extends Provider {
   List<RecommenderPolicy> getTablePolicy(NameIdentifier tableIdentifier);
 

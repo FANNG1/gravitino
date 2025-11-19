@@ -20,10 +20,12 @@
 package org.apache.gravitino.optimizer.api.recommender;
 
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.annotation.DeveloperApi;
 import org.apache.gravitino.optimizer.api.common.Provider;
 import org.apache.gravitino.rel.Table;
 
-// The table metadata provider to get the table metadata from Gravitino or external systems.
+/** Represents a provider that provides table metadata. */
+@DeveloperApi
 public interface TableMetadataProvider extends Provider {
   Table getTableMetadata(NameIdentifier tableIdentifier);
 }

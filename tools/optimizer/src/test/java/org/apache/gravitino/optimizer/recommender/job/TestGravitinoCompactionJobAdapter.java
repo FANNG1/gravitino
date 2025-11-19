@@ -22,7 +22,7 @@ package org.apache.gravitino.optimizer.recommender.job;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.optimizer.api.common.policy.RecommenderPolicy;
+import org.apache.gravitino.optimizer.api.common.RecommenderPolicy;
 import org.apache.gravitino.optimizer.recommender.actor.compaction.CompactionJobContext;
 import org.apache.gravitino.policy.PolicyContent;
 import org.apache.gravitino.rel.Table;

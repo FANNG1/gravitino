@@ -21,10 +21,11 @@ package org.apache.gravitino.optimizer.api.updater;
 
 import java.util.List;
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.annotation.DeveloperApi;
 import org.apache.gravitino.optimizer.api.common.SingleStatistic;
 
-// The stats provider to compute table stats, the stats will be used to update Gravitino stats store
-// or external systems.
+/** Represents a provider that supports job statistics. */
+@DeveloperApi
 public interface SupportJobStats extends StatsComputer {
   List<SingleStatistic<?>> computeJobStats(NameIdentifier jobIdentifier);
 }

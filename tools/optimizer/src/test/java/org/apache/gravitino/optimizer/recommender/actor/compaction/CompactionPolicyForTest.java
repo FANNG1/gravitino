@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.gravitino.MetadataObject;
-import org.apache.gravitino.optimizer.api.common.policy.RecommenderPolicy;
+import org.apache.gravitino.optimizer.api.common.RecommenderPolicy;
 import org.apache.gravitino.optimizer.recommender.util.PolicyUtils;
 import org.apache.gravitino.policy.PolicyContent;
 import org.apache.iceberg.actions.RewriteDataFiles;

@@ -101,36 +101,12 @@ tasks {
   register("copyLibs", Copy::class) {
     dependsOn(copyDepends, "build")
     from("build/libs")
-    into("$rootDir/distribution/package/iceberg-rest-server/libs")
-  }
-
-  register("copyLibsToStandalonePackage", Copy::class) {
-    dependsOn(copyDepends, "build")
-    from("build/libs")
-    into("$rootDir/distribution/gravitino-iceberg-rest-server/libs")
+    into("$rootDir/distribution/package/tools/optimizer/libs")
   }
 
   register("copyConfigs", Copy::class) {
     from("src/main/resources")
-    into("$rootDir/distribution/package/iceberg-rest-server/conf")
-
-    include("core-site.xml.template")
-    include("hdfs-site.xml.template")
-
-    rename { original ->
-      if (original.endsWith(".template")) {
-        original.replace(".template", "")
-      } else {
-        original
-      }
-    }
-
-    fileMode = 0b111101101
-  }
-
-  register("copyConfigsToStandalonePackage", Copy::class) {
-    from("src/main/resources")
-    into("$rootDir/distribution/gravitino-iceberg-rest-server/conf")
+    into("$rootDir/distribution/package/tools/optimizer/conf")
 
     include("core-site.xml.template")
     include("hdfs-site.xml.template")
@@ -148,10 +124,6 @@ tasks {
 
   register("copyLibAndConfigs", Copy::class) {
     dependsOn("copyLibs", "copyConfigs")
-  }
-
-  register("copyLibAndConfigsToStandalonePackage", Copy::class) {
-    dependsOn("copyLibsToStandalonePackage", "copyConfigsToStandalonePackage")
   }
 }
 

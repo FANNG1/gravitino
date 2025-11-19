@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.Namespace;
 import org.apache.gravitino.client.GravitinoClient;
-import org.apache.gravitino.optimizer.api.common.policy.RecommenderPolicy;
+import org.apache.gravitino.optimizer.api.common.RecommenderPolicy;
 import org.apache.gravitino.optimizer.api.recommender.PolicyProvider;
 import org.apache.gravitino.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;

@@ -22,6 +22,7 @@ package org.apache.gravitino.optimizer.api.common;
 import java.util.List;
 import org.apache.gravitino.optimizer.common.SinglePartition;
 
+/** Represents the statistics of a partition in a table. */
 public interface PartitionStatistic extends SingleStatistic {
   List<SinglePartition> partitionName();
 }

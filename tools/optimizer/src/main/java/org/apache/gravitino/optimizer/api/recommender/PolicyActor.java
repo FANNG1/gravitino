@@ -23,8 +23,8 @@ import java.util.List;
 import java.util.Map;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.optimizer.api.common.PartitionStatistic;
+import org.apache.gravitino.optimizer.api.common.RecommenderPolicy;
 import org.apache.gravitino.optimizer.api.common.SingleStatistic;
-import org.apache.gravitino.optimizer.api.common.policy.RecommenderPolicy;
 import org.apache.gravitino.rel.Table;
 
 public interface PolicyActor {

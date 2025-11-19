@@ -22,7 +22,7 @@ package org.apache.gravitino.optimizer.integration.test;
 import com.google.common.collect.ImmutableMap;
 import java.util.List;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.optimizer.api.common.policy.RecommenderPolicy;
+import org.apache.gravitino.optimizer.api.common.RecommenderPolicy;
 import org.apache.gravitino.optimizer.recommender.policy.GravitinoPolicyProvider;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;

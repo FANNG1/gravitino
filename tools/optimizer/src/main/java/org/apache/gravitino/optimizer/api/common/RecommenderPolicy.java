@@ -17,10 +17,24 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer.api.monitor;
+package org.apache.gravitino.optimizer.api.common;
+
+import java.util.Optional;
+import org.apache.gravitino.annotation.DeveloperApi;
+import org.apache.gravitino.policy.PolicyContent;
 
 /**
- * Provider interface for retrieving table-related metrics. Implementations of this interface should
- * provide specific logic to fetch metrics for a given table.
+ * Represents a policy used by the recommender system. This interface defines the structure and
+ * behavior of a policy, including its name, type, content, and optional job template name.
  */
-public interface TableMetricsProvider {}
+@DeveloperApi
+public interface RecommenderPolicy {
+
+  String name();
+  // policy type is used to identify the policy to find corresponding policy actor
+  String policyType();
+
+  PolicyContent content();
+
+  Optional<String> jobTemplateName();
+}

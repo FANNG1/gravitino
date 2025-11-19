@@ -19,8 +19,11 @@
 
 package org.apache.gravitino.optimizer.api.common;
 
+import org.apache.gravitino.annotation.DeveloperApi;
 import org.apache.gravitino.optimizer.common.OptimizerEnv;
 
+/** Represents a provider that provide information from external systems. */
+@DeveloperApi
 public interface Provider {
   String name();
 
