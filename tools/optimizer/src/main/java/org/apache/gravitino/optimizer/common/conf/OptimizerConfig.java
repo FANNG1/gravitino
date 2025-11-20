@@ -32,8 +32,8 @@ import org.apache.gravitino.optimizer.recommender.job.GravitinoJobSubmitter;
 import org.apache.gravitino.optimizer.recommender.policy.GravitinoPolicyProvider;
 import org.apache.gravitino.optimizer.recommender.stats.GravitinoStatsProvider;
 import org.apache.gravitino.optimizer.recommender.table.GravitinoTableMetadataProvider;
-import org.apache.gravitino.optimizer.updater.impl.GravitinoMetricsUpdater;
-import org.apache.gravitino.optimizer.updater.impl.GravitinoStatsUpdater;
+import org.apache.gravitino.optimizer.updater.GravitinoStatsUpdater;
+import org.apache.gravitino.optimizer.updater.metrics.GravitinoMetricsUpdater;
 
 public class OptimizerConfig extends Config {
 

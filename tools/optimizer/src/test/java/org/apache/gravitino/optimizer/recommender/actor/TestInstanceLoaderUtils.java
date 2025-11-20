@@ -19,18 +19,36 @@
 
 package org.apache.gravitino.optimizer.recommender.actor;
 
+import org.apache.gravitino.optimizer.api.monitor.MetricsEvaluator;
 import org.apache.gravitino.optimizer.api.recommender.PolicyActor;
+import org.apache.gravitino.optimizer.api.updater.StatsComputer;
 import org.apache.gravitino.optimizer.common.util.InstanceLoaderUtils;
+import org.apache.gravitino.optimizer.monitor.evaluator.GravitinoMetricsEvaluator;
 import org.apache.gravitino.optimizer.recommender.actor.compaction.CompactionPolicyActor;
 import org.apache.gravitino.optimizer.recommender.util.PolicyUtils;
+import org.apache.gravitino.optimizer.updater.computer.IcebergTableDataStatsComputer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-class TestActorUtils {
+class TestInstanceLoaderUtils {
 
   @Test
-  void createActorInstanceReturnsActorForValidPolicyType() {
+  void createActorInstance() {
     PolicyActor actor = InstanceLoaderUtils.createActorInstance(PolicyUtils.COMPACTION_POLICY_TYPE);
     Assertions.assertTrue(actor instanceof CompactionPolicyActor);
+  }
+
+  @Test
+  void testCreateStatsComputerInstance() {
+    StatsComputer computer =
+        InstanceLoaderUtils.createStatsComputerInstance(IcebergTableDataStatsComputer.NAME);
+    Assertions.assertTrue(computer instanceof IcebergTableDataStatsComputer);
+  }
+
+  @Test
+  void testCreateMetricsEvaluatorInstance() {
+    MetricsEvaluator evaluator =
+        InstanceLoaderUtils.createMetricsEvaluatorInstance(GravitinoMetricsEvaluator.NAME);
+    Assertions.assertTrue(evaluator instanceof GravitinoMetricsEvaluator);
   }
 }

@@ -24,7 +24,7 @@ import java.util.List;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.optimizer.api.common.SingleStatistic;
 import org.apache.gravitino.optimizer.api.updater.SupportJobStats;
-import org.apache.gravitino.optimizer.updater.impl.SingleStatisticImpl;
+import org.apache.gravitino.optimizer.updater.SingleStatisticImpl;
 import org.apache.gravitino.stats.StatisticValues;
 
 public class DummyJobMetricsComputer implements SupportJobStats {

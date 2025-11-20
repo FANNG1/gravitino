@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer.updater.impl.metrics;
+package org.apache.gravitino.optimizer.updater.metrics.storage;
 
 import java.sql.Connection;
 import java.sql.DriverManager;

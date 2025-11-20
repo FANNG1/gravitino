@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer.updater.impl;
+package org.apache.gravitino.optimizer.updater.metrics;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,10 +28,10 @@ import org.apache.gravitino.optimizer.api.common.SingleStatistic;
 import org.apache.gravitino.optimizer.api.updater.MetricsUpdater;
 import org.apache.gravitino.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.optimizer.common.util.StatisticValueUtils;
-import org.apache.gravitino.optimizer.updater.impl.metrics.H2MetricsStorage;
-import org.apache.gravitino.optimizer.updater.impl.metrics.MetricsStorage;
-import org.apache.gravitino.optimizer.updater.impl.metrics.StorageMetricImpl;
-import org.apache.gravitino.optimizer.updater.impl.util.PartitionUtils;
+import org.apache.gravitino.optimizer.updater.metrics.storage.H2MetricsStorage;
+import org.apache.gravitino.optimizer.updater.metrics.storage.MetricsStorage;
+import org.apache.gravitino.optimizer.updater.metrics.storage.StorageMetricImpl;
+import org.apache.gravitino.optimizer.updater.util.PartitionUtils;
 
 // Update metrics to h2
 public class GravitinoMetricsUpdater implements MetricsUpdater {
