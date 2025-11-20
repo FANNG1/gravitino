@@ -25,7 +25,7 @@ import org.apache.gravitino.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;
 
 public class EnvUtils {
-  public static final String CONF_FILE = "optimizer.conf";
+  public static final String CONF_FILE = "gravitino-optimizer.conf";
 
   public static OptimizerEnv getInitializedEnv(String confPath) {
     OptimizerEnv optimizerEnv = OptimizerEnv.getInstance();

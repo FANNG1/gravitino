@@ -20,6 +20,9 @@
 package org.apache.gravitino.optimizer;
 
 import com.google.common.base.Preconditions;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
@@ -63,7 +66,8 @@ public class OptimizerCmd {
       StartMode mode = StartMode.fromString(modeStr);
       Preconditions.checkArgument(mode == StartMode.CLI, "Only CLI mode is supported currently.");
 
-      String confPath = cmd.getOptionValue("conf-path", "conf/optimizer.conf");
+      String confPath =
+          cmd.getOptionValue("conf-path", Paths.get("conf", EnvUtils.CONF_FILE).toString());
       OptimizerEnv optimizerEnv = EnvUtils.getInitializedEnv(confPath);
 
       String typeStr = cmd.getOptionValue("type");
@@ -86,7 +90,12 @@ public class OptimizerCmd {
           LOG.info("Running Monitor Metrics Optimizer");
           break;
         default:
-          throw new IllegalArgumentException("Unsupported optimizer type: " + typeStr);
+          String error =
+              String.format(
+                  "Unsupported optimizer type: %s. Supported types: %s",
+                  typeStr, OptimizerType.allValues());
+          System.err.println(error);
+          throw new IllegalArgumentException(error);
       }
     } catch (Exception e) {
       LOG.error("Error parsing command line arguments: " + e.getMessage());
@@ -97,6 +106,10 @@ public class OptimizerCmd {
     RECOMMENDER,
     UPDATE_STATS,
     UPDATE_METRICS,
-    MONITOR_METRICS
+    MONITOR_METRICS;
+
+    public static String allValues() {
+      return Arrays.stream(values()).map(Enum::name).collect(Collectors.joining(","));
+    }
   }
 }
