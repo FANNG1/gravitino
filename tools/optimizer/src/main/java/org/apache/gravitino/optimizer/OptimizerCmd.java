@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.gravitino.optimizer.common.OptimizerEnv;
@@ -32,6 +33,7 @@ import org.apache.gravitino.optimizer.common.StartMode;
 import org.apache.gravitino.optimizer.common.util.EnvUtils;
 import org.apache.gravitino.optimizer.monitor.MonitorCmd;
 import org.apache.gravitino.optimizer.recommender.RecommenderCmd;
+import org.apache.gravitino.optimizer.updater.UpdateType;
 import org.apache.gravitino.optimizer.updater.UpdaterCmd;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,11 +80,11 @@ public class OptimizerCmd {
           RecommenderCmd.runCli(optimizerEnv, args);
           break;
         case UPDATE_STATS:
-          UpdaterCmd.runCli(optimizerEnv, args);
+          UpdaterCmd.runCli(optimizerEnv, args, UpdateType.STATS);
           LOG.info("Running Update Stats");
           break;
         case UPDATE_METRICS:
-          UpdaterCmd.runCli(optimizerEnv, args);
+          UpdaterCmd.runCli(optimizerEnv, args, UpdateType.METRICS);
           LOG.info("Running Update Metrics");
           break;
         case MONITOR_METRICS:
@@ -98,6 +100,7 @@ public class OptimizerCmd {
           throw new IllegalArgumentException(error);
       }
     } catch (Exception e) {
+      new HelpFormatter().printHelp("gravitino-optimizer", options);
       LOG.error("Error parsing command line arguments: " + e.getMessage());
     }
   }

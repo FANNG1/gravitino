@@ -43,7 +43,7 @@ public class UpdaterCmd {
    *     update type (e.g., metrics or stats)
    *     <p>output: the updated stats for the tables.
    */
-  public static void runCli(OptimizerEnv optimizerEnv, String[] args) {
+  public static void runCli(OptimizerEnv optimizerEnv, String[] args, UpdateType updateType) {
     Options options = new Options();
 
     options.addOption(
@@ -51,13 +51,6 @@ public class UpdaterCmd {
             .hasArg()
             .required(true)
             .desc("The stats updater name")
-            .build());
-
-    options.addOption(
-        Option.builder("update-type")
-            .hasArg()
-            .required(false)
-            .desc("The update type, metrics or stats")
             .build());
 
     options.addOption(
@@ -70,18 +63,15 @@ public class UpdaterCmd {
 
     CommandLineParser parser = new DefaultParser();
     String[] identifiers;
-    UpdateType updateType;
     String updaterName;
 
     try {
       CommandLine cmd = parser.parse(options, args);
-
       updaterName = cmd.getOptionValue("updater-name");
       identifiers = cmd.getOptionValues("identifiers");
-      updateType = UpdateType.fromString(cmd.getOptionValue("update-type", "stats"));
     } catch (Exception e) {
       LOG.error("Parse command Error: ", e);
-      new HelpFormatter().printHelp("cli-app", options);
+      new HelpFormatter().printHelp("updater", options);
       return;
     }
 
