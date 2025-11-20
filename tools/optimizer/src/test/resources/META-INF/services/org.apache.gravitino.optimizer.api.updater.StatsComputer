@@ -17,5 +17,5 @@
 # under the License.
 #
 
-org.apache.gravitino.optimizer.integration.test.DummyTableStatsComputer
 org.apache.gravitino.optimizer.integration.test.DummyJobMetricsComputer
+org.apache.gravitino.optimizer.integration.test.DummyTableStatsComputer

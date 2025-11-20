@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer.updater.impl.util;
+package org.apache.gravitino.optimizer.updater.util;
 
 import java.util.List;
 import java.util.stream.Collectors;

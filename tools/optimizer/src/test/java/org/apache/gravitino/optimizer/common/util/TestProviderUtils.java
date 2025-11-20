@@ -34,8 +34,8 @@ import org.apache.gravitino.optimizer.recommender.job.NoopJobSubmitter;
 import org.apache.gravitino.optimizer.recommender.policy.GravitinoPolicyProvider;
 import org.apache.gravitino.optimizer.recommender.stats.GravitinoStatsProvider;
 import org.apache.gravitino.optimizer.recommender.table.GravitinoTableMetadataProvider;
-import org.apache.gravitino.optimizer.updater.impl.GravitinoMetricsUpdater;
-import org.apache.gravitino.optimizer.updater.impl.GravitinoStatsUpdater;
+import org.apache.gravitino.optimizer.updater.GravitinoStatsUpdater;
+import org.apache.gravitino.optimizer.updater.metrics.GravitinoMetricsUpdater;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

@@ -27,8 +27,8 @@ import org.apache.gravitino.optimizer.api.common.SingleStatistic;
 import org.apache.gravitino.optimizer.api.updater.SupportTableStats;
 import org.apache.gravitino.optimizer.common.PartitionImpl;
 import org.apache.gravitino.optimizer.common.SinglePartition;
-import org.apache.gravitino.optimizer.updater.impl.PartitionStatisticImpl;
-import org.apache.gravitino.optimizer.updater.impl.SingleStatisticImpl;
+import org.apache.gravitino.optimizer.updater.PartitionStatisticImpl;
+import org.apache.gravitino.optimizer.updater.SingleStatisticImpl;
 import org.apache.gravitino.stats.StatisticValues;
 
 public class DummyTableStatsComputer implements SupportTableStats {

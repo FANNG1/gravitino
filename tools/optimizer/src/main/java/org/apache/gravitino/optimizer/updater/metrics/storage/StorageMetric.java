@@ -17,22 +17,10 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer.updater.impl;
+package org.apache.gravitino.optimizer.updater.metrics.storage;
 
-import java.util.List;
-import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.optimizer.api.common.SingleStatistic;
-import org.apache.gravitino.optimizer.api.updater.SupportTableStats;
+public interface StorageMetric {
+  long getTimestamp();
 
-public class GravitinoScanStatsComputer implements SupportTableStats {
-  @Override
-  public String name() {
-    return "gravitino-table-scan";
-  }
-
-  @Override
-  public List<SingleStatistic<?>> computeTableStats(NameIdentifier tableIdentifier) {
-    // table_scan_number, column_scan_number, low_filter_number from Iceberg Scan metrics store
-    return new java.util.ArrayList<>();
-  }
+  String getValue();
 }

@@ -17,8 +17,10 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer.updater.impl.iceberg;
+package org.apache.gravitino.optimizer.updater.computer;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import java.util.List;
 import java.util.Map;
 import lombok.Builder;
@@ -26,8 +28,8 @@ import lombok.Data;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.optimizer.api.common.SingleStatistic;
 import org.apache.gravitino.optimizer.api.updater.SupportTableStats;
-import org.apache.gravitino.optimizer.updater.impl.SingleStatisticImpl;
-import org.apache.gravitino.optimizer.updater.impl.util.ToStatistic;
+import org.apache.gravitino.optimizer.updater.SingleStatisticImpl;
+import org.apache.gravitino.optimizer.updater.util.ToStatistic;
 import org.apache.gravitino.stats.StatisticValues;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
@@ -36,9 +38,8 @@ import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema;
 
 public class IcebergTableDataStatsComputer implements SupportTableStats {
 
+  public static final String NAME = "gravitino-iceberg-datasize";
   private SparkSession sparkSession;
-  private String catalogName = "rest";
-
   private static String TABLE_STATS_SQL_TEMPLATE =
       "SELECT \n"
           + "    COUNT(*) AS file_count,\n"
@@ -49,7 +50,7 @@ public class IcebergTableDataStatsComputer implements SupportTableStats {
           + "   AVG(POWER(100000 - LEAST(100000, file_size_in_bytes), 2)) AS data_size_mse,\n"
           + "    AVG(file_size_in_bytes) AS avg_size,\n"
           + "    SUM(file_size_in_bytes) AS total_size\n"
-          + "FROM %s.%s.files";
+          + "FROM %s.files";
 
   private static String PARTITIONED_TABLE_STATS_SQL_TEMPLATE =
       "SELECT \n"
@@ -62,11 +63,12 @@ public class IcebergTableDataStatsComputer implements SupportTableStats {
           + "   AVG(POWER(100000 - LEAST(100000, file_size_in_bytes), 2)) AS data_size_mse,\n"
           + "    AVG(file_size_in_bytes) AS avg_size,\n"
           + "    SUM(file_size_in_bytes) AS total_size\n"
-          + "FROM %s.%s.files\n"
+          + "FROM %s.files\n"
           + "GROUP BY partition\n"
           + "ORDER BY partition";
 
-  public IcebergTableDataStatsComputer(SparkSession sparkSession) {
+  @VisibleForTesting
+  public void setSparkSessionForTest(SparkSession sparkSession) {
     this.sparkSession = sparkSession;
   }
 
@@ -79,12 +81,21 @@ public class IcebergTableDataStatsComputer implements SupportTableStats {
 
   @Override
   public String name() {
-    return "";
+    return NAME;
+  }
+
+  private SparkSession getSparkSession() {
+    if (sparkSession == null)
+      this.sparkSession = SparkSession.builder().appName(NAME).getOrCreate();
+    return sparkSession;
   }
 
   private TableStats getTableStats(NameIdentifier nameIdentifier) {
-    String sql = String.format(TABLE_STATS_SQL_TEMPLATE, catalogName, nameIdentifier.toString());
-    Dataset<Row> df = sparkSession.sql(sql);
+    Preconditions.checkArgument(
+        nameIdentifier.namespace().levels().length == 2,
+        "Iceberg table identifier should contain catalog and schema");
+    String sql = String.format(TABLE_STATS_SQL_TEMPLATE, nameIdentifier);
+    Dataset<Row> df = getSparkSession().sql(sql);
     Row row = df.collectAsList().get(0);
     TableStats tableStats =
         TableStats.builder()
@@ -99,7 +110,7 @@ public class IcebergTableDataStatsComputer implements SupportTableStats {
 
   private Map<GenericRowWithSchema, TableStats> getPartitionedTableStats() {
     String sql = String.format(PARTITIONED_TABLE_STATS_SQL_TEMPLATE, "rest", "db_table");
-    Dataset<Row> df = sparkSession.sql(sql);
+    Dataset<Row> df = getSparkSession().sql(sql);
     List<Row> rows = df.collectAsList();
     Map<GenericRowWithSchema, TableStats> tableStatsMap = new java.util.HashMap<>();
     for (Row row : rows) {

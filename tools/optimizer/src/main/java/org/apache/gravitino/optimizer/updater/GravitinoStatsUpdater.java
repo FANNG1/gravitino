@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer.updater.impl;
+package org.apache.gravitino.optimizer.updater;
 
 import java.util.List;
 import java.util.Map;
@@ -30,7 +30,7 @@ import org.apache.gravitino.optimizer.api.updater.StatsUpdater;
 import org.apache.gravitino.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;
 import org.apache.gravitino.optimizer.common.util.IdentifierUtils;
-import org.apache.gravitino.optimizer.updater.impl.util.PartitionUtils;
+import org.apache.gravitino.optimizer.updater.util.PartitionUtils;
 import org.apache.gravitino.stats.PartitionStatisticsUpdate;
 import org.apache.gravitino.stats.StatisticValue;
 

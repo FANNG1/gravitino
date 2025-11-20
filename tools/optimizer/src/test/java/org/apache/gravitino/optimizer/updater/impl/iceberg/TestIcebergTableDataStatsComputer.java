@@ -20,6 +20,7 @@
 package org.apache.gravitino.optimizer.updater.impl.iceberg;
 
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.optimizer.updater.computer.IcebergTableDataStatsComputer;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.SparkSession;
 import org.junit.jupiter.api.BeforeAll;
@@ -53,7 +54,8 @@ public class TestIcebergTableDataStatsComputer {
             .master("local")
             .config(sparkConf)
             .getOrCreate();
-    statsComputer = new IcebergTableDataStatsComputer(sparkSession);
+    statsComputer = new IcebergTableDataStatsComputer();
+    statsComputer.setSparkSessionForTest(sparkSession);
   }
 
   @Test

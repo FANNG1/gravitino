@@ -17,24 +17,24 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer.updater.impl.metrics;
+package org.apache.gravitino.optimizer.updater;
 
-public class StorageMetricImpl implements StorageMetric {
-  private long timestamp;
-  private String value;
+import java.util.List;
+import org.apache.gravitino.optimizer.api.common.PartitionStatistic;
+import org.apache.gravitino.optimizer.common.SinglePartition;
+import org.apache.gravitino.stats.StatisticValue;
 
-  public StorageMetricImpl(long timestamp, String value) {
-    this.timestamp = timestamp;
-    this.value = value;
+public class PartitionStatisticImpl extends SingleStatisticImpl implements PartitionStatistic {
+  private List<SinglePartition> partitions;
+
+  public PartitionStatisticImpl(
+      String name, StatisticValue value, List<SinglePartition> partitions) {
+    super(name, value);
+    this.partitions = partitions;
   }
 
   @Override
-  public long getTimestamp() {
-    return timestamp;
-  }
-
-  @Override
-  public String getValue() {
-    return value;
+  public List<SinglePartition> partitionName() {
+    return partitions;
   }
 }

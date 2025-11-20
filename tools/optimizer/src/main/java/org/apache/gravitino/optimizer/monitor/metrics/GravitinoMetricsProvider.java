@@ -31,12 +31,12 @@ import org.apache.gravitino.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.optimizer.common.SingleMetricImpl;
 import org.apache.gravitino.optimizer.common.SinglePartition;
 import org.apache.gravitino.optimizer.common.util.StatisticValueUtils;
-import org.apache.gravitino.optimizer.updater.impl.PartitionStatisticImpl;
-import org.apache.gravitino.optimizer.updater.impl.SingleStatisticImpl;
-import org.apache.gravitino.optimizer.updater.impl.metrics.H2MetricsStorage;
-import org.apache.gravitino.optimizer.updater.impl.metrics.MetricsStorage;
-import org.apache.gravitino.optimizer.updater.impl.metrics.StorageMetric;
-import org.apache.gravitino.optimizer.updater.impl.util.PartitionUtils;
+import org.apache.gravitino.optimizer.updater.PartitionStatisticImpl;
+import org.apache.gravitino.optimizer.updater.SingleStatisticImpl;
+import org.apache.gravitino.optimizer.updater.metrics.storage.H2MetricsStorage;
+import org.apache.gravitino.optimizer.updater.metrics.storage.MetricsStorage;
+import org.apache.gravitino.optimizer.updater.metrics.storage.StorageMetric;
+import org.apache.gravitino.optimizer.updater.util.PartitionUtils;
 
 public class GravitinoMetricsProvider implements MetricsProvider {
 

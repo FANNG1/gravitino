@@ -28,8 +28,8 @@ import org.apache.gravitino.optimizer.api.recommender.PolicyActor.JobExecuteCont
 import org.apache.gravitino.optimizer.api.updater.StatsUpdater;
 import org.apache.gravitino.optimizer.recommender.Recommender;
 import org.apache.gravitino.optimizer.recommender.util.PolicyUtils;
-import org.apache.gravitino.optimizer.updater.impl.GravitinoStatsUpdater;
-import org.apache.gravitino.optimizer.updater.impl.SingleStatisticImpl;
+import org.apache.gravitino.optimizer.updater.GravitinoStatsUpdater;
+import org.apache.gravitino.optimizer.updater.SingleStatisticImpl;
 import org.apache.gravitino.stats.StatisticValues;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;

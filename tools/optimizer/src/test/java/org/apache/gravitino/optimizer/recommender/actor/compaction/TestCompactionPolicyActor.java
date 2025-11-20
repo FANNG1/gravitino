@@ -28,7 +28,7 @@ import org.apache.gravitino.optimizer.api.common.SingleStatistic;
 import org.apache.gravitino.optimizer.api.recommender.PolicyActor.JobExecuteContext;
 import org.apache.gravitino.optimizer.recommender.util.ExpressionEvaluator;
 import org.apache.gravitino.optimizer.recommender.util.QLExpressionEvaluator;
-import org.apache.gravitino.optimizer.updater.impl.SingleStatisticImpl;
+import org.apache.gravitino.optimizer.updater.SingleStatisticImpl;
 import org.apache.gravitino.rel.Table;
 import org.apache.gravitino.stats.StatisticValues;
 import org.apache.iceberg.actions.RewriteDataFiles;

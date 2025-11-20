@@ -17,27 +17,24 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer.updater.impl;
+package org.apache.gravitino.optimizer.updater.metrics.storage;
 
-import org.apache.gravitino.optimizer.api.common.SingleStatistic;
-import org.apache.gravitino.stats.StatisticValue;
+public class StorageMetricImpl implements StorageMetric {
+  private long timestamp;
+  private String value;
 
-public class SingleStatisticImpl<T> implements SingleStatistic<T> {
-  private String name;
-  private StatisticValue<T> value;
-
-  public SingleStatisticImpl(String name, StatisticValue<T> value) {
-    this.name = name;
+  public StorageMetricImpl(long timestamp, String value) {
+    this.timestamp = timestamp;
     this.value = value;
   }
 
   @Override
-  public String name() {
-    return name;
+  public long getTimestamp() {
+    return timestamp;
   }
 
   @Override
-  public StatisticValue<T> value() {
+  public String getValue() {
     return value;
   }
 }
