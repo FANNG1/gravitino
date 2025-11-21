@@ -26,9 +26,9 @@ import org.apache.gravitino.optimizer.api.common.SingleStatistic;
 
 public class StatsUtils {
 
-  public static Map<String, Object> buildStatsContext(List<SingleStatistic> tableStats) {
+  public static Map<String, Object> buildStatsContext(List<SingleStatistic<?>> tableStats) {
     Map<String, Object> context = new HashMap<>();
-    for (SingleStatistic stat : tableStats) {
+    for (SingleStatistic<?> stat : tableStats) {
       context.put(stat.name(), stat.value().value());
     }
     return context;

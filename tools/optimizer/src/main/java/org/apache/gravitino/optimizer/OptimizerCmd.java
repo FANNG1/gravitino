@@ -22,19 +22,24 @@ package org.apache.gravitino.optimizer;
 import com.google.common.base.Preconditions;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.optimizer.common.StartMode;
 import org.apache.gravitino.optimizer.common.util.EnvUtils;
-import org.apache.gravitino.optimizer.monitor.MonitorCmd;
-import org.apache.gravitino.optimizer.recommender.RecommenderCmd;
+import org.apache.gravitino.optimizer.monitor.Monitor;
+import org.apache.gravitino.optimizer.recommender.Recommender;
 import org.apache.gravitino.optimizer.updater.UpdateType;
-import org.apache.gravitino.optimizer.updater.UpdaterCmd;
+import org.apache.gravitino.optimizer.updater.Updater;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,68 +49,177 @@ public class OptimizerCmd {
   public static void main(String[] args) {
     Options options = new Options();
     options.addOption(
-        Option.builder("type")
+        Option.builder()
+            .longOpt("type")
             .hasArg()
             .required(true)
             .desc("Optimizer type: recommender, update_stats, update_metrics, monitor_metrics")
             .build());
 
     options.addOption(
-        Option.builder("mode").hasArg().required(false).desc("Run mode: cli or server").build());
+        Option.builder()
+            .longOpt("mode")
+            .hasArg()
+            .required(false)
+            .desc("Run mode: cli or server")
+            .build());
 
     options.addOption(
-        Option.builder("conf-path")
+        Option.builder()
+            .longOpt("conf-path")
             .hasArg()
             .required(false)
             .desc("Optimizer configuration path")
             .build());
 
+    options.addOption(
+        Option.builder()
+            .longOpt("identifiers")
+            .hasArg()
+            .required(false)
+            .valueSeparator(',')
+            .desc("Comma separated identifier list")
+            .build());
+
+    options.addOption(
+        Option.builder()
+            .longOpt("policy-type")
+            .hasArg()
+            .required(false)
+            .desc("Policy type")
+            .build());
+
+    options.addOption(
+        Option.builder()
+            .longOpt("updater-name")
+            .hasArg()
+            .required(false)
+            .desc("The stats updater name")
+            .build());
+
+    options.addOption(
+        Option.builder()
+            .longOpt("action-time")
+            .hasArg()
+            .required(false)
+            .desc("Optimize Action time (in epoch seconds)")
+            .build());
+
+    options.addOption(
+        Option.builder()
+            .longOpt("range-seconds")
+            .hasArg()
+            .required(false)
+            .desc("Range seconds (in seconds)")
+            .build());
+
+    String updaterName;
+    String confPath;
+    String[] identifiers;
+    String policyType;
+    OptimizerType optimizerType;
+
     CommandLineParser parser = new DefaultParser();
     try {
       var cmd = parser.parse(options, args);
-
+      updaterName = cmd.getOptionValue("updater-name");
       String modeStr = cmd.getOptionValue("mode", StartMode.CLI.name());
       StartMode mode = StartMode.fromString(modeStr);
       Preconditions.checkArgument(mode == StartMode.CLI, "Only CLI mode is supported currently.");
 
-      String confPath =
-          cmd.getOptionValue("conf-path", Paths.get("conf", EnvUtils.CONF_FILE).toString());
+      confPath = cmd.getOptionValue("conf-path", Paths.get("conf", EnvUtils.CONF_FILE).toString());
       OptimizerEnv optimizerEnv = EnvUtils.getInitializedEnv(confPath);
 
+      identifiers = cmd.getOptionValues("identifiers");
+      policyType = cmd.getOptionValue("policy-type");
+      String actionTime = cmd.getOptionValue("action-time");
+      long defaultRangeSeconds = 24 * 3600; // 1 day
+      String rangeSeconds = cmd.getOptionValue("range-seconds", Long.toString(defaultRangeSeconds));
+
       String typeStr = cmd.getOptionValue("type");
-      OptimizerType type = OptimizerType.valueOf(typeStr.toUpperCase());
-      switch (type) {
+      checkRequiredOption("type", typeStr);
+      optimizerType = OptimizerType.valueOf(typeStr.toUpperCase(Locale.ROOT));
+      switch (optimizerType) {
         case RECOMMENDER:
-          LOG.info("Running Recommender");
-          RecommenderCmd.runCli(optimizerEnv, args);
+          checkRequiredOption("identifiers", identifiers);
+          checkRequiredOption("policy-type", policyType);
+
+          runWithNoException(
+              () -> {
+                List<NameIdentifier> nameIdentifiers =
+                    Arrays.stream(identifiers).map(NameIdentifier::parse).toList();
+                Recommender recommender = new Recommender(optimizerEnv);
+                recommender.recommendForPolicyType(nameIdentifiers, policyType);
+              });
           break;
         case UPDATE_STATS:
-          UpdaterCmd.runCli(optimizerEnv, args, UpdateType.STATS);
-          LOG.info("Running Update Stats");
+          checkRequiredOption("identifiers", identifiers);
+          checkRequiredOption("updater-name", updaterName);
+
+          runWithNoException(
+              () -> {
+                List<NameIdentifier> nameIdentifiers =
+                    Arrays.stream(identifiers).map(NameIdentifier::parse).toList();
+                Updater updater = new Updater(optimizerEnv);
+                updater.update(updaterName, nameIdentifiers, UpdateType.STATS);
+              });
           break;
         case UPDATE_METRICS:
-          UpdaterCmd.runCli(optimizerEnv, args, UpdateType.METRICS);
-          LOG.info("Running Update Metrics");
+          checkRequiredOption("identifiers", identifiers);
+          checkRequiredOption("updater-name", updaterName);
+
+          runWithNoException(
+              () -> {
+                List<NameIdentifier> nameIdentifiers =
+                    Arrays.stream(identifiers).map(NameIdentifier::parse).toList();
+                Updater updater = new Updater(optimizerEnv);
+                updater.update(updaterName, nameIdentifiers, UpdateType.METRICS);
+              });
           break;
         case MONITOR_METRICS:
-          MonitorCmd.runCli(optimizerEnv, args);
-          LOG.info("Running Monitor Metrics Optimizer");
+          checkRequiredOption("identifiers", identifiers);
+          checkRequiredOption("action-time", actionTime);
+          Long actionTimeLong = Long.parseLong(actionTime);
+          Long rangeSecondsLong = Long.parseLong(rangeSeconds);
+
+          runWithNoException(
+              () -> {
+                List<NameIdentifier> nameIdentifiers =
+                    Arrays.stream(identifiers).map(NameIdentifier::parse).toList();
+                Monitor monitor = new Monitor(optimizerEnv);
+                monitor.run(nameIdentifiers, actionTimeLong, rangeSecondsLong, Optional.empty());
+              });
           break;
         default:
-          String error =
-              String.format(
-                  "Unsupported optimizer type: %s. Supported types: %s",
-                  typeStr, OptimizerType.allValues());
-          System.err.println(error);
+          String error = String.format("Unsupported optimizer type: %s.", optimizerType);
           throw new IllegalArgumentException(error);
       }
     } catch (Exception e) {
+      System.err.println(e.getMessage());
       new HelpFormatter().printHelp("gravitino-optimizer", options);
-      LOG.error("Error parsing command line arguments: " + e.getMessage());
+      LOG.error("Error parsing command line arguments: ", e);
     }
   }
 
-  public enum OptimizerType {
+  private static void checkRequiredOption(String optionName, String optionValue) {
+    Preconditions.checkArgument(
+        StringUtils.isNotBlank(optionValue), String.format("Option %s is required.", optionName));
+  }
+
+  private static void checkRequiredOption(String optionName, String[] optionValue) {
+    Preconditions.checkArgument(
+        optionValue != null, String.format("Option %s is required.", optionName));
+  }
+
+  private static void runWithNoException(Runnable runnable) {
+    try {
+      runnable.run();
+    } catch (Exception e) {
+      LOG.error("Error running optimizer: ", e);
+    }
+  }
+
+  enum OptimizerType {
     RECOMMENDER,
     UPDATE_STATS,
     UPDATE_METRICS,

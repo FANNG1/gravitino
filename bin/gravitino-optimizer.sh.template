@@ -82,4 +82,8 @@ if [ -d "${GRAVITINO_HOME}/tools/optimizer/libs" ]; then
   addDirToClasspath "${GRAVITINO_HOME}/tools/optimizer/conf"
 fi
 
+if [ -n "$SPARK_HOME" ]; then
+  addJarInDir "${SPARK_HOME}/jars"
+fi
+
 ${JAVA_RUNNER} ${JAVA_OPTS} ${GRAVITINO_DEBUG_OPTS} -cp ${GRAVITINO_CLASSPATH} ${GRAVITINO_OPTIMIZER_NAME} "$@"

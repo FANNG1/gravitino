@@ -69,7 +69,7 @@ public class GravitinoStatsIT extends GravitinoOptimizerEnvIT {
                 STATS_PREFIX + Name.DATAFILE_SIZE_MSE.name(),
                 StatisticValues.doubleValue(10000.1))));
 
-    List<SingleStatistic> stats =
+    List<SingleStatistic<?>> stats =
         statsProvider.getTableStats(NameIdentifier.of(TEST_SCHEMA, TEST_TABLE));
     Assertions.assertEquals(3, stats.size());
     stats.stream()

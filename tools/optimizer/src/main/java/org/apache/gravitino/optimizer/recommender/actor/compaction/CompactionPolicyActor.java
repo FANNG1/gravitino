@@ -42,7 +42,7 @@ public class CompactionPolicyActor
         PolicyActor.requireTableMetadata {
   private ExpressionEvaluator expressionEvaluator;
   private RecommenderPolicy policy;
-  private List<SingleStatistic> tableStats;
+  private List<SingleStatistic<?>> tableStats;
   private List<PartitionStatistic> partitionStats;
   private Table tableMetadata;
   private NameIdentifier nameIdentifier;
@@ -97,13 +97,13 @@ public class CompactionPolicyActor
   }
 
   @Override
-  public void setTableStats(List<SingleStatistic> tableStats) {
+  public void setTableStats(List<SingleStatistic<?>> tableStats) {
     this.tableStats = tableStats;
   }
 
   @VisibleForTesting
   static boolean shouldTriggerCompaction(
-      RecommenderPolicy policy, List<SingleStatistic> stats, ExpressionEvaluator evaluator) {
+      RecommenderPolicy policy, List<SingleStatistic<?>> stats, ExpressionEvaluator evaluator) {
     String triggerExpression = PolicyUtils.getTriggerExpression(policy);
     Map<String, Object> context = buildExpressionContext(policy, stats);
     return evaluator.evaluateBool(triggerExpression, context);
@@ -115,7 +115,7 @@ public class CompactionPolicyActor
 
   @SuppressWarnings("EmptyCatch")
   private static Map<String, Object> buildExpressionContext(
-      RecommenderPolicy policy, List<SingleStatistic> stats) {
+      RecommenderPolicy policy, List<SingleStatistic<?>> stats) {
     Map<String, Object> context = new HashMap<>();
     context.putAll(StatsUtils.buildStatsContext(stats));
     policy

@@ -33,7 +33,7 @@ public interface PolicyActor {
   }
 
   interface requireTableStats {
-    void setTableStats(List<SingleStatistic> tableStats);
+    void setTableStats(List<SingleStatistic<?>> tableStats);
   }
 
   interface requirePartitionStats {
