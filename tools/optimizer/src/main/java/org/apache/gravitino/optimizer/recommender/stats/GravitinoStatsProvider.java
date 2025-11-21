@@ -55,7 +55,7 @@ public class GravitinoStatsProvider implements SupportTableStats {
   }
 
   @Override
-  public List<SingleStatistic> getTableStats(NameIdentifier tableIdentifier) {
+  public List<SingleStatistic<?>> getTableStats(NameIdentifier tableIdentifier) {
     Table t =
         gravitinoClient
             .loadCatalog(
@@ -66,7 +66,10 @@ public class GravitinoStatsProvider implements SupportTableStats {
     List<Statistic> statistics = t.supportsStatistics().listStatistics();
     return statistics.stream()
         .filter(statistic -> statistic.value().isPresent())
-        .map(statistic -> new SingleStatisticImpl(statistic.name(), statistic.value().get()))
+        .map(
+            statistic ->
+                (SingleStatistic<?>)
+                    new SingleStatisticImpl(statistic.name(), statistic.value().get()))
         .collect(Collectors.toList());
   }
 

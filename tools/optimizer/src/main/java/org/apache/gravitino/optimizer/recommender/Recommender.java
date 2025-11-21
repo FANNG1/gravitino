@@ -103,7 +103,7 @@ public class Recommender {
     }
 
     if (policyActor instanceof PolicyActor.requireTableStats) {
-      List<SingleStatistic> tableStats =
+      List<SingleStatistic<?>> tableStats =
           ((SupportTableStats) statsProvider).getTableStats(tableIdentifier);
       ((PolicyActor.requireTableStats) policyActor).setTableStats(tableStats);
       List<PartitionStatistic> partitionStats =

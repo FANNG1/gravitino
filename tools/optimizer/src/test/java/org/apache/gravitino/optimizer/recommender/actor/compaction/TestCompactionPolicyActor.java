@@ -45,7 +45,7 @@ class TestCompactionPolicyActor {
 
   @Test
   void testShouldTriggerCompaction() {
-    List<SingleStatistic> stats =
+    List<SingleStatistic<?>> stats =
         Arrays.asList(new SingleStatisticImpl("datafile_mse", StatisticValues.longValue(2000L)));
     Assertions.assertEquals(
         true, CompactionPolicyActor.shouldTriggerCompaction(policy, stats, evaluator));

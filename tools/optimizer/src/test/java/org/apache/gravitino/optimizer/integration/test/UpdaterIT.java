@@ -70,7 +70,7 @@ public class UpdaterIT extends GravitinoOptimizerEnvIT {
     updater.update(
         DummyTableStatsComputer.DUMMY_TABLE_STAT, Arrays.asList(tableIdentifier), UpdateType.STATS);
 
-    List<SingleStatistic> tableStats = statsProvider.getTableStats(tableIdentifier);
+    List<SingleStatistic<?>> tableStats = statsProvider.getTableStats(tableIdentifier);
     Assertions.assertEquals(1, tableStats.size());
     Assertions.assertEquals(DummyTableStatsComputer.TABLE_STAT_NAME, tableStats.get(0).name());
     Assertions.assertEquals(1L, tableStats.get(0).value().value());

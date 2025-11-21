@@ -17,6 +17,4 @@
 # under the License.
 #
 
-gravitino.optimizer.gravitino-metalake = test
-gravitino.optimizer.gravitino-uri = http://localhost:8090
-gravitino.optimizer.gravitino-default-catalog = iceberg-rest
+org.apache.gravitino.optimizer.updater.computer.IcebergTableDataStatsComputer
