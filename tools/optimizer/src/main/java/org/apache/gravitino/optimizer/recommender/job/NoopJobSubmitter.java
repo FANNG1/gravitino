@@ -32,8 +32,12 @@ public class NoopJobSubmitter implements JobSubmitter {
 
   @Override
   public String submitJob(String policyType, JobExecuteContext job) {
-    LOG.info("NoopJobSubmitter submitJob: policyType={}, job={}", policyType, job);
-    return "id";
+    LOG.info(
+        "NoopJobSubmitter submitJob: policyType={}, identifier={}, jobConfig={}",
+        policyType,
+        job.identifier(),
+        job.config());
+    return "";
   }
 
   @Override

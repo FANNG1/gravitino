@@ -48,7 +48,7 @@ public class GravitinoTableMetadataProvider implements TableMetadataProvider {
         .loadCatalog(
             IdentifierUtils.getCatalogNameFromTableIdentifier(tableIdentifier, defaultCatalogName))
         .asTableCatalog()
-        .loadTable(tableIdentifier);
+        .loadTable(IdentifierUtils.removeCatalogFromIdentifier(tableIdentifier));
   }
 
   @Override

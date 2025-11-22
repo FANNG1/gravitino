@@ -27,10 +27,10 @@ import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;
 public class EnvUtils {
   public static final String CONF_FILE = "gravitino-optimizer.conf";
 
-  public static OptimizerEnv getInitializedEnv(String confPath) {
+  public static OptimizerEnv getInitializedEnv(String confPath, String customContent) {
     OptimizerEnv optimizerEnv = OptimizerEnv.getInstance();
     OptimizerConfig optimizerConfig = loadConfig(confPath);
-    optimizerEnv.initialize(optimizerConfig);
+    optimizerEnv.initialize(optimizerConfig, customContent);
     return optimizerEnv;
   }
 

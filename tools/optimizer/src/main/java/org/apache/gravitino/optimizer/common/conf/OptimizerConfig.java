@@ -28,7 +28,7 @@ import org.apache.gravitino.config.ConfigEntry;
 import org.apache.gravitino.optimizer.monitor.evaluator.GravitinoMetricsEvaluator;
 import org.apache.gravitino.optimizer.monitor.job.DummyJobProvider;
 import org.apache.gravitino.optimizer.monitor.metrics.GravitinoMetricsProvider;
-import org.apache.gravitino.optimizer.recommender.job.GravitinoJobSubmitter;
+import org.apache.gravitino.optimizer.recommender.job.NoopJobSubmitter;
 import org.apache.gravitino.optimizer.recommender.policy.GravitinoPolicyProvider;
 import org.apache.gravitino.optimizer.recommender.stats.GravitinoStatsProvider;
 import org.apache.gravitino.optimizer.recommender.table.GravitinoTableMetadataProvider;
@@ -85,7 +85,7 @@ public class OptimizerConfig extends Config {
           .doc("The job submitter for the recommender.")
           .version(ConfigConstants.VERSION_1_1_0)
           .stringConf()
-          .createWithDefault(GravitinoJobSubmitter.GRAVITINO_JOB_SUBMITTER_NAME);
+          .createWithDefault(NoopJobSubmitter.NOOP_JOB_SUBMITTER_NAME);
 
   public static final ConfigEntry<String> STATS_UPDATER_CONFIG =
       new ConfigBuilder(STATS_UPDATER)

@@ -24,6 +24,7 @@ import java.util.List;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.optimizer.api.common.SingleStatistic;
 import org.apache.gravitino.optimizer.api.updater.SupportJobStats;
+import org.apache.gravitino.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.optimizer.updater.SingleStatisticImpl;
 import org.apache.gravitino.stats.StatisticValues;
 
@@ -36,6 +37,9 @@ public class DummyJobMetricsComputer implements SupportJobStats {
   public String name() {
     return DUMMY_JOB_METRICS;
   }
+
+  @Override
+  public void initialize(OptimizerEnv optimizerEnv) {}
 
   @Override
   public List<SingleStatistic<?>> computeJobStats(NameIdentifier jobIdentifier) {

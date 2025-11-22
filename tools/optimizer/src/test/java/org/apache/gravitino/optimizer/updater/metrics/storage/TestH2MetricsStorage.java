@@ -17,21 +17,19 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer.updater.impl.metrics;
+package org.apache.gravitino.optimizer.updater.metrics.storage;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.optimizer.updater.metrics.storage.H2MetricsStorage;
-import org.apache.gravitino.optimizer.updater.metrics.storage.StorageMetric;
-import org.apache.gravitino.optimizer.updater.metrics.storage.StorageMetricImpl;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class TestH2MetricsStorage {
@@ -40,6 +38,7 @@ class TestH2MetricsStorage {
   @BeforeAll
   void setUp() {
     storage = new H2MetricsStorage();
+    storage.initialize(ImmutableMap.of());
     storage.cleanupAllMetricsBefore(System.currentTimeMillis());
   }
 

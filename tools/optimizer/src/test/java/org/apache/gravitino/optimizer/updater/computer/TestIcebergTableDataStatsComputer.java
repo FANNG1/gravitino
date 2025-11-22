@@ -17,10 +17,9 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer.updater.impl.iceberg;
+package org.apache.gravitino.optimizer.updater.computer;
 
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.optimizer.updater.computer.IcebergTableDataStatsComputer;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.SparkSession;
 import org.junit.jupiter.api.BeforeAll;

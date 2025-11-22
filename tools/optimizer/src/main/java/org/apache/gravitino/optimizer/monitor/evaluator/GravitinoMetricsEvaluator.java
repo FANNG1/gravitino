@@ -19,6 +19,7 @@
 
 package org.apache.gravitino.optimizer.monitor.evaluator;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.apache.gravitino.NameIdentifier;
@@ -64,7 +65,10 @@ public class GravitinoMetricsEvaluator implements MetricsEvaluator {
             metricName -> {
               String name = metricName.name();
               doEvaluation(
-                  tableIdentifier, beforeMetrics.get(name), afterMetrics.get(name), metricName);
+                  tableIdentifier,
+                  beforeMetrics.getOrDefault(name, Collections.emptyList()),
+                  afterMetrics.getOrDefault(name, Collections.emptyList()),
+                  metricName);
             });
     return false;
   }
@@ -80,7 +84,10 @@ public class GravitinoMetricsEvaluator implements MetricsEvaluator {
             metricName -> {
               String name = metricName.name();
               doEvaluation(
-                  jobIdentifier, beforeMetrics.get(name), afterMetrics.get(name), metricName);
+                  jobIdentifier,
+                  beforeMetrics.getOrDefault(name, Collections.emptyList()),
+                  afterMetrics.getOrDefault(name, Collections.emptyList()),
+                  metricName);
             });
     return false;
   }

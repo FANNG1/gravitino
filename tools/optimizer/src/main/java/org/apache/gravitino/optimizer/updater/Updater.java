@@ -20,7 +20,6 @@
 package org.apache.gravitino.optimizer.updater;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
 import java.util.List;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.optimizer.api.common.SingleMetric;
@@ -39,8 +38,10 @@ import org.apache.gravitino.optimizer.common.util.ProviderUtils;
 public class Updater {
   private StatsUpdater statsUpdater;
   private MetricsUpdater metricsUpdater;
+  private OptimizerEnv optimizerEnv;
 
   public Updater(OptimizerEnv optimizerEnv) {
+    this.optimizerEnv = optimizerEnv;
     this.statsUpdater = loadStatsUpdater(optimizerEnv.config());
     statsUpdater.initialize(optimizerEnv);
     this.metricsUpdater = loadMetricsUpdater(optimizerEnv.config());
@@ -55,15 +56,11 @@ public class Updater {
         SupportTableStats supportTableStats = ((SupportTableStats) computer);
         List<SingleStatistic<?>> statistics = supportTableStats.computeTableStats(nameIdentifier);
         updateTable(statistics, nameIdentifier, updateType);
-      } else if (computer instanceof SupportJobStats) {
-        Preconditions.checkState(
-            updateType.equals(UpdateType.METRICS), "Job stats only support metrics update");
+      }
+      if (computer instanceof SupportJobStats && updateType.equals(UpdateType.METRICS)) {
         SupportJobStats supportJobStats = ((SupportJobStats) computer);
         List<SingleStatistic<?>> statistics = supportJobStats.computeJobStats(nameIdentifier);
         updateJob(statistics, nameIdentifier);
-      } else {
-        throw new UnsupportedOperationException(
-            String.format("Stats computer %s does not support %s", statsComputerName, updateType));
       }
     }
   }
@@ -96,7 +93,9 @@ public class Updater {
   }
 
   private StatsComputer getStatsComputer(String statsComputerName) {
-    return InstanceLoaderUtils.createStatsComputerInstance(statsComputerName);
+    StatsComputer computer = InstanceLoaderUtils.createStatsComputerInstance(statsComputerName);
+    computer.initialize(optimizerEnv);
+    return computer;
   }
 
   private StatsUpdater loadStatsUpdater(OptimizerConfig config) {

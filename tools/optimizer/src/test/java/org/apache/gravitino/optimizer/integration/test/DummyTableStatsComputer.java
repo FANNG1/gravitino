@@ -25,6 +25,7 @@ import java.util.List;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.optimizer.api.common.SingleStatistic;
 import org.apache.gravitino.optimizer.api.updater.SupportTableStats;
+import org.apache.gravitino.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.optimizer.common.PartitionImpl;
 import org.apache.gravitino.optimizer.common.SinglePartition;
 import org.apache.gravitino.optimizer.updater.PartitionStatisticImpl;
@@ -40,6 +41,9 @@ public class DummyTableStatsComputer implements SupportTableStats {
   public String name() {
     return DUMMY_TABLE_STAT;
   }
+
+  @Override
+  public void initialize(OptimizerEnv optimizerEnv) {}
 
   @Override
   public List<SingleStatistic<?>> computeTableStats(NameIdentifier tableIdentifier) {
