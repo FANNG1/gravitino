@@ -40,18 +40,18 @@ import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;
 import org.apache.gravitino.optimizer.common.util.InstanceLoaderUtils;
 import org.apache.gravitino.optimizer.common.util.ProviderUtils;
 import org.apache.gravitino.rel.Table;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("UnusedVariable")
 public class Recommender {
-
-  private OptimizerEnv optimizerEnv;
+  private static final Logger LOG = LoggerFactory.getLogger(Recommender.class);
   private PolicyProvider policyProvider;
   private StatsProvider statsProvider;
   private TableMetadataProvider tableMetadataProvider;
   private JobSubmitter jobSubmitter;
 
   public Recommender(OptimizerEnv optimizerEnv) {
-    this.optimizerEnv = optimizerEnv;
     OptimizerConfig config = optimizerEnv.config();
 
     this.policyProvider = loadPolicyProvider(config);
@@ -66,6 +66,7 @@ public class Recommender {
 
   public List<JobExecuteContext> recommendForOnePolicy(
       List<NameIdentifier> tableIdentifiers, String policyName) {
+    LOG.info("Recommend policy {} for identifiers {}", policyName, tableIdentifiers);
     RecommenderPolicy policy = policyProvider.getPolicy(policyName);
 
     PriorityQueue<PolicyActor> scoreQueue =
@@ -75,6 +76,11 @@ public class Recommender {
       if (policyActor.shouldTrigger() == false) {
         continue;
       }
+      LOG.info(
+          "Recommend policy {} for identifier {} score: {}",
+          policyName,
+          tableIdentifier,
+          policyActor.score());
       scoreQueue.add(policyActor);
     }
 

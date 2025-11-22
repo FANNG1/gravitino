@@ -38,6 +38,8 @@ import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.config.ConfigBuilder;
 import org.apache.gravitino.config.ConfigConstants;
 import org.apache.gravitino.config.ConfigEntry;
+import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;
+import org.apache.gravitino.utils.MapUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,14 +55,15 @@ public class H2MetricsStorage implements MetricsStorage {
 
   public H2MetricsStorage() {
     initializeDatabase();
-    // scheduler.scheduleAtFixedRate(() -> cleanupAllMetricsBefore(System.currentTimeMillis() - 30L
-    // * 24 * 60 * 60 * 1000),
-    //                              calculateInitialDelay(), 24, TimeUnit.HOURS);
   }
 
   @Override
-  public void initialize(Map<String, String> properties) {
-    H2MetricsStorageConfig config = new H2MetricsStorageConfig(properties);
+  public void initialize(Map<String, String> OptimizerProperties) {
+    Map<String, String> h2Properties =
+        MapUtils.getPrefixMap(
+            OptimizerProperties,
+            OptimizerConfig.OPTIMIZER_PREFIX + "." + H2MetricsStorageConfig.H2_METRICS_PREFIX);
+    H2MetricsStorageConfig config = new H2MetricsStorageConfig(h2Properties);
     String path = config.get(H2MetricsStorageConfig.H2_METRICS_STORAGE_PATH_CONFIG);
     JDBC_URL = "jdbc:h2:file:" + path + ";AUTO_SERVER=TRUE";
     initializeDatabase();
@@ -270,6 +273,7 @@ public class H2MetricsStorage implements MetricsStorage {
   }
 
   public static class H2MetricsStorageConfig extends Config {
+    static final String H2_METRICS_PREFIX = "h2-metrics";
 
     public static final String H2_METRICS_STORAGE_PATH = "h2-metrics-storage-path";
 

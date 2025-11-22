@@ -20,9 +20,12 @@
 package org.apache.gravitino.optimizer.api.updater;
 
 import org.apache.gravitino.annotation.DeveloperApi;
+import org.apache.gravitino.optimizer.common.OptimizerEnv;
 
 /** Represents a computer that can compute stats. */
 @DeveloperApi
 public interface StatsComputer {
   String name();
+
+  void initialize(OptimizerEnv optimizerEnv);
 }

@@ -75,7 +75,7 @@ public class OptimizerCmd {
     options.addOption(
         Option.builder()
             .longOpt("identifiers")
-            .hasArg()
+            .hasArgs()
             .required(false)
             .valueSeparator(',')
             .desc("Comma separated identifier list")
@@ -113,27 +113,38 @@ public class OptimizerCmd {
             .desc("Range seconds (in seconds)")
             .build());
 
+    options.addOption(
+        Option.builder()
+            .longOpt("custom-content")
+            .hasArg()
+            .required(false)
+            .desc("The custom content which saved in OptimizerEnv")
+            .build());
+
     String updaterName;
     String confPath;
     String[] identifiers;
     String policyType;
     OptimizerType optimizerType;
+    String customContent;
 
     CommandLineParser parser = new DefaultParser();
     try {
       var cmd = parser.parse(options, args);
-      updaterName = cmd.getOptionValue("updater-name");
+
       String modeStr = cmd.getOptionValue("mode", StartMode.CLI.name());
       StartMode mode = StartMode.fromString(modeStr);
       Preconditions.checkArgument(mode == StartMode.CLI, "Only CLI mode is supported currently.");
 
+      customContent = cmd.getOptionValue("custom-content", "");
       confPath = cmd.getOptionValue("conf-path", Paths.get("conf", EnvUtils.CONF_FILE).toString());
-      OptimizerEnv optimizerEnv = EnvUtils.getInitializedEnv(confPath);
+      OptimizerEnv optimizerEnv = EnvUtils.getInitializedEnv(confPath, customContent);
 
+      updaterName = cmd.getOptionValue("updater-name");
       identifiers = cmd.getOptionValues("identifiers");
       policyType = cmd.getOptionValue("policy-type");
       String actionTime = cmd.getOptionValue("action-time");
-      long defaultRangeSeconds = 24 * 3600; // 1 day
+      long defaultRangeSeconds = 24 * 3600;
       String rangeSeconds = cmd.getOptionValue("range-seconds", Long.toString(defaultRangeSeconds));
 
       String typeStr = cmd.getOptionValue("type");
@@ -144,7 +155,7 @@ public class OptimizerCmd {
           checkRequiredOption("identifiers", identifiers);
           checkRequiredOption("policy-type", policyType);
 
-          runWithNoException(
+          runWithoutException(
               () -> {
                 List<NameIdentifier> nameIdentifiers =
                     Arrays.stream(identifiers).map(NameIdentifier::parse).toList();
@@ -156,7 +167,7 @@ public class OptimizerCmd {
           checkRequiredOption("identifiers", identifiers);
           checkRequiredOption("updater-name", updaterName);
 
-          runWithNoException(
+          runWithoutException(
               () -> {
                 List<NameIdentifier> nameIdentifiers =
                     Arrays.stream(identifiers).map(NameIdentifier::parse).toList();
@@ -168,7 +179,7 @@ public class OptimizerCmd {
           checkRequiredOption("identifiers", identifiers);
           checkRequiredOption("updater-name", updaterName);
 
-          runWithNoException(
+          runWithoutException(
               () -> {
                 List<NameIdentifier> nameIdentifiers =
                     Arrays.stream(identifiers).map(NameIdentifier::parse).toList();
@@ -182,7 +193,7 @@ public class OptimizerCmd {
           Long actionTimeLong = Long.parseLong(actionTime);
           Long rangeSecondsLong = Long.parseLong(rangeSeconds);
 
-          runWithNoException(
+          runWithoutException(
               () -> {
                 List<NameIdentifier> nameIdentifiers =
                     Arrays.stream(identifiers).map(NameIdentifier::parse).toList();
@@ -211,10 +222,11 @@ public class OptimizerCmd {
         optionValue != null, String.format("Option %s is required.", optionName));
   }
 
-  private static void runWithNoException(Runnable runnable) {
+  private static void runWithoutException(Runnable runnable) {
     try {
       runnable.run();
     } catch (Exception e) {
+      System.err.println(e.getMessage());
       LOG.error("Error running optimizer: ", e);
     }
   }

@@ -28,6 +28,7 @@ import lombok.Data;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.optimizer.api.common.SingleStatistic;
 import org.apache.gravitino.optimizer.api.updater.SupportTableStats;
+import org.apache.gravitino.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.optimizer.updater.SingleStatisticImpl;
 import org.apache.gravitino.optimizer.updater.util.ToStatistic;
 import org.apache.gravitino.stats.StatisticValues;
@@ -83,6 +84,9 @@ public class IcebergTableDataStatsComputer implements SupportTableStats {
   public String name() {
     return NAME;
   }
+
+  @Override
+  public void initialize(OptimizerEnv optimizerEnv) {}
 
   private SparkSession getSparkSession() {
     if (sparkSession == null)

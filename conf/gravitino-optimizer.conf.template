@@ -19,4 +19,6 @@
 
 gravitino.optimizer.gravitino-metalake = test
 gravitino.optimizer.gravitino-uri = http://localhost:8090
-gravitino.optimizer.gravitino-default-catalog = iceberg-rest
+gravitino.optimizer.gravitino-default-catalog = iceberg
+
+gravitino.optimizer.recommender.job-submitter = noop

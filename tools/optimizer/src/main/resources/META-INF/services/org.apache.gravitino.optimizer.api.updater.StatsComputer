@@ -18,3 +18,4 @@
 #
 
 org.apache.gravitino.optimizer.updater.computer.IcebergTableDataStatsComputer
+org.apache.gravitino.optimizer.updater.computer.CliStatsComputer

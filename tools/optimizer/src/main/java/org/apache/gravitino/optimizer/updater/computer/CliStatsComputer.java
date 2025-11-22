@@ -24,10 +24,9 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.optimizer.api.common.PartitionStatistic;
 import org.apache.gravitino.optimizer.api.common.SingleStatistic;
-import org.apache.gravitino.optimizer.api.recommender.SupportTableStats;
 import org.apache.gravitino.optimizer.api.updater.SupportJobStats;
+import org.apache.gravitino.optimizer.api.updater.SupportTableStats;
 import org.apache.gravitino.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.optimizer.updater.SingleStatisticImpl;
 import org.apache.gravitino.stats.StatisticValue;
@@ -35,12 +34,9 @@ import org.apache.gravitino.stats.StatisticValues;
 
 public class CliStatsComputer implements SupportTableStats, SupportJobStats {
 
-  public static final String NAME = "cli";
-  public static final String CUSTOM = "custom";
-
+  public static final String NAME = "gravitino-cli";
   private List<SingleStatistic<?>> tableStatistics = new ArrayList<>();
   private List<SingleStatistic<?>> jobStatistics = new ArrayList<>();
-  private List<PartitionStatistic> partitionStatistics = new ArrayList<>();
 
   @Override
   public String name() {
@@ -49,7 +45,7 @@ public class CliStatsComputer implements SupportTableStats, SupportJobStats {
 
   @Override
   public void initialize(OptimizerEnv optimizerEnv) {
-    String customContent = optimizerEnv.config().getAllConfig().get(CUSTOM);
+    String customContent = optimizerEnv.customContent();
     Preconditions.checkArgument(StringUtils.isNotBlank(customContent), "custom content is empty");
     if (customContent.startsWith("table:")) {
       this.tableStatistics = getStatistics(customContent.substring("table:".length()));
@@ -61,13 +57,8 @@ public class CliStatsComputer implements SupportTableStats, SupportJobStats {
   }
 
   @Override
-  public List<SingleStatistic<?>> getTableStats(NameIdentifier tableIdentifier) {
+  public List<SingleStatistic<?>> computeTableStats(NameIdentifier tableIdentifier) {
     return tableStatistics;
-  }
-
-  @Override
-  public List<PartitionStatistic> getPartitionStats(NameIdentifier tableIdentifier) {
-    return partitionStatistics;
   }
 
   @Override
@@ -78,16 +69,10 @@ public class CliStatsComputer implements SupportTableStats, SupportJobStats {
   static List<SingleStatistic<?>> getStatistics(String customContent) {
 
     List<SingleStatistic<?>> statistics = new ArrayList<>();
-    // The custom content format is like "table:name=value,name=value", parse it to a list of
-    // SingleStatistic
-    // 1. Split the content by comma
     String[] stats = customContent.split(",");
-    // 2. For each stat, split it by colon
     for (String stat : stats) {
-      String[] statParts = stat.split(":");
-      Preconditions.checkArgument(statParts.length == 2, "custom stat format is invalid");
       // 3. For each stat part, split it by equal sign
-      String[] statPartParts = statParts[1].split("=");
+      String[] statPartParts = stat.split("=");
       Preconditions.checkArgument(statPartParts.length == 2, "custom stat format is invalid");
 
       String name = statPartParts[0];

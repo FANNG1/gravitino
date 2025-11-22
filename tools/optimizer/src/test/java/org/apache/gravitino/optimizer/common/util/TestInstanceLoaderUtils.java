@@ -17,15 +17,15 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer.recommender.actor;
+package org.apache.gravitino.optimizer.common.util;
 
 import org.apache.gravitino.optimizer.api.monitor.MetricsEvaluator;
 import org.apache.gravitino.optimizer.api.recommender.PolicyActor;
 import org.apache.gravitino.optimizer.api.updater.StatsComputer;
-import org.apache.gravitino.optimizer.common.util.InstanceLoaderUtils;
 import org.apache.gravitino.optimizer.monitor.evaluator.GravitinoMetricsEvaluator;
 import org.apache.gravitino.optimizer.recommender.actor.compaction.CompactionPolicyActor;
 import org.apache.gravitino.optimizer.recommender.util.PolicyUtils;
+import org.apache.gravitino.optimizer.updater.computer.CliStatsComputer;
 import org.apache.gravitino.optimizer.updater.computer.IcebergTableDataStatsComputer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -43,6 +43,9 @@ class TestInstanceLoaderUtils {
     StatsComputer computer =
         InstanceLoaderUtils.createStatsComputerInstance(IcebergTableDataStatsComputer.NAME);
     Assertions.assertTrue(computer instanceof IcebergTableDataStatsComputer);
+
+    computer = InstanceLoaderUtils.createStatsComputerInstance(CliStatsComputer.NAME);
+    Assertions.assertTrue(computer instanceof CliStatsComputer);
   }
 
   @Test
