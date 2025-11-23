@@ -100,7 +100,8 @@ public class UpdaterIT extends GravitinoOptimizerEnvIT {
     Assertions.assertTrue(tableMetrics.containsKey(DummyTableStatsComputer.TABLE_STAT_NAME));
     List<SingleMetric> tableMetricsList = tableMetrics.get(DummyTableStatsComputer.TABLE_STAT_NAME);
     Assertions.assertEquals(1, tableMetricsList.size());
-    long diff = System.currentTimeMillis() - tableMetricsList.get(0).timestamp();
+    sleep(2);
+    long diff = System.currentTimeMillis() / 1000 - tableMetricsList.get(0).timestamp();
     Assertions.assertTrue(diff > 0 && diff <= 10000);
     Assertions.assertEquals(1L, tableMetricsList.get(0).statistic().value().value());
 
@@ -115,7 +116,8 @@ public class UpdaterIT extends GravitinoOptimizerEnvIT {
     List<SingleMetric> partitionMetricsList =
         partitionMetrics.get(DummyTableStatsComputer.TABLE_STAT_NAME);
     Assertions.assertEquals(1, partitionMetricsList.size());
-    diff = System.currentTimeMillis() - partitionMetricsList.get(0).timestamp();
+    sleep(2);
+    diff = System.currentTimeMillis() / 1000 - partitionMetricsList.get(0).timestamp();
     Assertions.assertTrue(diff > 0 && diff <= 10000);
     Assertions.assertEquals(2L, partitionMetricsList.get(0).statistic().value().value());
     Assertions.assertEquals(
@@ -139,8 +141,17 @@ public class UpdaterIT extends GravitinoOptimizerEnvIT {
     Assertions.assertTrue(jobMetrics.containsKey(DummyJobMetricsComputer.JOB_STAT_NAME));
     List<SingleMetric> jobMetricsList = jobMetrics.get(DummyJobMetricsComputer.JOB_STAT_NAME);
     Assertions.assertEquals(1, jobMetricsList.size());
-    long diff = System.currentTimeMillis() - jobMetricsList.get(0).timestamp();
+    sleep(2);
+    long diff = System.currentTimeMillis() / 1000 - jobMetricsList.get(0).timestamp();
     Assertions.assertTrue(diff > 0 && diff <= 10000);
     Assertions.assertEquals(1L, jobMetricsList.get(0).statistic().value().value());
+  }
+
+  private void sleep(long secs) {
+    try {
+      Thread.sleep(secs * 1000);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
   }
 }
