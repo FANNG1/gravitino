@@ -53,7 +53,7 @@ public class OptimizerCmd {
             .longOpt("type")
             .hasArg()
             .required(true)
-            .desc("Optimizer type: recommender, update_stats, update_metrics, monitor_metrics")
+            .desc("Optimizer type: " + OptimizerType.allValues())
             .build());
 
     options.addOption(
@@ -91,10 +91,10 @@ public class OptimizerCmd {
 
     options.addOption(
         Option.builder()
-            .longOpt("updater-name")
+            .longOpt("computer-name")
             .hasArg()
             .required(false)
-            .desc("The stats updater name")
+            .desc("The stats computer name to compute stats or metrics")
             .build());
 
     options.addOption(
@@ -121,7 +121,7 @@ public class OptimizerCmd {
             .desc("The custom content which saved in OptimizerEnv")
             .build());
 
-    String updaterName;
+    String computerName;
     String confPath;
     String[] identifiers;
     String policyType;
@@ -140,7 +140,7 @@ public class OptimizerCmd {
       confPath = cmd.getOptionValue("conf-path", Paths.get("conf", EnvUtils.CONF_FILE).toString());
       OptimizerEnv optimizerEnv = EnvUtils.getInitializedEnv(confPath, customContent);
 
-      updaterName = cmd.getOptionValue("updater-name");
+      computerName = cmd.getOptionValue("computer-name");
       identifiers = cmd.getOptionValues("identifiers");
       policyType = cmd.getOptionValue("policy-type");
       String actionTime = cmd.getOptionValue("action-time");
@@ -151,7 +151,7 @@ public class OptimizerCmd {
       checkRequiredOption("type", typeStr);
       optimizerType = OptimizerType.valueOf(typeStr.toUpperCase(Locale.ROOT));
       switch (optimizerType) {
-        case RECOMMENDER:
+        case RECOMMEND_POLICY_TYPE:
           checkRequiredOption("identifiers", identifiers);
           checkRequiredOption("policy-type", policyType);
 
@@ -165,26 +165,26 @@ public class OptimizerCmd {
           break;
         case UPDATE_STATS:
           checkRequiredOption("identifiers", identifiers);
-          checkRequiredOption("updater-name", updaterName);
+          checkRequiredOption("computer-name", computerName);
 
           runWithoutException(
               () -> {
                 List<NameIdentifier> nameIdentifiers =
                     Arrays.stream(identifiers).map(NameIdentifier::parse).toList();
                 Updater updater = new Updater(optimizerEnv);
-                updater.update(updaterName, nameIdentifiers, UpdateType.STATS);
+                updater.update(computerName, nameIdentifiers, UpdateType.STATS);
               });
           break;
         case UPDATE_METRICS:
           checkRequiredOption("identifiers", identifiers);
-          checkRequiredOption("updater-name", updaterName);
+          checkRequiredOption("computer-name", computerName);
 
           runWithoutException(
               () -> {
                 List<NameIdentifier> nameIdentifiers =
                     Arrays.stream(identifiers).map(NameIdentifier::parse).toList();
                 Updater updater = new Updater(optimizerEnv);
-                updater.update(updaterName, nameIdentifiers, UpdateType.METRICS);
+                updater.update(computerName, nameIdentifiers, UpdateType.METRICS);
               });
           break;
         case MONITOR_METRICS:
@@ -232,13 +232,16 @@ public class OptimizerCmd {
   }
 
   enum OptimizerType {
-    RECOMMENDER,
+    RECOMMEND_POLICY_TYPE,
     UPDATE_STATS,
     UPDATE_METRICS,
     MONITOR_METRICS;
 
     public static String allValues() {
-      return Arrays.stream(values()).map(Enum::name).collect(Collectors.joining(","));
+      return Arrays.stream(values())
+          .map(Enum::name)
+          .map(String::toLowerCase)
+          .collect(Collectors.joining(","));
     }
   }
 }

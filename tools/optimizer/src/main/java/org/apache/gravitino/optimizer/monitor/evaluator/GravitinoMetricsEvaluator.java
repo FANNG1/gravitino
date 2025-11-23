@@ -64,11 +64,20 @@ public class GravitinoMetricsEvaluator implements MetricsEvaluator {
         .forEach(
             metricName -> {
               String name = metricName.name();
-              doEvaluation(
-                  tableIdentifier,
-                  beforeMetrics.getOrDefault(name, Collections.emptyList()),
-                  afterMetrics.getOrDefault(name, Collections.emptyList()),
-                  metricName);
+
+              List<SingleMetric> metricsBeforeList =
+                  beforeMetrics.getOrDefault(name, Collections.emptyList());
+              List<SingleMetric> metricsAfterList =
+                  afterMetrics.getOrDefault(name, Collections.emptyList());
+              if (metricsBeforeList.isEmpty() && metricsAfterList.isEmpty()) {
+                LOG.debug(
+                    "Metrics {} of {} before and after action time are empty, skip evaluation",
+                    metricName,
+                    tableIdentifier);
+                return;
+              }
+
+              doEvaluation(tableIdentifier, metricsBeforeList, metricsAfterList, metricName);
             });
     return false;
   }
@@ -83,11 +92,19 @@ public class GravitinoMetricsEvaluator implements MetricsEvaluator {
         .forEach(
             metricName -> {
               String name = metricName.name();
-              doEvaluation(
-                  jobIdentifier,
-                  beforeMetrics.getOrDefault(name, Collections.emptyList()),
-                  afterMetrics.getOrDefault(name, Collections.emptyList()),
-                  metricName);
+
+              List<SingleMetric> metricsBeforeList =
+                  beforeMetrics.getOrDefault(name, Collections.emptyList());
+              List<SingleMetric> metricsAfterList =
+                  afterMetrics.getOrDefault(name, Collections.emptyList());
+              if (metricsBeforeList.isEmpty() && metricsAfterList.isEmpty()) {
+                LOG.debug(
+                    "Metrics {} of {} before and after action time are empty, skip evaluation",
+                    metricName,
+                    jobIdentifier);
+                return;
+              }
+              doEvaluation(jobIdentifier, metricsBeforeList, metricsAfterList, metricName);
             });
     return false;
   }
@@ -117,10 +134,12 @@ public class GravitinoMetricsEvaluator implements MetricsEvaluator {
 
     LOG.info(
         String.format(
-            "Metrics %s of %s avg before action time: %s", metricName, identifier, beforeAvg));
+            "Metrics %s of %s avg before action time: %s",
+            metricName, identifier, beforeAvg.value()));
     LOG.info(
         String.format(
-            "Metrics %s of %s avg after action time: %s", metricName, identifier, afterAvg));
+            "Metrics %s of %s avg after action time: %s",
+            metricName, identifier, afterAvg.value()));
   }
 
   private StatisticValue toStatisticValue(SingleMetric metric) {

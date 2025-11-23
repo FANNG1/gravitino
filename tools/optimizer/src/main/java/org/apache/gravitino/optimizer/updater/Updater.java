@@ -88,7 +88,7 @@ public class Updater {
 
   private List<SingleMetric> toMetrics(List<SingleStatistic<?>> statistics) {
     return statistics.stream()
-        .map(stat -> (SingleMetric) new SingleMetricImpl(System.currentTimeMillis(), stat))
+        .map(stat -> (SingleMetric) new SingleMetricImpl(System.currentTimeMillis() / 1000, stat))
         .toList();
   }
 

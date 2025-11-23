@@ -40,4 +40,9 @@ public class SingleStatisticImpl<T> implements SingleStatistic<T> {
   public StatisticValue<T> value() {
     return value;
   }
+
+  @Override
+  public String toString() {
+    return "{ " + name + " : " + value.value() + '}';
+  }
 }

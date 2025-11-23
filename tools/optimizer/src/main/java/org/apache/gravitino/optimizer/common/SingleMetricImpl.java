@@ -43,6 +43,6 @@ public class SingleMetricImpl implements SingleMetric {
 
   @Override
   public String toString() {
-    return "BaseMetric{" + "timestamp=" + timestamp + ", statistic=" + statistic + '}';
+    return "{" + timestamp + ": " + statistic + " }";
   }
 }
