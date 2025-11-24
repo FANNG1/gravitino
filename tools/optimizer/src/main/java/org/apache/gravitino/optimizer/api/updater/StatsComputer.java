@@ -25,7 +25,9 @@ import org.apache.gravitino.optimizer.common.OptimizerEnv;
 /** Represents a computer that can compute stats. */
 @DeveloperApi
 public interface StatsComputer {
+  /** Logical name used for discovery via ServiceLoader. */
   String name();
 
+  /** Prepare any external resources before first computation. */
   void initialize(OptimizerEnv optimizerEnv);
 }

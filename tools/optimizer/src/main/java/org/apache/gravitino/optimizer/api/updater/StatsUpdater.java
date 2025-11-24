@@ -28,5 +28,11 @@ import org.apache.gravitino.optimizer.api.common.SingleStatistic;
 /** Represents an updater that can update statistics for a table. */
 @DeveloperApi
 public interface StatsUpdater extends Provider {
+  /**
+   * Persist table (and optionally partition) statistics into the catalog.
+   *
+   * @param tableIdentifier catalog/schema/table identifier
+   * @param statistics list of table and/or partition statistics
+   */
   void updateTableStatistics(NameIdentifier tableIdentifier, List<SingleStatistic<?>> statistics);
 }

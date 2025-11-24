@@ -27,6 +27,11 @@ import org.apache.gravitino.optimizer.api.common.RecommenderPolicy;
 
 @DeveloperApi
 public interface PolicyActor {
+  /**
+   * Declares the optional data the actor needs before it can be initialized. The {@link
+   * PolicyActorContext} handed to {@link #initialize(PolicyActorContext)} will include only the
+   * requested items.
+   */
   enum DataRequirement {
     TABLE_METADATA,
     TABLE_STATISTICS,
@@ -47,10 +52,21 @@ public interface PolicyActor {
     return Set.of();
   }
 
+  /**
+   * Initialize the actor with the supplied context.
+   *
+   * @param context immutable view of table identifier, policy, and any requested metadata or
+   *     statistics
+   */
   void initialize(PolicyActorContext context);
 
+  /** Stable identifier for the policy type this actor handles (e.g. {@code COMPACTION}). */
   String policyType();
 
+  /**
+   * Score that allows ranking multiple recommendations for the same policy; higher scores take
+   * precedence.
+   */
   long score();
   // Whether to trigger a job to run the policy
   boolean shouldTrigger();

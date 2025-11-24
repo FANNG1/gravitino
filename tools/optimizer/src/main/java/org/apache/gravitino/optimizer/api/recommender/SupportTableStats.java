@@ -28,7 +28,19 @@ import org.apache.gravitino.optimizer.api.common.SingleStatistic;
 /** Represents a provider that supports table statistics. */
 @DeveloperApi
 public interface SupportTableStats extends StatsProvider {
+  /**
+   * Retrieve table-level statistics.
+   *
+   * @param tableIdentifier catalog/schema/table identifier
+   * @return list of statistics; empty when none are available
+   */
   List<SingleStatistic<?>> getTableStats(NameIdentifier tableIdentifier);
 
+  /**
+   * Retrieve partition-level statistics.
+   *
+   * @param tableIdentifier catalog/schema/table identifier
+   * @return list of partition statistics; empty when none are available or table is unpartitioned
+   */
   List<PartitionStatistic> getPartitionStats(NameIdentifier tableIdentifier);
 }

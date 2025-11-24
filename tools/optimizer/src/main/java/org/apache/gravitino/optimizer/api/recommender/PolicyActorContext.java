@@ -58,14 +58,17 @@ public final class PolicyActorContext {
     return policy;
   }
 
+  /** Table metadata if requested, otherwise {@link Optional#empty()}. */
   public Optional<Table> tableMetadata() {
     return tableMetadata;
   }
 
+  /** Table-level statistics if requested, otherwise an empty list. */
   public List<SingleStatistic<?>> tableStatistics() {
     return tableStatistics;
   }
 
+  /** Partition-level statistics if requested, otherwise an empty list. */
   public List<PartitionStatistic> partitionStatistics() {
     return partitionStatistics;
   }
@@ -91,6 +94,7 @@ public final class PolicyActorContext {
       return this;
     }
 
+    /** Attach table-level statistics when the actor requests {@code TABLE_STATISTICS}. */
     public Builder withTableStatistics(List<SingleStatistic<?>> stats) {
       this.tableStatistics =
           Collections.unmodifiableList(
@@ -98,6 +102,7 @@ public final class PolicyActorContext {
       return this;
     }
 
+    /** Attach partition-level statistics when the actor requests {@code PARTITION_STATISTICS}. */
     public Builder withPartitionStatistics(List<PartitionStatistic> partitionStats) {
       this.partitionStatistics =
           Collections.unmodifiableList(

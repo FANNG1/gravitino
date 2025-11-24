@@ -45,6 +45,15 @@ public interface MetricsProvider extends Provider {
   Map<String, List<SingleMetric>> listJobMetrics(
       NameIdentifier jobIdentifier, long startTime, long endTime);
 
+  /**
+   * Retrieve metrics for a table, optionally scoped to specific partitions.
+   *
+   * @param tableIdentifier catalog/schema/table identifier
+   * @param partitionName when present, limit metrics to these partitions
+   * @param startTime start timestamp (seconds)
+   * @param endTime end timestamp (seconds)
+   * @return map keyed by metric name, each containing a time-ordered series
+   */
   Map<String, List<SingleMetric>> listTableMetrics(
       NameIdentifier tableIdentifier,
       Optional<List<SinglePartition>> partitionName,

@@ -26,5 +26,12 @@ import org.apache.gravitino.optimizer.api.recommender.PolicyActor.JobExecuteCont
 /** Represents a submitter that can submit jobs based on a policy type and job execution context. */
 @DeveloperApi
 public interface JobSubmitter extends Provider {
+  /**
+   * Submit a job for execution.
+   *
+   * @param policyType policy type identifier (routes to the proper job template/queue)
+   * @param job execution context built by the policy actor
+   * @return provider-specific job id or handle
+   */
   String submitJob(String policyType, JobExecuteContext job);
 }

@@ -27,5 +27,11 @@ import org.apache.gravitino.optimizer.api.common.SingleStatistic;
 /** Represents a provider that supports job statistics. */
 @DeveloperApi
 public interface SupportJobStats extends StatsComputer {
+  /**
+   * Compute job-level statistics to be persisted.
+   *
+   * @param jobIdentifier job identifier
+   * @return list of statistics; empty when none are produced
+   */
   List<SingleStatistic<?>> computeJobStats(NameIdentifier jobIdentifier);
 }

@@ -27,5 +27,11 @@ import org.apache.gravitino.optimizer.api.common.Provider;
 /** Represents a provider that provides job information for a table. */
 @DeveloperApi
 public interface JobProvider extends Provider {
+  /**
+   * List jobs related to the provided table.
+   *
+   * @param tableIdentifier catalog/schema/table identifier
+   * @return identifiers for jobs touching this table
+   */
   List<NameIdentifier> getJobNames(NameIdentifier tableIdentifier);
 }

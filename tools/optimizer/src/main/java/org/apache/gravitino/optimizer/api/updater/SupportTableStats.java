@@ -27,5 +27,11 @@ import org.apache.gravitino.optimizer.api.common.SingleStatistic;
 /** Represents a provider that supports table statistics. */
 @DeveloperApi
 public interface SupportTableStats extends StatsComputer {
+  /**
+   * Compute table-level statistics to be persisted.
+   *
+   * @param tableIdentifier catalog/schema/table identifier
+   * @return list of statistics; empty when none are produced
+   */
   List<SingleStatistic<?>> computeTableStats(NameIdentifier tableIdentifier);
 }
