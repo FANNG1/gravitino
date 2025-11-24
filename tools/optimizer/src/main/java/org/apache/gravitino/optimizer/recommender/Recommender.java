@@ -59,15 +59,31 @@ public class Recommender {
 
   public Recommender(OptimizerEnv optimizerEnv) {
     OptimizerConfig config = optimizerEnv.config();
+    PolicyProvider policyProvider = loadPolicyProvider(config);
+    StatsProvider statsProvider = loadStatsProvider(config);
+    TableMetadataProvider tableMetadataProvider = loadTableMetadataProvider(config);
+    JobSubmitter jobSubmitter = loadJobSubmitter(config);
 
-    this.policyProvider = loadPolicyProvider(config);
-    policyProvider.initialize(optimizerEnv);
-    this.statsProvider = loadStatsProvider(config);
-    statsProvider.initialize(optimizerEnv);
-    this.tableMetadataProvider = loadTableMetadataProvider(config);
-    tableMetadataProvider.initialize(optimizerEnv);
-    this.jobSubmitter = loadJobSubmitter(config);
-    jobSubmitter.initialize(optimizerEnv);
+    this.policyProvider = policyProvider;
+    this.statsProvider = statsProvider;
+    this.tableMetadataProvider = tableMetadataProvider;
+    this.jobSubmitter = jobSubmitter;
+
+    this.policyProvider.initialize(optimizerEnv);
+    this.statsProvider.initialize(optimizerEnv);
+    this.tableMetadataProvider.initialize(optimizerEnv);
+    this.jobSubmitter.initialize(optimizerEnv);
+  }
+
+  Recommender(
+      PolicyProvider policyProvider,
+      StatsProvider statsProvider,
+      TableMetadataProvider tableMetadataProvider,
+      JobSubmitter jobSubmitter) {
+    this.policyProvider = policyProvider;
+    this.statsProvider = statsProvider;
+    this.tableMetadataProvider = tableMetadataProvider;
+    this.jobSubmitter = jobSubmitter;
   }
 
   public List<JobExecuteContext> recommendForOnePolicy(
@@ -109,7 +125,7 @@ public class Recommender {
   }
 
   private PolicyActor loadPolicyActor(RecommenderPolicy policy, NameIdentifier tableIdentifier) {
-    PolicyActor policyActor = getPolicyActor(policy.policyType());
+    PolicyActor policyActor = createPolicyActor(policy.policyType());
 
     Set<DataRequirement> declaredRequirements = policyActor.requiredData();
     EnumSet<DataRequirement> requirements =
@@ -146,7 +162,7 @@ public class Recommender {
     return policyActor;
   }
 
-  private PolicyActor getPolicyActor(String policyType) {
+  protected PolicyActor createPolicyActor(String policyType) {
     return InstanceLoaderUtils.createActorInstance(policyType);
   }
 
