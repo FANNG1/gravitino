@@ -30,11 +30,21 @@ import org.apache.gravitino.policy.PolicyContent;
 @DeveloperApi
 public interface RecommenderPolicy {
 
+  /** Unique policy name supplied by the control plane. */
   String name();
   // policy type is used to identify the policy to find corresponding policy actor
+  /**
+   * Policy type used to route to a {@link
+   * org.apache.gravitino.optimizer.api.recommender.PolicyActor}.
+   */
   String policyType();
 
+  /** Structured policy content (rules + job config). */
   PolicyContent content();
 
+  /**
+   * Optional job template name to resolve job parameters; empty when the policy embeds full job
+   * configuration.
+   */
   Optional<String> jobTemplateName();
 }

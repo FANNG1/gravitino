@@ -36,7 +36,9 @@ public interface SingleStatistic<T> {
     JOB_DURATION,
   }
 
+  /** Stable metric key used for lookup and reporting. */
   String name();
 
+  /** Typed value holder for the statistic. */
   StatisticValue<T> value();
 }

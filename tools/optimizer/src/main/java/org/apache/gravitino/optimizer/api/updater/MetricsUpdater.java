@@ -36,7 +36,19 @@ import org.apache.gravitino.optimizer.api.common.SingleMetric;
  */
 @DeveloperApi
 public interface MetricsUpdater extends Provider {
+  /**
+   * Persist table metrics into the catalog.
+   *
+   * @param nameIdentifier catalog/schema/table identifier
+   * @param metrics time-series samples to write
+   */
   void updateTableMetrics(NameIdentifier nameIdentifier, List<SingleMetric> metrics);
 
+  /**
+   * Persist job metrics into the catalog.
+   *
+   * @param nameIdentifier job identifier
+   * @param metrics time-series samples to write
+   */
   void updateJobMetrics(NameIdentifier nameIdentifier, List<SingleMetric> metrics);
 }

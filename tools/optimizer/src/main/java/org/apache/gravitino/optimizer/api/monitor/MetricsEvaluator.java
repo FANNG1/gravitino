@@ -30,13 +30,24 @@ import org.apache.gravitino.optimizer.api.common.SingleMetric;
  */
 @DeveloperApi
 public interface MetricsEvaluator {
+  /** Human-readable evaluator name, primarily for logging and selection. */
   String name();
 
+  /**
+   * Evaluate table metrics before/after optimization to decide success/failure.
+   *
+   * @return true when metrics meet expectations
+   */
   boolean evaluateTableMetrics(
       NameIdentifier tableIdentifier,
       Map<String, List<SingleMetric>> beforeMetrics,
       Map<String, List<SingleMetric>> afterMetrics);
 
+  /**
+   * Evaluate job metrics before/after optimization to decide success/failure.
+   *
+   * @return true when metrics meet expectations
+   */
   boolean evaluateJobMetrics(
       NameIdentifier jobIdentifier,
       Map<String, List<SingleMetric>> beforeMetrics,

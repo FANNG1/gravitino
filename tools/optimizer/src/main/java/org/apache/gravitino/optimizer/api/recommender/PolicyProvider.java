@@ -28,7 +28,19 @@ import org.apache.gravitino.optimizer.api.common.RecommenderPolicy;
 /** Represents a provider that provides policies. */
 @DeveloperApi
 public interface PolicyProvider extends Provider {
+  /**
+   * List all policies attached to the given table.
+   *
+   * @param tableIdentifier catalog/schema/table identifier
+   * @return ordered list of policies for the table
+   */
   List<RecommenderPolicy> getTablePolicy(NameIdentifier tableIdentifier);
 
+  /**
+   * Fetch a single policy by name.
+   *
+   * @param policyName unique policy name
+   * @return policy definition; implementors should throw if missing
+   */
   RecommenderPolicy getPolicy(String policyName);
 }

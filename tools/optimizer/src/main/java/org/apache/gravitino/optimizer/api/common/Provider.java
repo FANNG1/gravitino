@@ -25,7 +25,13 @@ import org.apache.gravitino.optimizer.common.OptimizerEnv;
 /** Represents a provider that provide information from external systems. */
 @DeveloperApi
 public interface Provider {
+  /** Logical name used for discovery and logging. */
   String name();
 
+  /**
+   * Hook for wiring external resources (clients, credentials, caches) before first use.
+   *
+   * @param optimizerEnv shared optimizer environment/configuration
+   */
   void initialize(OptimizerEnv optimizerEnv);
 }

@@ -27,5 +27,11 @@ import org.apache.gravitino.rel.Table;
 /** Represents a provider that provides table metadata. */
 @DeveloperApi
 public interface TableMetadataProvider extends Provider {
+  /**
+   * Fetch table metadata for a fully-qualified table identifier.
+   *
+   * @param tableIdentifier catalog/schema/table identifier
+   * @return table definition; implementors should throw if the table is missing
+   */
   Table getTableMetadata(NameIdentifier tableIdentifier);
 }

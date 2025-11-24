@@ -25,7 +25,9 @@ import org.apache.gravitino.annotation.DeveloperApi;
 @DeveloperApi
 public interface SingleMetric {
 
+  /** Metric event time in epoch milliseconds. */
   long timestamp();
 
+  /** The statistic value sampled at this timestamp. */
   SingleStatistic<?> statistic();
 }

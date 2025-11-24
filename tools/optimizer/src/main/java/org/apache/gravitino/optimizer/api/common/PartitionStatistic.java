@@ -24,5 +24,6 @@ import org.apache.gravitino.optimizer.common.SinglePartition;
 
 /** Represents the statistics of a partition in a table. */
 public interface PartitionStatistic extends SingleStatistic {
+  /** Partition identifiers associated with this statistic, ordered from outer to inner level. */
   List<SinglePartition> partitionName();
 }
