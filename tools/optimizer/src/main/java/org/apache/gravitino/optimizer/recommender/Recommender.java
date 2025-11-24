@@ -22,7 +22,7 @@ package org.apache.gravitino.optimizer.recommender;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
@@ -152,7 +152,8 @@ public class Recommender {
 
   private Map<String, List<NameIdentifier>> getPolicyTables(
       List<NameIdentifier> tableIdentifiers, String policyType) {
-    Map<String, List<NameIdentifier>> tablesByPolicy = new HashMap<>();
+    // LinkedHashMap preserves deterministic order for predictable job submission sequencing.
+    Map<String, List<NameIdentifier>> tablesByPolicy = new LinkedHashMap<>();
     for (NameIdentifier tableIdentifier : tableIdentifiers) {
       policyProvider.getTablePolicy(tableIdentifier).stream()
           .filter(policy -> policy.policyType().equals(policyType))

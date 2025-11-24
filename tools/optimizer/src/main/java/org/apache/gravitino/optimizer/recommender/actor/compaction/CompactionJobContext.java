@@ -31,10 +31,10 @@ import org.apache.iceberg.actions.RewriteDataFiles;
 
 @ToString
 public class CompactionJobContext implements JobExecuteContext {
-  private NameIdentifier name;
-  private Map<String, Object> config;
-  private RecommenderPolicy policy;
-  private Table tableMetadata;
+  private final NameIdentifier name;
+  private final Map<String, Object> config;
+  private final RecommenderPolicy policy;
+  private final Table tableMetadata;
 
   public CompactionJobContext(
       NameIdentifier name,
@@ -43,7 +43,8 @@ public class CompactionJobContext implements JobExecuteContext {
       Table tableMetadata) {
     this.policy = policy;
     this.name = name;
-    this.config = config;
+    // keep a defensive copy to prevent accidental mutation by callers
+    this.config = Map.copyOf(config);
     this.tableMetadata = tableMetadata;
   }
 
