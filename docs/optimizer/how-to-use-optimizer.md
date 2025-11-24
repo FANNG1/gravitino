@@ -10,15 +10,19 @@ license: "This software is licensed under the Apache License version 2."
 
 ## How to build
 
-```agsl
+```shell
 ./gradlew clean compileDistribution -x test
 ```
 
 After the build, the Gravitino package will be in the `distribution/package` directory.
 
+## How to start up Gravitino server and create metalake & catalog & schema & table 
+
+(TODO:) provide detailed steps to start up Gravitino server and create metalake, catalog, schema and table.
+
 ## How to run the optimizer tools
 
-```agsl
+```
 cd distribution/package
 ./bin/gravitino-optimizer.sh --type xx
 ```
@@ -33,7 +37,9 @@ You could control the optimizer tools by the following parameters:
 - identifiers: the identifiers of the tables, could be multiple, separated by comma
 - custom-content: the custom content of the optimizer tool, could be multiple, separated by comma
 
-## Example workflow
+## Quick start 
+
+Here is a quick start workflow to use Gravitino optimizer tools to update table stats, recommend the table for the compaction policy and monitor the table metrics after the table compaction job is finished.
 
 1. create Iceberg catalog in Gravitino server, like:
 

@@ -17,32 +17,28 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer.common;
+package org.apache.gravitino.optimizer.api.common;
 
-import org.apache.gravitino.optimizer.api.common.SingleMetric;
-import org.apache.gravitino.optimizer.api.common.SingleStatistic;
+import org.apache.gravitino.annotation.DeveloperApi;
+import org.apache.gravitino.stats.StatisticValue;
 
-public class SingleMetricImpl implements SingleMetric {
-  private long timestamp;
-  private SingleStatistic<?> statistic;
-
-  public SingleMetricImpl(long timestamp, SingleStatistic<?> statistic) {
-    this.timestamp = timestamp;
-    this.statistic = statistic;
+/** Represents a single statistic with name and value. */
+@DeveloperApi
+public interface StatisticEntry<T> {
+  enum Name {
+    TABLE_STORAGE_COST,
+    DATAFILE_AVG_SIZE,
+    DATAFILE_NUMBER,
+    DATAFILE_SIZE_MSE,
+    POSITION_DELETE_FILE_NUMBER,
+    EQUAL_DELETE_FILE_NUMBER,
+    JOB_COST,
+    JOB_DURATION,
   }
 
-  @Override
-  public long timestamp() {
-    return timestamp;
-  }
+  /** Stable metric key used for lookup and reporting. */
+  String name();
 
-  @Override
-  public SingleStatistic<?> statistic() {
-    return statistic;
-  }
-
-  @Override
-  public String toString() {
-    return "{" + timestamp + ": " + statistic + " }";
-  }
+  /** Typed value holder for the statistic. */
+  StatisticValue<T> value();
 }

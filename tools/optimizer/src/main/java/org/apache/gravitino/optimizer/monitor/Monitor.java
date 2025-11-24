@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.optimizer.api.common.SingleMetric;
+import org.apache.gravitino.optimizer.api.common.MetricsPoint;
 import org.apache.gravitino.optimizer.api.monitor.JobProvider;
 import org.apache.gravitino.optimizer.api.monitor.MetricsEvaluator;
 import org.apache.gravitino.optimizer.api.monitor.MetricsProvider;
@@ -78,25 +78,25 @@ public class Monitor {
   void evaluateTableMetrics(
       MetricsEvaluator evaluator, NameIdentifier tableIdentifier, long time, long rangeSeconds) {
     Pair<Long, Long> timeRange = getTimeRange(time, rangeSeconds);
-    Map<String, List<SingleMetric>> metrics =
+    Map<String, List<MetricsPoint>> metrics =
         metricsProvider.listTableMetrics(
             tableIdentifier, Optional.empty(), timeRange.getLeft(), timeRange.getRight());
 
-    Pair<Map<String, List<SingleMetric>>, Map<String, List<SingleMetric>>> splitMetrics =
+    Pair<Map<String, List<MetricsPoint>>, Map<String, List<MetricsPoint>>> splitMetrics =
         splitMetrics(metrics, time);
 
     evaluator.evaluateTableMetrics(
         tableIdentifier, splitMetrics.getLeft(), splitMetrics.getRight());
   }
 
-  private Pair<Map<String, List<SingleMetric>>, Map<String, List<SingleMetric>>> splitMetrics(
-      Map<String, List<SingleMetric>> metrics, long actionTimeInSeconds) {
+  private Pair<Map<String, List<MetricsPoint>>, Map<String, List<MetricsPoint>>> splitMetrics(
+      Map<String, List<MetricsPoint>> metrics, long actionTimeInSeconds) {
     // split metrics into metrics before and after action time
-    Map<String, List<SingleMetric>> beforeMetrics = new HashMap<>();
-    Map<String, List<SingleMetric>> afterMetrics = new HashMap<>();
-    for (Map.Entry<String, List<SingleMetric>> entry : metrics.entrySet()) {
+    Map<String, List<MetricsPoint>> beforeMetrics = new HashMap<>();
+    Map<String, List<MetricsPoint>> afterMetrics = new HashMap<>();
+    for (Map.Entry<String, List<MetricsPoint>> entry : metrics.entrySet()) {
       String metricName = entry.getKey();
-      List<SingleMetric> metricList = entry.getValue();
+      List<MetricsPoint> metricList = entry.getValue();
       beforeMetrics.put(
           metricName,
           metricList.stream().filter(m -> m.timestamp() < actionTimeInSeconds).toList());
@@ -113,9 +113,9 @@ public class Monitor {
       long actionTimeInSeconds,
       long rangeSeconds) {
     Pair<Long, Long> timeRange = getTimeRange(actionTimeInSeconds, rangeSeconds);
-    Map<String, List<SingleMetric>> metrics =
+    Map<String, List<MetricsPoint>> metrics =
         metricsProvider.listJobMetrics(jobIdentifier, timeRange.getLeft(), timeRange.getRight());
-    Pair<Map<String, List<SingleMetric>>, Map<String, List<SingleMetric>>> splitMetrics =
+    Pair<Map<String, List<MetricsPoint>>, Map<String, List<MetricsPoint>>> splitMetrics =
         splitMetrics(metrics, actionTimeInSeconds);
     evaluator.evaluateJobMetrics(jobIdentifier, splitMetrics.getLeft(), splitMetrics.getRight());
   }

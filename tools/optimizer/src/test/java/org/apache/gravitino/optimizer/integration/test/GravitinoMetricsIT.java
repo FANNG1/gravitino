@@ -24,15 +24,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.optimizer.api.common.SingleMetric;
+import org.apache.gravitino.optimizer.api.common.MetricsPoint;
+import org.apache.gravitino.optimizer.api.common.PartitionEntry;
+import org.apache.gravitino.optimizer.common.MetricPointImpl;
 import org.apache.gravitino.optimizer.common.OptimizerEnv;
-import org.apache.gravitino.optimizer.common.PartitionImpl;
-import org.apache.gravitino.optimizer.common.SingleMetricImpl;
-import org.apache.gravitino.optimizer.common.SinglePartition;
+import org.apache.gravitino.optimizer.common.PartitionEntryImpl;
 import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;
 import org.apache.gravitino.optimizer.monitor.metrics.GravitinoMetricsProvider;
-import org.apache.gravitino.optimizer.updater.PartitionStatisticImpl;
-import org.apache.gravitino.optimizer.updater.SingleStatisticImpl;
+import org.apache.gravitino.optimizer.updater.PartitionStatisticEntryImpl;
+import org.apache.gravitino.optimizer.updater.StatisticEntryImpl;
 import org.apache.gravitino.optimizer.updater.metrics.GravitinoMetricsUpdater;
 import org.apache.gravitino.optimizer.updater.metrics.storage.H2MetricsStorage.H2MetricsStorageConfig;
 import org.apache.gravitino.stats.StatisticValues;
@@ -64,31 +64,32 @@ public class GravitinoMetricsIT {
   void testTableMetrics() {
     NameIdentifier tableIdentifier = NameIdentifier.of("catalog", "schema", "table");
 
-    List<SinglePartition> partition1 =
-        Arrays.asList(new PartitionImpl("p1", "v1"), new PartitionImpl("p2", "v2"));
-    List<SinglePartition> partition2 =
-        Arrays.asList(new PartitionImpl("p1", "v11"), new PartitionImpl("p2", "v2"));
+    List<PartitionEntry> partition1 =
+        Arrays.asList(new PartitionEntryImpl("p1", "v1"), new PartitionEntryImpl("p2", "v2"));
+    List<PartitionEntry> partition2 =
+        Arrays.asList(new PartitionEntryImpl("p1", "v11"), new PartitionEntryImpl("p2", "v2"));
 
     updater.updateTableMetrics(
         tableIdentifier,
         Arrays.asList(
-            new SingleMetricImpl(1000, new SingleStatisticImpl("a", StatisticValues.longValue(10))),
-            new SingleMetricImpl(
-                1000, new SingleStatisticImpl("b", StatisticValues.longValue(1000))),
-            new SingleMetricImpl(
-                1000, new PartitionStatisticImpl("b", StatisticValues.longValue(1003), partition1)),
-            new SingleMetricImpl(
-                1000, new PartitionStatisticImpl("b", StatisticValues.longValue(1004), partition2)),
-            new SingleMetricImpl(
-                1001, new SingleStatisticImpl("a", StatisticValues.longValue(100L)))));
+            new MetricPointImpl(1000, new StatisticEntryImpl("a", StatisticValues.longValue(10))),
+            new MetricPointImpl(1000, new StatisticEntryImpl("b", StatisticValues.longValue(1000))),
+            new MetricPointImpl(
+                1000,
+                new PartitionStatisticEntryImpl("b", StatisticValues.longValue(1003), partition1)),
+            new MetricPointImpl(
+                1000,
+                new PartitionStatisticEntryImpl("b", StatisticValues.longValue(1004), partition2)),
+            new MetricPointImpl(
+                1001, new StatisticEntryImpl("a", StatisticValues.longValue(100L)))));
 
-    Map<String, List<SingleMetric>> metrics =
+    Map<String, List<MetricsPoint>> metrics =
         provider.listTableMetrics(tableIdentifier, Optional.empty(), 1000, 1002);
 
     Assertions.assertEquals(2, metrics.size());
 
     Assertions.assertTrue(metrics.containsKey("a"));
-    List<SingleMetric> aMetrics = metrics.get("a");
+    List<MetricsPoint> aMetrics = metrics.get("a");
     Assertions.assertEquals(2, aMetrics.size());
     Assertions.assertEquals(10L, aMetrics.get(0).statistic().value().value());
     Assertions.assertEquals(1000, aMetrics.get(0).timestamp());
@@ -96,22 +97,23 @@ public class GravitinoMetricsIT {
     Assertions.assertEquals(1001, aMetrics.get(1).timestamp());
 
     Assertions.assertTrue(metrics.containsKey("b"));
-    List<SingleMetric> bMetrics = metrics.get("b");
+    List<MetricsPoint> bMetrics = metrics.get("b");
     Assertions.assertEquals(1, bMetrics.size());
     Assertions.assertEquals(1000L, bMetrics.get(0).statistic().value().value());
     Assertions.assertEquals(1000, bMetrics.get(0).timestamp());
 
-    Map<String, List<SingleMetric>> partitionMetrics =
+    Map<String, List<MetricsPoint>> partitionMetrics =
         provider.listTableMetrics(tableIdentifier, Optional.of(partition1), 1000, 1002);
     Assertions.assertEquals(1, partitionMetrics.size());
 
     Assertions.assertTrue(partitionMetrics.containsKey("b"));
-    List<SingleMetric> partitionMetrics1 = partitionMetrics.get("b");
+    List<MetricsPoint> partitionMetrics1 = partitionMetrics.get("b");
     Assertions.assertEquals(1, partitionMetrics1.size());
-    Assertions.assertTrue(partitionMetrics1.get(0).statistic() instanceof PartitionStatisticImpl);
+    Assertions.assertTrue(
+        partitionMetrics1.get(0).statistic() instanceof PartitionStatisticEntryImpl);
     Assertions.assertEquals(
         partition1,
-        ((PartitionStatisticImpl) partitionMetrics1.get(0).statistic()).partitionName());
+        ((PartitionStatisticEntryImpl) partitionMetrics1.get(0).statistic()).partitionName());
     Assertions.assertEquals(1003L, partitionMetrics1.get(0).statistic().value().value());
     Assertions.assertEquals(1000, partitionMetrics1.get(0).timestamp());
 
@@ -120,12 +122,13 @@ public class GravitinoMetricsIT {
     Assertions.assertEquals(1, partitionMetrics.size());
 
     Assertions.assertTrue(partitionMetrics.containsKey("b"));
-    List<SingleMetric> partitionMetrics2 = partitionMetrics.get("b");
+    List<MetricsPoint> partitionMetrics2 = partitionMetrics.get("b");
     Assertions.assertEquals(1, partitionMetrics2.size());
-    Assertions.assertTrue(partitionMetrics2.get(0).statistic() instanceof PartitionStatisticImpl);
+    Assertions.assertTrue(
+        partitionMetrics2.get(0).statistic() instanceof PartitionStatisticEntryImpl);
     Assertions.assertEquals(
         partition2,
-        ((PartitionStatisticImpl) partitionMetrics2.get(0).statistic()).partitionName());
+        ((PartitionStatisticEntryImpl) partitionMetrics2.get(0).statistic()).partitionName());
     Assertions.assertEquals(1004L, partitionMetrics2.get(0).statistic().value().value());
     Assertions.assertEquals(1000, partitionMetrics2.get(0).timestamp());
   }
@@ -137,18 +140,17 @@ public class GravitinoMetricsIT {
     updater.updateJobMetrics(
         jobIdentifier,
         Arrays.asList(
-            new SingleMetricImpl(2000, new SingleStatisticImpl("x", StatisticValues.longValue(20))),
-            new SingleMetricImpl(
-                2000, new SingleStatisticImpl("y", StatisticValues.longValue(2000))),
-            new SingleMetricImpl(
-                2001, new SingleStatisticImpl("x", StatisticValues.longValue(200L)))));
+            new MetricPointImpl(2000, new StatisticEntryImpl("x", StatisticValues.longValue(20))),
+            new MetricPointImpl(2000, new StatisticEntryImpl("y", StatisticValues.longValue(2000))),
+            new MetricPointImpl(
+                2001, new StatisticEntryImpl("x", StatisticValues.longValue(200L)))));
 
-    Map<String, List<SingleMetric>> metrics = provider.listJobMetrics(jobIdentifier, 2000, 2002);
+    Map<String, List<MetricsPoint>> metrics = provider.listJobMetrics(jobIdentifier, 2000, 2002);
 
     Assertions.assertEquals(2, metrics.size());
 
     Assertions.assertTrue(metrics.containsKey("x"));
-    List<SingleMetric> xMetrics = metrics.get("x");
+    List<MetricsPoint> xMetrics = metrics.get("x");
     Assertions.assertEquals(2, xMetrics.size());
     Assertions.assertEquals(20L, xMetrics.get(0).statistic().value().value());
     Assertions.assertEquals(2000, xMetrics.get(0).timestamp());
@@ -156,7 +158,7 @@ public class GravitinoMetricsIT {
     Assertions.assertEquals(2001, xMetrics.get(1).timestamp());
 
     Assertions.assertTrue(metrics.containsKey("y"));
-    List<SingleMetric> yMetrics = metrics.get("y");
+    List<MetricsPoint> yMetrics = metrics.get("y");
     Assertions.assertEquals(1, yMetrics.size());
     Assertions.assertEquals(2000L, yMetrics.get(0).statistic().value().value());
     Assertions.assertEquals(2000, yMetrics.get(0).timestamp());

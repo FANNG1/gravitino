@@ -24,9 +24,9 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.annotation.DeveloperApi;
+import org.apache.gravitino.optimizer.api.common.MetricsPoint;
+import org.apache.gravitino.optimizer.api.common.PartitionEntry;
 import org.apache.gravitino.optimizer.api.common.Provider;
-import org.apache.gravitino.optimizer.api.common.SingleMetric;
-import org.apache.gravitino.optimizer.common.SinglePartition;
 
 /** Represents a provider that provides table and job related metrics. */
 @DeveloperApi
@@ -39,10 +39,10 @@ public interface MetricsProvider extends Provider {
    *     metrics
    * @param endTime The end timestamp (in seconds) of the time range to consider when fetching
    *     metrics
-   * @return A list of {@link SingleMetric} objects containing the job metrics for the specified
+   * @return A list of {@link MetricsPoint} objects containing the job metrics for the specified
    *     criteria
    */
-  Map<String, List<SingleMetric>> listJobMetrics(
+  Map<String, List<MetricsPoint>> listJobMetrics(
       NameIdentifier jobIdentifier, long startTime, long endTime);
 
   /**
@@ -54,9 +54,9 @@ public interface MetricsProvider extends Provider {
    * @param endTime end timestamp (seconds)
    * @return map keyed by metric name, each containing a time-ordered series
    */
-  Map<String, List<SingleMetric>> listTableMetrics(
+  Map<String, List<MetricsPoint>> listTableMetrics(
       NameIdentifier tableIdentifier,
-      Optional<List<SinglePartition>> partitionName,
+      Optional<List<PartitionEntry>> partitionName,
       long startTime,
       long endTime);
 }

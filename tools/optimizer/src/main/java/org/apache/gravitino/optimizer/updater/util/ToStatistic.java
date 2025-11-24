@@ -20,8 +20,8 @@
 package org.apache.gravitino.optimizer.updater.util;
 
 import java.util.List;
-import org.apache.gravitino.optimizer.api.common.SingleStatistic;
+import org.apache.gravitino.optimizer.api.common.StatisticEntry;
 
 public interface ToStatistic {
-  List<SingleStatistic<?>> toStatistic();
+  List<StatisticEntry<?>> toStatistic();
 }

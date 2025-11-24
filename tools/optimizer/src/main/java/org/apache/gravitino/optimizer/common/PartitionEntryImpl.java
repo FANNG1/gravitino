@@ -17,24 +17,26 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer.updater;
+package org.apache.gravitino.optimizer.common;
 
-import java.util.List;
-import org.apache.gravitino.optimizer.api.common.PartitionStatistic;
-import org.apache.gravitino.optimizer.common.SinglePartition;
-import org.apache.gravitino.stats.StatisticValue;
+import org.apache.gravitino.optimizer.api.common.PartitionEntry;
 
-public class PartitionStatisticImpl extends SingleStatisticImpl implements PartitionStatistic {
-  private List<SinglePartition> partitions;
+public class PartitionEntryImpl implements PartitionEntry {
+  private final String partitionName;
+  private final String partitionValue;
 
-  public PartitionStatisticImpl(
-      String name, StatisticValue value, List<SinglePartition> partitions) {
-    super(name, value);
-    this.partitions = partitions;
+  public PartitionEntryImpl(String partitionName, String partitionValue) {
+    this.partitionName = partitionName;
+    this.partitionValue = partitionValue;
   }
 
   @Override
-  public List<SinglePartition> partitionName() {
-    return partitions;
+  public String partitionName() {
+    return partitionName;
+  }
+
+  @Override
+  public String partitionValue() {
+    return partitionValue;
   }
 }

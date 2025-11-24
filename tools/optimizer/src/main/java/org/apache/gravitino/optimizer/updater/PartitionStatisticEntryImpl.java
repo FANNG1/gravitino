@@ -17,21 +17,27 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer.api.monitor;
+package org.apache.gravitino.optimizer.updater;
 
 import java.util.List;
-import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.annotation.DeveloperApi;
-import org.apache.gravitino.optimizer.api.common.Provider;
+import org.apache.arrow.util.Preconditions;
+import org.apache.gravitino.optimizer.api.common.PartitionEntry;
+import org.apache.gravitino.optimizer.api.common.PartitionStatisticEntry;
+import org.apache.gravitino.stats.StatisticValue;
 
-/** Represents a provider that provides upstream and downstream jobs for a table. */
-@DeveloperApi
-public interface JobProvider extends Provider {
-  /**
-   * List jobs related to the provided table.
-   *
-   * @param tableIdentifier catalog/schema/table identifier
-   * @return identifiers for jobs touching this table
-   */
-  List<NameIdentifier> getJobNames(NameIdentifier tableIdentifier);
+public class PartitionStatisticEntryImpl<T> extends StatisticEntryImpl
+    implements PartitionStatisticEntry {
+  private final List<PartitionEntry> partitionName;
+
+  public PartitionStatisticEntryImpl(
+      String name, StatisticValue<T> value, List<PartitionEntry> partitionName) {
+    super(name, value);
+    Preconditions.checkArgument(partitionName != null, "partitionName must not be null");
+    this.partitionName = partitionName;
+  }
+
+  @Override
+  public List<PartitionEntry> partitionName() {
+    return List.copyOf(partitionName);
+  }
 }

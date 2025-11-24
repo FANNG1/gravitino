@@ -24,15 +24,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.client.GravitinoClient;
-import org.apache.gravitino.optimizer.api.common.PartitionStatistic;
-import org.apache.gravitino.optimizer.api.common.SingleStatistic;
+import org.apache.gravitino.optimizer.api.common.PartitionEntry;
+import org.apache.gravitino.optimizer.api.common.PartitionStatisticEntry;
+import org.apache.gravitino.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.optimizer.api.recommender.SupportTableStats;
 import org.apache.gravitino.optimizer.common.OptimizerEnv;
-import org.apache.gravitino.optimizer.common.SinglePartition;
 import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;
 import org.apache.gravitino.optimizer.common.util.IdentifierUtils;
-import org.apache.gravitino.optimizer.updater.PartitionStatisticImpl;
-import org.apache.gravitino.optimizer.updater.SingleStatisticImpl;
+import org.apache.gravitino.optimizer.updater.PartitionStatisticEntryImpl;
+import org.apache.gravitino.optimizer.updater.StatisticEntryImpl;
 import org.apache.gravitino.optimizer.updater.util.PartitionUtils;
 import org.apache.gravitino.rel.Table;
 import org.apache.gravitino.stats.PartitionRange;
@@ -55,7 +55,7 @@ public class GravitinoStatsProvider implements SupportTableStats {
   }
 
   @Override
-  public List<SingleStatistic<?>> getTableStats(NameIdentifier tableIdentifier) {
+  public List<StatisticEntry<?>> getTableStats(NameIdentifier tableIdentifier) {
     Table t =
         gravitinoClient
             .loadCatalog(
@@ -68,13 +68,13 @@ public class GravitinoStatsProvider implements SupportTableStats {
         .filter(statistic -> statistic.value().isPresent())
         .map(
             statistic ->
-                (SingleStatistic<?>)
-                    new SingleStatisticImpl(statistic.name(), statistic.value().get()))
+                (StatisticEntry<?>)
+                    new StatisticEntryImpl(statistic.name(), statistic.value().get()))
         .collect(Collectors.toList());
   }
 
   @Override
-  public List<PartitionStatistic> getPartitionStats(NameIdentifier tableIdentifier) {
+  public List<PartitionStatisticEntry> getPartitionStats(NameIdentifier tableIdentifier) {
     Table t =
         gravitinoClient
             .loadCatalog(
@@ -90,13 +90,15 @@ public class GravitinoStatsProvider implements SupportTableStats {
         .collect(Collectors.toList());
   }
 
-  private List<PartitionStatistic> toPartitionStatistics(PartitionStatistics partitionStatistics) {
-    List<SinglePartition> partitions =
+  private List<PartitionStatisticEntry> toPartitionStatistics(
+      PartitionStatistics partitionStatistics) {
+    List<PartitionEntry> partitions =
         PartitionUtils.parseGravitinoPartitionName(partitionStatistics.partitionName());
     return Arrays.stream(partitionStatistics.statistics())
         .map(
             statistic ->
-                new PartitionStatisticImpl(statistic.name(), statistic.value().get(), partitions))
+                new PartitionStatisticEntryImpl(
+                    statistic.name(), statistic.value().get(), partitions))
         .collect(Collectors.toList());
   }
 

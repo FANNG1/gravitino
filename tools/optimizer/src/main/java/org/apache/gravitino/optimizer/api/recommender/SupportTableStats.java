@@ -22,8 +22,8 @@ package org.apache.gravitino.optimizer.api.recommender;
 import java.util.List;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.annotation.DeveloperApi;
-import org.apache.gravitino.optimizer.api.common.PartitionStatistic;
-import org.apache.gravitino.optimizer.api.common.SingleStatistic;
+import org.apache.gravitino.optimizer.api.common.PartitionStatisticEntry;
+import org.apache.gravitino.optimizer.api.common.StatisticEntry;
 
 /** Represents a provider that supports table statistics. */
 @DeveloperApi
@@ -34,7 +34,7 @@ public interface SupportTableStats extends StatsProvider {
    * @param tableIdentifier catalog/schema/table identifier
    * @return list of statistics; empty when none are available
    */
-  List<SingleStatistic<?>> getTableStats(NameIdentifier tableIdentifier);
+  List<StatisticEntry<?>> getTableStats(NameIdentifier tableIdentifier);
 
   /**
    * Retrieve partition-level statistics.
@@ -42,5 +42,5 @@ public interface SupportTableStats extends StatsProvider {
    * @param tableIdentifier catalog/schema/table identifier
    * @return list of partition statistics; empty when none are available or table is unpartitioned
    */
-  List<PartitionStatistic> getPartitionStats(NameIdentifier tableIdentifier);
+  List<PartitionStatisticEntry> getPartitionStats(NameIdentifier tableIdentifier);
 }

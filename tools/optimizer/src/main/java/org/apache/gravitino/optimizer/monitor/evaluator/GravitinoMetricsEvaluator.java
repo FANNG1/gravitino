@@ -23,8 +23,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.optimizer.api.common.SingleMetric;
-import org.apache.gravitino.optimizer.api.common.SingleStatistic;
+import org.apache.gravitino.optimizer.api.common.MetricsPoint;
+import org.apache.gravitino.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.optimizer.api.monitor.MetricsEvaluator;
 import org.apache.gravitino.optimizer.common.util.StatisticValueUtils;
 import org.apache.gravitino.stats.StatisticValue;
@@ -37,17 +37,17 @@ public class GravitinoMetricsEvaluator implements MetricsEvaluator {
 
   private static final Logger LOG = LoggerFactory.getLogger(GravitinoMetricsEvaluator.class);
 
-  private List<SingleStatistic.Name> evaluateTableMetricsNames =
+  private List<StatisticEntry.Name> evaluateTableMetricsNames =
       List.of(
-          SingleStatistic.Name.TABLE_STORAGE_COST,
-          SingleStatistic.Name.DATAFILE_AVG_SIZE,
-          SingleStatistic.Name.DATAFILE_NUMBER,
-          SingleStatistic.Name.DATAFILE_SIZE_MSE,
-          SingleStatistic.Name.POSITION_DELETE_FILE_NUMBER,
-          SingleStatistic.Name.EQUAL_DELETE_FILE_NUMBER);
+          StatisticEntry.Name.TABLE_STORAGE_COST,
+          StatisticEntry.Name.DATAFILE_AVG_SIZE,
+          StatisticEntry.Name.DATAFILE_NUMBER,
+          StatisticEntry.Name.DATAFILE_SIZE_MSE,
+          StatisticEntry.Name.POSITION_DELETE_FILE_NUMBER,
+          StatisticEntry.Name.EQUAL_DELETE_FILE_NUMBER);
 
-  private List<SingleStatistic.Name> evaluateJobMetricsNames =
-      List.of(SingleStatistic.Name.JOB_COST, SingleStatistic.Name.JOB_DURATION);
+  private List<StatisticEntry.Name> evaluateJobMetricsNames =
+      List.of(StatisticEntry.Name.JOB_COST, StatisticEntry.Name.JOB_DURATION);
 
   @Override
   public String name() {
@@ -57,17 +57,17 @@ public class GravitinoMetricsEvaluator implements MetricsEvaluator {
   @Override
   public boolean evaluateTableMetrics(
       NameIdentifier tableIdentifier,
-      Map<String, List<SingleMetric>> beforeMetrics,
-      Map<String, List<SingleMetric>> afterMetrics) {
+      Map<String, List<MetricsPoint>> beforeMetrics,
+      Map<String, List<MetricsPoint>> afterMetrics) {
     //  evaluate table storage cost, data file size, data file number, position file number, etc
     evaluateTableMetricsNames.stream()
         .forEach(
             metricName -> {
               String name = metricName.name();
 
-              List<SingleMetric> metricsBeforeList =
+              List<MetricsPoint> metricsBeforeList =
                   beforeMetrics.getOrDefault(name, Collections.emptyList());
-              List<SingleMetric> metricsAfterList =
+              List<MetricsPoint> metricsAfterList =
                   afterMetrics.getOrDefault(name, Collections.emptyList());
               if (metricsBeforeList.isEmpty() && metricsAfterList.isEmpty()) {
                 LOG.debug(
@@ -85,17 +85,17 @@ public class GravitinoMetricsEvaluator implements MetricsEvaluator {
   @Override
   public boolean evaluateJobMetrics(
       NameIdentifier jobIdentifier,
-      Map<String, List<SingleMetric>> beforeMetrics,
-      Map<String, List<SingleMetric>> afterMetrics) {
+      Map<String, List<MetricsPoint>> beforeMetrics,
+      Map<String, List<MetricsPoint>> afterMetrics) {
     // evaluate job cost, duration, etc
     evaluateJobMetricsNames.stream()
         .forEach(
             metricName -> {
               String name = metricName.name();
 
-              List<SingleMetric> metricsBeforeList =
+              List<MetricsPoint> metricsBeforeList =
                   beforeMetrics.getOrDefault(name, Collections.emptyList());
-              List<SingleMetric> metricsAfterList =
+              List<MetricsPoint> metricsAfterList =
                   afterMetrics.getOrDefault(name, Collections.emptyList());
               if (metricsBeforeList.isEmpty() && metricsAfterList.isEmpty()) {
                 LOG.debug(
@@ -111,20 +111,20 @@ public class GravitinoMetricsEvaluator implements MetricsEvaluator {
 
   private void doEvaluation(
       NameIdentifier identifier,
-      List<SingleMetric> beforeMetrics,
-      List<SingleMetric> afterMetrics,
-      SingleStatistic.Name metricName) {
+      List<MetricsPoint> beforeMetrics,
+      List<MetricsPoint> afterMetrics,
+      StatisticEntry.Name metricName) {
     // implement evaluation logic here, 1. print metrics before and after action time, 2 compare the
     // avg metrics before and after action time
     // 1. print metrics before and after action time
     LOG.info(
         String.format(
             "Metrics %s of %s before action time: %s",
-            metricName, identifier, beforeMetrics.stream().map(SingleMetric::toString).toList()));
+            metricName, identifier, beforeMetrics.stream().map(MetricsPoint::toString).toList()));
     LOG.info(
         String.format(
             "Metrics %s of %s after action time: %s",
-            metricName, identifier, afterMetrics.stream().map(SingleMetric::toString).toList()));
+            metricName, identifier, afterMetrics.stream().map(MetricsPoint::toString).toList()));
 
     StatisticValue beforeAvg =
         StatisticValueUtils.avg(beforeMetrics.stream().map(this::toStatisticValue).toList());
@@ -142,8 +142,8 @@ public class GravitinoMetricsEvaluator implements MetricsEvaluator {
             metricName, identifier, afterAvg.value()));
   }
 
-  private StatisticValue toStatisticValue(SingleMetric metric) {
-    SingleStatistic<?> statistic = metric.statistic();
+  private StatisticValue toStatisticValue(MetricsPoint metric) {
+    StatisticEntry<?> statistic = metric.statistic();
     return statistic.value();
   }
 }

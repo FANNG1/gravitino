@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.annotation.DeveloperApi;
-import org.apache.gravitino.optimizer.api.common.SingleMetric;
+import org.apache.gravitino.optimizer.api.common.MetricsPoint;
 
 /**
  * Evaluator interface for the table and related job metrics before and after optimization actions.
@@ -40,8 +40,8 @@ public interface MetricsEvaluator {
    */
   boolean evaluateTableMetrics(
       NameIdentifier tableIdentifier,
-      Map<String, List<SingleMetric>> beforeMetrics,
-      Map<String, List<SingleMetric>> afterMetrics);
+      Map<String, List<MetricsPoint>> beforeMetrics,
+      Map<String, List<MetricsPoint>> afterMetrics);
 
   /**
    * Evaluate job metrics before/after optimization to decide success/failure.
@@ -50,6 +50,6 @@ public interface MetricsEvaluator {
    */
   boolean evaluateJobMetrics(
       NameIdentifier jobIdentifier,
-      Map<String, List<SingleMetric>> beforeMetrics,
-      Map<String, List<SingleMetric>> afterMetrics);
+      Map<String, List<MetricsPoint>> beforeMetrics,
+      Map<String, List<MetricsPoint>> afterMetrics);
 }

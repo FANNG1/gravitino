@@ -22,14 +22,14 @@ package org.apache.gravitino.optimizer.integration.test;
 import java.util.Arrays;
 import java.util.List;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.optimizer.api.common.PartitionStatistic;
-import org.apache.gravitino.optimizer.api.common.SingleStatistic;
-import org.apache.gravitino.optimizer.api.common.SingleStatistic.Name;
-import org.apache.gravitino.optimizer.common.PartitionImpl;
+import org.apache.gravitino.optimizer.api.common.PartitionStatisticEntry;
+import org.apache.gravitino.optimizer.api.common.StatisticEntry;
+import org.apache.gravitino.optimizer.api.common.StatisticEntry.Name;
+import org.apache.gravitino.optimizer.common.PartitionEntryImpl;
 import org.apache.gravitino.optimizer.recommender.stats.GravitinoStatsProvider;
 import org.apache.gravitino.optimizer.updater.GravitinoStatsUpdater;
-import org.apache.gravitino.optimizer.updater.PartitionStatisticImpl;
-import org.apache.gravitino.optimizer.updater.SingleStatisticImpl;
+import org.apache.gravitino.optimizer.updater.PartitionStatisticEntryImpl;
+import org.apache.gravitino.optimizer.updater.StatisticEntryImpl;
 import org.apache.gravitino.stats.StatisticValues;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -58,18 +58,19 @@ public class GravitinoStatsIT extends GravitinoOptimizerEnvIT {
     statsUpdater.updateTableStatistics(
         NameIdentifier.of(TEST_SCHEMA, TEST_TABLE),
         Arrays.asList(
-            new SingleStatisticImpl(STATS_PREFIX + "row_count", StatisticValues.longValue(1000)),
-            new SingleStatisticImpl(
+            new StatisticEntryImpl(STATS_PREFIX + "row_count", StatisticValues.longValue(1000)),
+            new StatisticEntryImpl(
                 STATS_PREFIX + "size_in_bytes", StatisticValues.longValue(1000000)),
-            new PartitionStatisticImpl(
+            new PartitionStatisticEntryImpl(
                 STATS_PREFIX + "partition_row_count",
                 StatisticValues.longValue(500),
-                Arrays.asList(new PartitionImpl("col1", "1"), new PartitionImpl("col2", "2"))),
-            new SingleStatisticImpl(
+                Arrays.asList(
+                    new PartitionEntryImpl("col1", "1"), new PartitionEntryImpl("col2", "2"))),
+            new StatisticEntryImpl(
                 STATS_PREFIX + Name.DATAFILE_SIZE_MSE.name(),
                 StatisticValues.doubleValue(10000.1))));
 
-    List<SingleStatistic<?>> stats =
+    List<StatisticEntry<?>> stats =
         statsProvider.getTableStats(NameIdentifier.of(TEST_SCHEMA, TEST_TABLE));
     Assertions.assertEquals(3, stats.size());
     stats.stream()
@@ -94,18 +95,20 @@ public class GravitinoStatsIT extends GravitinoOptimizerEnvIT {
     statsUpdater.updateTableStatistics(
         NameIdentifier.of(TEST_SCHEMA, TEST_PARTITION_TABLE),
         Arrays.asList(
-            new SingleStatisticImpl(
+            new StatisticEntryImpl(
                 STATS_PREFIX + "size_in_bytes", StatisticValues.longValue(1000000)),
-            new PartitionStatisticImpl(
+            new PartitionStatisticEntryImpl(
                 STATS_PREFIX + "partition_row_count",
                 StatisticValues.longValue(500),
-                Arrays.asList(new PartitionImpl("col1", "1"), new PartitionImpl("col2", "2"))),
-            new PartitionStatisticImpl(
+                Arrays.asList(
+                    new PartitionEntryImpl("col1", "1"), new PartitionEntryImpl("col2", "2"))),
+            new PartitionStatisticEntryImpl(
                 STATS_PREFIX + "partition_size_in_bytes",
                 StatisticValues.longValue(500000),
-                Arrays.asList(new PartitionImpl("col1", "1"), new PartitionImpl("col2", "2")))));
+                Arrays.asList(
+                    new PartitionEntryImpl("col1", "1"), new PartitionEntryImpl("col2", "2")))));
 
-    List<PartitionStatistic> stats =
+    List<PartitionStatisticEntry> stats =
         statsProvider.getPartitionStats(NameIdentifier.of(TEST_SCHEMA, TEST_PARTITION_TABLE));
     Assertions.assertEquals(2, stats.size());
     stats.stream()

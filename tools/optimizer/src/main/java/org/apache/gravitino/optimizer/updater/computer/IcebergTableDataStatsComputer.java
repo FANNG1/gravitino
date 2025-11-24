@@ -26,10 +26,10 @@ import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.optimizer.api.common.SingleStatistic;
+import org.apache.gravitino.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.optimizer.api.updater.SupportTableStats;
 import org.apache.gravitino.optimizer.common.OptimizerEnv;
-import org.apache.gravitino.optimizer.updater.SingleStatisticImpl;
+import org.apache.gravitino.optimizer.updater.StatisticEntryImpl;
 import org.apache.gravitino.optimizer.updater.util.ToStatistic;
 import org.apache.gravitino.stats.StatisticValues;
 import org.apache.spark.sql.Dataset;
@@ -73,7 +73,7 @@ public class IcebergTableDataStatsComputer implements SupportTableStats {
     this.sparkSession = sparkSession;
   }
 
-  public List<SingleStatistic<?>> computeTableStats(NameIdentifier tableIdentifier) {
+  public List<StatisticEntry<?>> computeTableStats(NameIdentifier tableIdentifier) {
     // For non-partitioned table return table stats
     TableStats tableStats = getTableStats(tableIdentifier);
     return tableStats.toStatistic();
@@ -147,15 +147,15 @@ public class IcebergTableDataStatsComputer implements SupportTableStats {
     public long dataSizeMSE;
 
     @Override
-    public List<SingleStatistic<?>> toStatistic() {
+    public List<StatisticEntry<?>> toStatistic() {
       return List.of(
-          new SingleStatisticImpl("data_files", StatisticValues.longValue(dataFiles)),
-          new SingleStatisticImpl(
+          new StatisticEntryImpl("data_files", StatisticValues.longValue(dataFiles)),
+          new StatisticEntryImpl(
               "position_delete_files", StatisticValues.longValue(positionDeleteFiles)),
-          new SingleStatisticImpl(
+          new StatisticEntryImpl(
               "equality_delete_files", StatisticValues.longValue(equalityDeleteFiles)),
-          new SingleStatisticImpl("small_files", StatisticValues.longValue(smallFiles)),
-          new SingleStatisticImpl("data_size_mse", StatisticValues.longValue(dataSizeMSE)));
+          new StatisticEntryImpl("small_files", StatisticValues.longValue(smallFiles)),
+          new StatisticEntryImpl("data_size_mse", StatisticValues.longValue(dataSizeMSE)));
     }
   }
 }
