@@ -23,7 +23,7 @@ import com.google.common.base.Preconditions;
 import java.util.List;
 import java.util.Map;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.optimizer.api.common.SingleMetric;
+import org.apache.gravitino.optimizer.api.common.MetricsPoint;
 import org.apache.gravitino.optimizer.api.monitor.MetricsEvaluator;
 import org.apache.gravitino.optimizer.monitor.job.JobProviderForTest;
 
@@ -31,13 +31,13 @@ public class MetricsEvaluatorForTest implements MetricsEvaluator {
 
   public static final String NAME = "test-metrics-evaluator";
 
-  public Map<String, List<SingleMetric>> tableBeforeMetrics;
-  public Map<String, List<SingleMetric>> tableAfterMetrics;
+  public Map<String, List<MetricsPoint>> tableBeforeMetrics;
+  public Map<String, List<MetricsPoint>> tableAfterMetrics;
 
-  public Map<String, List<SingleMetric>> jobBeforeMetrics1;
-  public Map<String, List<SingleMetric>> jobAfterMetrics1;
-  public Map<String, List<SingleMetric>> jobBeforeMetrics2;
-  public Map<String, List<SingleMetric>> jobAfterMetrics2;
+  public Map<String, List<MetricsPoint>> jobBeforeMetrics1;
+  public Map<String, List<MetricsPoint>> jobAfterMetrics1;
+  public Map<String, List<MetricsPoint>> jobBeforeMetrics2;
+  public Map<String, List<MetricsPoint>> jobAfterMetrics2;
 
   @Override
   public String name() {
@@ -47,8 +47,8 @@ public class MetricsEvaluatorForTest implements MetricsEvaluator {
   @Override
   public boolean evaluateTableMetrics(
       NameIdentifier tableIdentifier,
-      Map<String, List<SingleMetric>> beforeMetrics,
-      Map<String, List<SingleMetric>> afterMetrics) {
+      Map<String, List<MetricsPoint>> beforeMetrics,
+      Map<String, List<MetricsPoint>> afterMetrics) {
     this.tableBeforeMetrics = beforeMetrics;
     this.tableAfterMetrics = afterMetrics;
     return true;
@@ -57,8 +57,8 @@ public class MetricsEvaluatorForTest implements MetricsEvaluator {
   @Override
   public boolean evaluateJobMetrics(
       NameIdentifier jobIdentifier,
-      Map<String, List<SingleMetric>> beforeMetrics,
-      Map<String, List<SingleMetric>> afterMetrics) {
+      Map<String, List<MetricsPoint>> beforeMetrics,
+      Map<String, List<MetricsPoint>> afterMetrics) {
     if (jobIdentifier.equals(JobProviderForTest.job1)) {
       this.jobBeforeMetrics1 = beforeMetrics;
       this.jobAfterMetrics1 = afterMetrics;

@@ -23,13 +23,13 @@ import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
 import java.util.List;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.optimizer.api.common.SingleStatistic.Name;
+import org.apache.gravitino.optimizer.api.common.StatisticEntry.Name;
 import org.apache.gravitino.optimizer.api.recommender.PolicyActor.JobExecuteContext;
 import org.apache.gravitino.optimizer.api.updater.StatsUpdater;
 import org.apache.gravitino.optimizer.recommender.Recommender;
 import org.apache.gravitino.optimizer.recommender.util.PolicyUtils;
 import org.apache.gravitino.optimizer.updater.GravitinoStatsUpdater;
-import org.apache.gravitino.optimizer.updater.SingleStatisticImpl;
+import org.apache.gravitino.optimizer.updater.StatisticEntryImpl;
 import org.apache.gravitino.stats.StatisticValues;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -102,22 +102,22 @@ public class RecommenderIT extends GravitinoOptimizerEnvIT {
     statsUpdater.updateTableStatistics(
         NameIdentifier.of(TEST_SCHEMA, tableWithSmallFile),
         Arrays.asList(
-            new SingleStatisticImpl(DELETE_FILE_NUM, StatisticValues.longValue(2)),
-            new SingleStatisticImpl(DATAFILE_MSE, StatisticValues.doubleValue(10000.1))));
+            new StatisticEntryImpl(DELETE_FILE_NUM, StatisticValues.longValue(2)),
+            new StatisticEntryImpl(DATAFILE_MSE, StatisticValues.doubleValue(10000.1))));
 
     // update table stats with low datafile_mse and high delete file number
     statsUpdater.updateTableStatistics(
         NameIdentifier.of(TEST_SCHEMA, tableWithDeleteFile),
         Arrays.asList(
-            new SingleStatisticImpl(DELETE_FILE_NUM, StatisticValues.longValue(100)),
-            new SingleStatisticImpl(DATAFILE_MSE, StatisticValues.doubleValue(100.1))));
+            new StatisticEntryImpl(DELETE_FILE_NUM, StatisticValues.longValue(100)),
+            new StatisticEntryImpl(DATAFILE_MSE, StatisticValues.doubleValue(100.1))));
 
     // table 3 should not be triggered by any policy
     statsUpdater.updateTableStatistics(
         NameIdentifier.of(TEST_SCHEMA, tableWithoutCompaction),
         Arrays.asList(
-            new SingleStatisticImpl(DELETE_FILE_NUM, StatisticValues.longValue(0)),
-            new SingleStatisticImpl(DATAFILE_MSE, StatisticValues.doubleValue(0))));
+            new StatisticEntryImpl(DELETE_FILE_NUM, StatisticValues.longValue(0)),
+            new StatisticEntryImpl(DATAFILE_MSE, StatisticValues.doubleValue(0))));
 
     Recommender recommender = new Recommender(optimizerEnv);
     List<JobExecuteContext> jobs =

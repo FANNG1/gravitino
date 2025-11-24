@@ -22,8 +22,8 @@ package org.apache.gravitino.optimizer.api.updater;
 import java.util.List;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.annotation.DeveloperApi;
+import org.apache.gravitino.optimizer.api.common.MetricsPoint;
 import org.apache.gravitino.optimizer.api.common.Provider;
-import org.apache.gravitino.optimizer.api.common.SingleMetric;
 
 /**
  * Represents an updater that can update metrics for a table or job.
@@ -42,7 +42,7 @@ public interface MetricsUpdater extends Provider {
    * @param nameIdentifier catalog/schema/table identifier
    * @param metrics time-series samples to write
    */
-  void updateTableMetrics(NameIdentifier nameIdentifier, List<SingleMetric> metrics);
+  void updateTableMetrics(NameIdentifier nameIdentifier, List<MetricsPoint> metrics);
 
   /**
    * Persist job metrics into the catalog.
@@ -50,5 +50,5 @@ public interface MetricsUpdater extends Provider {
    * @param nameIdentifier job identifier
    * @param metrics time-series samples to write
    */
-  void updateJobMetrics(NameIdentifier nameIdentifier, List<SingleMetric> metrics);
+  void updateJobMetrics(NameIdentifier nameIdentifier, List<MetricsPoint> metrics);
 }

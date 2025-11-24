@@ -22,7 +22,7 @@ package org.apache.gravitino.optimizer.api.updater;
 import java.util.List;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.annotation.DeveloperApi;
-import org.apache.gravitino.optimizer.api.common.SingleStatistic;
+import org.apache.gravitino.optimizer.api.common.StatisticEntry;
 
 /** Represents a provider that supports table statistics. */
 @DeveloperApi
@@ -33,5 +33,5 @@ public interface SupportTableStats extends StatsComputer {
    * @param tableIdentifier catalog/schema/table identifier
    * @return list of statistics; empty when none are produced
    */
-  List<SingleStatistic<?>> computeTableStats(NameIdentifier tableIdentifier);
+  List<StatisticEntry<?>> computeTableStats(NameIdentifier tableIdentifier);
 }

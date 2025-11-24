@@ -29,9 +29,9 @@ import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.optimizer.api.common.PartitionStatistic;
+import org.apache.gravitino.optimizer.api.common.PartitionStatisticEntry;
 import org.apache.gravitino.optimizer.api.common.RecommenderPolicy;
-import org.apache.gravitino.optimizer.api.common.SingleStatistic;
+import org.apache.gravitino.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.optimizer.api.recommender.JobSubmitter;
 import org.apache.gravitino.optimizer.api.recommender.PolicyActor;
 import org.apache.gravitino.optimizer.api.recommender.PolicyActor.DataRequirement;
@@ -133,8 +133,8 @@ public class Recommender {
             ? EnumSet.noneOf(DataRequirement.class)
             : EnumSet.copyOf(declaredRequirements);
     Table tableMetadata = null;
-    List<SingleStatistic<?>> tableStats = Collections.emptyList();
-    List<PartitionStatistic> partitionStats = Collections.emptyList();
+    List<StatisticEntry<?>> tableStats = Collections.emptyList();
+    List<PartitionStatisticEntry> partitionStats = Collections.emptyList();
 
     if (requirements.contains(DataRequirement.TABLE_METADATA)) {
       tableMetadata = tableMetadataProvider.getTableMetadata(tableIdentifier);

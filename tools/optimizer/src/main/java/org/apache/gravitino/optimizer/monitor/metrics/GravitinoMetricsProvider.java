@@ -24,15 +24,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.optimizer.api.common.SingleMetric;
-import org.apache.gravitino.optimizer.api.common.SingleStatistic;
+import org.apache.gravitino.optimizer.api.common.MetricsPoint;
+import org.apache.gravitino.optimizer.api.common.PartitionEntry;
+import org.apache.gravitino.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.optimizer.api.monitor.MetricsProvider;
+import org.apache.gravitino.optimizer.common.MetricPointImpl;
 import org.apache.gravitino.optimizer.common.OptimizerEnv;
-import org.apache.gravitino.optimizer.common.SingleMetricImpl;
-import org.apache.gravitino.optimizer.common.SinglePartition;
 import org.apache.gravitino.optimizer.common.util.StatisticValueUtils;
-import org.apache.gravitino.optimizer.updater.PartitionStatisticImpl;
-import org.apache.gravitino.optimizer.updater.SingleStatisticImpl;
+import org.apache.gravitino.optimizer.updater.PartitionStatisticEntryImpl;
+import org.apache.gravitino.optimizer.updater.StatisticEntryImpl;
 import org.apache.gravitino.optimizer.updater.metrics.storage.H2MetricsStorage;
 import org.apache.gravitino.optimizer.updater.metrics.storage.MetricsStorage;
 import org.apache.gravitino.optimizer.updater.metrics.storage.StorageMetric;
@@ -55,7 +55,7 @@ public class GravitinoMetricsProvider implements MetricsProvider {
   }
 
   @Override
-  public Map<String, List<SingleMetric>> listJobMetrics(
+  public Map<String, List<MetricsPoint>> listJobMetrics(
       NameIdentifier jobIdentifier, long startTime, long endTime) {
     Map<String, List<StorageMetric>> metrics =
         metricsStorage.getJobMetrics(jobIdentifier, startTime, endTime);
@@ -64,9 +64,9 @@ public class GravitinoMetricsProvider implements MetricsProvider {
   }
 
   @Override
-  public Map<String, List<SingleMetric>> listTableMetrics(
+  public Map<String, List<MetricsPoint>> listTableMetrics(
       NameIdentifier tableIdentifier,
-      Optional<List<SinglePartition>> partitionName,
+      Optional<List<PartitionEntry>> partitionName,
       long startTime,
       long endTime) {
     Map<String, List<StorageMetric>> metrics =
@@ -79,8 +79,8 @@ public class GravitinoMetricsProvider implements MetricsProvider {
     return toSingeMetrics(metrics, partitionName);
   }
 
-  private Map<String, List<SingleMetric>> toSingeMetrics(
-      Map<String, List<StorageMetric>> metrics, Optional<List<SinglePartition>> partitions) {
+  private Map<String, List<MetricsPoint>> toSingeMetrics(
+      Map<String, List<StorageMetric>> metrics, Optional<List<PartitionEntry>> partitions) {
     return metrics.entrySet().stream()
         .collect(
             Collectors.toMap(
@@ -93,19 +93,19 @@ public class GravitinoMetricsProvider implements MetricsProvider {
                         .collect(Collectors.toList())));
   }
 
-  private SingleMetric toSingleMetric(
-      StorageMetric metric, Optional<List<SinglePartition>> partitions, String metricName) {
-    return new SingleMetricImpl(
+  private MetricsPoint toSingleMetric(
+      StorageMetric metric, Optional<List<PartitionEntry>> partitions, String metricName) {
+    return new MetricPointImpl(
         metric.getTimestamp(), toSingleStatistic(metric, partitions, metricName));
   }
 
-  private SingleStatistic toSingleStatistic(
-      StorageMetric metric, Optional<List<SinglePartition>> partitions, String metricName) {
+  private StatisticEntry toSingleStatistic(
+      StorageMetric metric, Optional<List<PartitionEntry>> partitions, String metricName) {
     if (partitions.isPresent()) {
-      List<SinglePartition> p = partitions.get();
-      return new PartitionStatisticImpl(
+      List<PartitionEntry> p = partitions.get();
+      return new PartitionStatisticEntryImpl(
           metricName, StatisticValueUtils.fromString(metric.getValue()), p);
     }
-    return new SingleStatisticImpl<>(metricName, StatisticValueUtils.fromString(metric.getValue()));
+    return new StatisticEntryImpl<>(metricName, StatisticValueUtils.fromString(metric.getValue()));
   }
 }

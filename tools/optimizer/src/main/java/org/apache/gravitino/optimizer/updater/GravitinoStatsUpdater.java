@@ -24,8 +24,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.client.GravitinoClient;
-import org.apache.gravitino.optimizer.api.common.PartitionStatistic;
-import org.apache.gravitino.optimizer.api.common.SingleStatistic;
+import org.apache.gravitino.optimizer.api.common.PartitionStatisticEntry;
+import org.apache.gravitino.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.optimizer.api.updater.StatsUpdater;
 import org.apache.gravitino.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;
@@ -56,7 +56,7 @@ public class GravitinoStatsUpdater implements StatsUpdater {
 
   @Override
   public void updateTableStatistics(
-      NameIdentifier tableIdentifier, List<SingleStatistic<?>> statistics) {
+      NameIdentifier tableIdentifier, List<StatisticEntry<?>> statistics) {
     doUpdateTableStatistics(tableIdentifier, getTableStatisticsMap(statistics));
     doUpdatePartitionStatistics(tableIdentifier, getPartitionStatsUpdates(statistics));
   }
@@ -75,18 +75,17 @@ public class GravitinoStatsUpdater implements StatsUpdater {
         .updateStatistics(tableStatsMap);
   }
 
-  private Map<String, StatisticValue<?>> getTableStatisticsMap(
-      List<SingleStatistic<?>> statistics) {
+  private Map<String, StatisticValue<?>> getTableStatisticsMap(List<StatisticEntry<?>> statistics) {
     return statistics.stream()
-        .filter(statistic -> !(statistic instanceof PartitionStatistic))
-        .collect(Collectors.toMap(SingleStatistic::name, SingleStatistic::value));
+        .filter(statistic -> !(statistic instanceof PartitionStatisticEntry))
+        .collect(Collectors.toMap(StatisticEntry::name, StatisticEntry::value));
   }
 
   private List<PartitionStatisticsUpdate> getPartitionStatsUpdates(
-      List<SingleStatistic<?>> partitionStatistics) {
+      List<StatisticEntry<?>> partitionStatistics) {
     return partitionStatistics.stream()
-        .filter(statistic -> statistic instanceof PartitionStatistic)
-        .map(statistic -> (PartitionStatistic) statistic)
+        .filter(statistic -> statistic instanceof PartitionStatisticEntry)
+        .map(statistic -> (PartitionStatisticEntry) statistic)
         .map(
             partitionStatistic ->
                 new PartitionStatisticsUpdate() {

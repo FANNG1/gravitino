@@ -24,14 +24,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.optimizer.api.common.SingleMetric;
+import org.apache.gravitino.optimizer.api.common.MetricsPoint;
+import org.apache.gravitino.optimizer.common.MetricPointImpl;
 import org.apache.gravitino.optimizer.common.OptimizerEnv;
-import org.apache.gravitino.optimizer.common.SingleMetricImpl;
 import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;
 import org.apache.gravitino.optimizer.monitor.Monitor;
 import org.apache.gravitino.optimizer.monitor.evaluator.MetricsEvaluatorForTest;
 import org.apache.gravitino.optimizer.monitor.job.JobProviderForTest;
-import org.apache.gravitino.optimizer.updater.SingleStatisticImpl;
+import org.apache.gravitino.optimizer.updater.StatisticEntryImpl;
 import org.apache.gravitino.optimizer.updater.metrics.GravitinoMetricsUpdater;
 import org.apache.gravitino.stats.StatisticValues;
 import org.junit.jupiter.api.Assertions;
@@ -71,34 +71,34 @@ public class MonitorIT {
     updater.updateTableMetrics(
         table1,
         Arrays.asList(
-            new SingleMetricImpl(
-                8, new SingleStatisticImpl("storage", StatisticValues.longValue(10))),
-            new SingleMetricImpl(
-                9, new SingleStatisticImpl("s3_cost", StatisticValues.longValue(1000))),
-            new SingleMetricImpl(
-                10, new SingleStatisticImpl("s3_cost", StatisticValues.longValue(1003))),
-            new SingleMetricImpl(
-                11, new SingleStatisticImpl("s3_cost", StatisticValues.longValue(1004))),
-            new SingleMetricImpl(
-                12, new SingleStatisticImpl("storage", StatisticValues.longValue(100L)))));
+            new MetricPointImpl(
+                8, new StatisticEntryImpl("storage", StatisticValues.longValue(10))),
+            new MetricPointImpl(
+                9, new StatisticEntryImpl("s3_cost", StatisticValues.longValue(1000))),
+            new MetricPointImpl(
+                10, new StatisticEntryImpl("s3_cost", StatisticValues.longValue(1003))),
+            new MetricPointImpl(
+                11, new StatisticEntryImpl("s3_cost", StatisticValues.longValue(1004))),
+            new MetricPointImpl(
+                12, new StatisticEntryImpl("storage", StatisticValues.longValue(100L)))));
 
     monitor.run(table1, actionTime, rangeSeconds, Optional.empty());
     MetricsEvaluatorForTest evaluator = (MetricsEvaluatorForTest) monitor.metricsEvaluator();
-    Map<String, List<SingleMetric>> tableBeforeMetrics = evaluator.tableBeforeMetrics;
+    Map<String, List<MetricsPoint>> tableBeforeMetrics = evaluator.tableBeforeMetrics;
 
     Assertions.assertTrue(tableBeforeMetrics.containsKey("storage"));
-    List<SingleMetric> storageMetrics = tableBeforeMetrics.get("storage");
+    List<MetricsPoint> storageMetrics = tableBeforeMetrics.get("storage");
     Assertions.assertEquals(1, storageMetrics.size());
     Assertions.assertEquals(8, storageMetrics.get(0).timestamp());
     Assertions.assertEquals(10L, storageMetrics.get(0).statistic().value().value());
 
     Assertions.assertTrue(tableBeforeMetrics.containsKey("s3_cost"));
-    List<SingleMetric> s3CostMetrics = tableBeforeMetrics.get("s3_cost");
+    List<MetricsPoint> s3CostMetrics = tableBeforeMetrics.get("s3_cost");
     Assertions.assertEquals(1, s3CostMetrics.size());
     Assertions.assertEquals(1000L, s3CostMetrics.get(0).statistic().value().value());
     Assertions.assertEquals(9, s3CostMetrics.get(0).timestamp());
 
-    Map<String, List<SingleMetric>> tableAfterMetrics = evaluator.tableAfterMetrics;
+    Map<String, List<MetricsPoint>> tableAfterMetrics = evaluator.tableAfterMetrics;
     Assertions.assertTrue(tableAfterMetrics.containsKey("storage"));
     storageMetrics = tableAfterMetrics.get("storage");
     Assertions.assertEquals(1, storageMetrics.size());
@@ -121,18 +121,18 @@ public class MonitorIT {
     NameIdentifier job1 = JobProviderForTest.job1;
     NameIdentifier job2 = JobProviderForTest.job2;
 
-    List<SingleMetric> jobMetrics =
+    List<MetricsPoint> jobMetrics =
         Arrays.asList(
-            new SingleMetricImpl(
-                8, new SingleStatisticImpl("job_runtime", StatisticValues.longValue(8))),
-            new SingleMetricImpl(
-                9, new SingleStatisticImpl("job_cost", StatisticValues.longValue(9))),
-            new SingleMetricImpl(
-                10, new SingleStatisticImpl("job_cost", StatisticValues.longValue(10))),
-            new SingleMetricImpl(
-                100, new SingleStatisticImpl("job_cost", StatisticValues.longValue(11))),
-            new SingleMetricImpl(
-                12, new SingleStatisticImpl("job_runtime", StatisticValues.longValue(12L))));
+            new MetricPointImpl(
+                8, new StatisticEntryImpl("job_runtime", StatisticValues.longValue(8))),
+            new MetricPointImpl(
+                9, new StatisticEntryImpl("job_cost", StatisticValues.longValue(9))),
+            new MetricPointImpl(
+                10, new StatisticEntryImpl("job_cost", StatisticValues.longValue(10))),
+            new MetricPointImpl(
+                100, new StatisticEntryImpl("job_cost", StatisticValues.longValue(11))),
+            new MetricPointImpl(
+                12, new StatisticEntryImpl("job_runtime", StatisticValues.longValue(12L))));
 
     // update job1, job2 metrics by updater
     updater.updateJobMetrics(job1, jobMetrics);
@@ -145,16 +145,16 @@ public class MonitorIT {
   }
 
   private void checkJobMetrics(
-      Map<String, List<SingleMetric>> jobBeforeMetrics,
-      Map<String, List<SingleMetric>> jobAfterMetrics) {
+      Map<String, List<MetricsPoint>> jobBeforeMetrics,
+      Map<String, List<MetricsPoint>> jobAfterMetrics) {
     Assertions.assertTrue(jobBeforeMetrics.containsKey("job_runtime"));
-    List<SingleMetric> job_runtimeMetrics = jobBeforeMetrics.get("job_runtime");
+    List<MetricsPoint> job_runtimeMetrics = jobBeforeMetrics.get("job_runtime");
     Assertions.assertEquals(1, job_runtimeMetrics.size());
     Assertions.assertEquals(8, job_runtimeMetrics.get(0).timestamp());
     Assertions.assertEquals(8L, job_runtimeMetrics.get(0).statistic().value().value());
 
     Assertions.assertTrue(jobBeforeMetrics.containsKey("job_cost"));
-    List<SingleMetric> jobCostMetrics = jobBeforeMetrics.get("job_cost");
+    List<MetricsPoint> jobCostMetrics = jobBeforeMetrics.get("job_cost");
     Assertions.assertEquals(1, jobCostMetrics.size());
     Assertions.assertEquals(9L, jobCostMetrics.get(0).statistic().value().value());
     Assertions.assertEquals(9, jobCostMetrics.get(0).timestamp());

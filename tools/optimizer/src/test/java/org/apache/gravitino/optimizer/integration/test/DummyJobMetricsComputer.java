@@ -22,10 +22,10 @@ package org.apache.gravitino.optimizer.integration.test;
 import java.util.Arrays;
 import java.util.List;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.optimizer.api.common.SingleStatistic;
+import org.apache.gravitino.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.optimizer.api.updater.SupportJobStats;
 import org.apache.gravitino.optimizer.common.OptimizerEnv;
-import org.apache.gravitino.optimizer.updater.SingleStatisticImpl;
+import org.apache.gravitino.optimizer.updater.StatisticEntryImpl;
 import org.apache.gravitino.stats.StatisticValues;
 
 public class DummyJobMetricsComputer implements SupportJobStats {
@@ -42,7 +42,7 @@ public class DummyJobMetricsComputer implements SupportJobStats {
   public void initialize(OptimizerEnv optimizerEnv) {}
 
   @Override
-  public List<SingleStatistic<?>> computeJobStats(NameIdentifier jobIdentifier) {
-    return Arrays.asList(new SingleStatisticImpl(JOB_STAT_NAME, StatisticValues.longValue(1L)));
+  public List<StatisticEntry<?>> computeJobStats(NameIdentifier jobIdentifier) {
+    return Arrays.asList(new StatisticEntryImpl(JOB_STAT_NAME, StatisticValues.longValue(1L)));
   }
 }

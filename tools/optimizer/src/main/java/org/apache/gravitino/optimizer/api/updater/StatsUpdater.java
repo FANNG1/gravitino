@@ -23,7 +23,7 @@ import java.util.List;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.annotation.DeveloperApi;
 import org.apache.gravitino.optimizer.api.common.Provider;
-import org.apache.gravitino.optimizer.api.common.SingleStatistic;
+import org.apache.gravitino.optimizer.api.common.StatisticEntry;
 
 /** Represents an updater that can update statistics for a table. */
 @DeveloperApi
@@ -34,5 +34,5 @@ public interface StatsUpdater extends Provider {
    * @param tableIdentifier catalog/schema/table identifier
    * @param statistics list of table and/or partition statistics
    */
-  void updateTableStatistics(NameIdentifier tableIdentifier, List<SingleStatistic<?>> statistics);
+  void updateTableStatistics(NameIdentifier tableIdentifier, List<StatisticEntry<?>> statistics);
 }

@@ -22,13 +22,13 @@ package org.apache.gravitino.optimizer.recommender.util;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.gravitino.optimizer.api.common.SingleStatistic;
+import org.apache.gravitino.optimizer.api.common.StatisticEntry;
 
 public class StatsUtils {
 
-  public static Map<String, Object> buildStatsContext(List<SingleStatistic<?>> tableStats) {
+  public static Map<String, Object> buildStatsContext(List<StatisticEntry<?>> tableStats) {
     Map<String, Object> context = new HashMap<>();
-    for (SingleStatistic<?> stat : tableStats) {
+    for (StatisticEntry<?> stat : tableStats) {
       context.put(stat.name(), stat.value().value());
     }
     return context;

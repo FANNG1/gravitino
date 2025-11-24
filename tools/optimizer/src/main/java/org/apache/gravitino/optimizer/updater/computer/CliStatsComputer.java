@@ -24,19 +24,19 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.optimizer.api.common.SingleStatistic;
+import org.apache.gravitino.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.optimizer.api.updater.SupportJobStats;
 import org.apache.gravitino.optimizer.api.updater.SupportTableStats;
 import org.apache.gravitino.optimizer.common.OptimizerEnv;
-import org.apache.gravitino.optimizer.updater.SingleStatisticImpl;
+import org.apache.gravitino.optimizer.updater.StatisticEntryImpl;
 import org.apache.gravitino.stats.StatisticValue;
 import org.apache.gravitino.stats.StatisticValues;
 
 public class CliStatsComputer implements SupportTableStats, SupportJobStats {
 
   public static final String NAME = "gravitino-cli";
-  private List<SingleStatistic<?>> tableStatistics = new ArrayList<>();
-  private List<SingleStatistic<?>> jobStatistics = new ArrayList<>();
+  private List<StatisticEntry<?>> tableStatistics = new ArrayList<>();
+  private List<StatisticEntry<?>> jobStatistics = new ArrayList<>();
 
   @Override
   public String name() {
@@ -57,18 +57,18 @@ public class CliStatsComputer implements SupportTableStats, SupportJobStats {
   }
 
   @Override
-  public List<SingleStatistic<?>> computeTableStats(NameIdentifier tableIdentifier) {
+  public List<StatisticEntry<?>> computeTableStats(NameIdentifier tableIdentifier) {
     return tableStatistics;
   }
 
   @Override
-  public List<SingleStatistic<?>> computeJobStats(NameIdentifier jobIdentifier) {
+  public List<StatisticEntry<?>> computeJobStats(NameIdentifier jobIdentifier) {
     return jobStatistics;
   }
 
-  static List<SingleStatistic<?>> getStatistics(String customContent) {
+  static List<StatisticEntry<?>> getStatistics(String customContent) {
 
-    List<SingleStatistic<?>> statistics = new ArrayList<>();
+    List<StatisticEntry<?>> statistics = new ArrayList<>();
     String[] stats = customContent.split(",");
     for (String stat : stats) {
       // 3. For each stat part, split it by equal sign
@@ -77,7 +77,7 @@ public class CliStatsComputer implements SupportTableStats, SupportJobStats {
 
       String name = statPartParts[0];
       StatisticValue<?> value = getStatisticValue(statPartParts[1]);
-      SingleStatisticImpl<?> singleStatistic = new SingleStatisticImpl<>(name, value);
+      StatisticEntryImpl<?> singleStatistic = new StatisticEntryImpl<>(name, value);
       statistics.add(singleStatistic);
     }
     return statistics;

@@ -25,9 +25,9 @@ import java.util.Objects;
 import java.util.Optional;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.annotation.DeveloperApi;
-import org.apache.gravitino.optimizer.api.common.PartitionStatistic;
+import org.apache.gravitino.optimizer.api.common.PartitionStatisticEntry;
 import org.apache.gravitino.optimizer.api.common.RecommenderPolicy;
-import org.apache.gravitino.optimizer.api.common.SingleStatistic;
+import org.apache.gravitino.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.rel.Table;
 
 /**
@@ -39,8 +39,8 @@ public final class PolicyActorContext {
   private final NameIdentifier identifier;
   private final RecommenderPolicy policy;
   private final Optional<Table> tableMetadata;
-  private final List<SingleStatistic<?>> tableStatistics;
-  private final List<PartitionStatistic> partitionStatistics;
+  private final List<StatisticEntry<?>> tableStatistics;
+  private final List<PartitionStatisticEntry> partitionStatistics;
 
   private PolicyActorContext(Builder builder) {
     this.identifier = builder.identifier;
@@ -64,12 +64,12 @@ public final class PolicyActorContext {
   }
 
   /** Table-level statistics if requested, otherwise an empty list. */
-  public List<SingleStatistic<?>> tableStatistics() {
+  public List<StatisticEntry<?>> tableStatistics() {
     return tableStatistics;
   }
 
   /** Partition-level statistics if requested, otherwise an empty list. */
-  public List<PartitionStatistic> partitionStatistics() {
+  public List<PartitionStatisticEntry> partitionStatistics() {
     return partitionStatistics;
   }
 
@@ -81,8 +81,8 @@ public final class PolicyActorContext {
     private final NameIdentifier identifier;
     private final RecommenderPolicy policy;
     private Optional<Table> tableMetadata = Optional.empty();
-    private List<SingleStatistic<?>> tableStatistics = List.of();
-    private List<PartitionStatistic> partitionStatistics = List.of();
+    private List<StatisticEntry<?>> tableStatistics = List.of();
+    private List<PartitionStatisticEntry> partitionStatistics = List.of();
 
     private Builder(NameIdentifier identifier, RecommenderPolicy policy) {
       this.identifier = Objects.requireNonNull(identifier, "identifier must not be null");
@@ -95,7 +95,7 @@ public final class PolicyActorContext {
     }
 
     /** Attach table-level statistics when the actor requests {@code TABLE_STATISTICS}. */
-    public Builder withTableStatistics(List<SingleStatistic<?>> stats) {
+    public Builder withTableStatistics(List<StatisticEntry<?>> stats) {
       this.tableStatistics =
           Collections.unmodifiableList(
               stats == null ? List.of() : List.copyOf(stats)); // avoid accidental mutation
@@ -103,7 +103,7 @@ public final class PolicyActorContext {
     }
 
     /** Attach partition-level statistics when the actor requests {@code PARTITION_STATISTICS}. */
-    public Builder withPartitionStatistics(List<PartitionStatistic> partitionStats) {
+    public Builder withPartitionStatistics(List<PartitionStatisticEntry> partitionStats) {
       this.partitionStatistics =
           Collections.unmodifiableList(
               partitionStats == null ? List.of() : List.copyOf(partitionStats));

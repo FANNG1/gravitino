@@ -17,32 +17,17 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer.updater;
+package org.apache.gravitino.optimizer.api.common;
 
-import org.apache.gravitino.optimizer.api.common.SingleStatistic;
-import org.apache.gravitino.stats.StatisticValue;
+import org.apache.gravitino.annotation.DeveloperApi;
 
-public class SingleStatisticImpl<T> implements SingleStatistic<T> {
-  private String name;
-  private StatisticValue<T> value;
+/** Represents a single metric data point with a timestamp and associated statistic. */
+@DeveloperApi
+public interface MetricsPoint {
 
-  public SingleStatisticImpl(String name, StatisticValue<T> value) {
-    this.name = name;
-    this.value = value;
-  }
+  /** Metric event time in epoch milliseconds. */
+  long timestamp();
 
-  @Override
-  public String name() {
-    return name;
-  }
-
-  @Override
-  public StatisticValue<T> value() {
-    return value;
-  }
-
-  @Override
-  public String toString() {
-    return "{ " + name + " : " + value.value() + '}';
-  }
+  /** The statistic value sampled at this timestamp. */
+  StatisticEntry<?> statistic();
 }

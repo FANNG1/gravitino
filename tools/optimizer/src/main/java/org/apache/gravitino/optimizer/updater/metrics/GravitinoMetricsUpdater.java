@@ -22,9 +22,9 @@ package org.apache.gravitino.optimizer.updater.metrics;
 import java.util.List;
 import java.util.Optional;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.optimizer.api.common.PartitionStatistic;
-import org.apache.gravitino.optimizer.api.common.SingleMetric;
-import org.apache.gravitino.optimizer.api.common.SingleStatistic;
+import org.apache.gravitino.optimizer.api.common.MetricsPoint;
+import org.apache.gravitino.optimizer.api.common.PartitionStatisticEntry;
+import org.apache.gravitino.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.optimizer.api.updater.MetricsUpdater;
 import org.apache.gravitino.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.optimizer.common.util.StatisticValueUtils;
@@ -52,14 +52,14 @@ public class GravitinoMetricsUpdater implements MetricsUpdater {
   }
 
   @Override
-  public void updateTableMetrics(NameIdentifier nameIdentifier, List<SingleMetric> metrics) {
+  public void updateTableMetrics(NameIdentifier nameIdentifier, List<MetricsPoint> metrics) {
     metrics.stream()
         .forEach(
             metric -> doUpdateTableMetrics(nameIdentifier, metric.timestamp(), metric.statistic()));
   }
 
   @Override
-  public void updateJobMetrics(NameIdentifier nameIdentifier, List<SingleMetric> metrics) {
+  public void updateJobMetrics(NameIdentifier nameIdentifier, List<MetricsPoint> metrics) {
     metrics.stream()
         .forEach(
             metric -> doUpdateJobMetrics(nameIdentifier, metric.timestamp(), metric.statistic()));
@@ -74,7 +74,7 @@ public class GravitinoMetricsUpdater implements MetricsUpdater {
   }
 
   private void doUpdateJobMetrics(
-      NameIdentifier nameIdentifier, long timestamp, SingleStatistic statistic) {
+      NameIdentifier nameIdentifier, long timestamp, StatisticEntry statistic) {
     metricsStorage.storeJobMetrics(
         nameIdentifier,
         statistic.name(),
@@ -82,9 +82,9 @@ public class GravitinoMetricsUpdater implements MetricsUpdater {
   }
 
   private void doUpdateTableMetrics(
-      NameIdentifier nameIdentifier, long timestamp, SingleStatistic statistic) {
-    if (statistic instanceof PartitionStatistic) {
-      PartitionStatistic partitionStatistic = (PartitionStatistic) statistic;
+      NameIdentifier nameIdentifier, long timestamp, StatisticEntry statistic) {
+    if (statistic instanceof PartitionStatisticEntry) {
+      PartitionStatisticEntry partitionStatistic = (PartitionStatisticEntry) statistic;
       metricsStorage.storeTableMetrics(
           nameIdentifier,
           statistic.name(),

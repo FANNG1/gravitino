@@ -20,7 +20,7 @@
 package org.apache.gravitino.optimizer.updater.computer;
 
 import java.util.List;
-import org.apache.gravitino.optimizer.api.common.SingleStatistic;
+import org.apache.gravitino.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;
 import org.junit.jupiter.api.Assertions;
@@ -35,7 +35,7 @@ class TestCliStatsComputer {
 
     computer.initialize(env);
 
-    List<SingleStatistic<?>> stats = computer.computeTableStats(null);
+    List<StatisticEntry<?>> stats = computer.computeTableStats(null);
 
     Assertions.assertEquals(2, stats.size());
     Assertions.assertEquals(100L, stats.get(0).value().value());
@@ -49,7 +49,7 @@ class TestCliStatsComputer {
 
     computer.initialize(env);
 
-    List<SingleStatistic<?>> stats = computer.computeJobStats(null);
+    List<StatisticEntry<?>> stats = computer.computeJobStats(null);
     Assertions.assertEquals(2, stats.size());
     Assertions.assertEquals(50L, stats.get(0).value().value());
     Assertions.assertEquals(75.3, stats.get(1).value().value());

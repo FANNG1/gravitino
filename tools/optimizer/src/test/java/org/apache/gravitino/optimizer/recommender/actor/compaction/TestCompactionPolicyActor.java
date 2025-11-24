@@ -24,11 +24,11 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.optimizer.api.common.RecommenderPolicy;
-import org.apache.gravitino.optimizer.api.common.SingleStatistic;
+import org.apache.gravitino.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.optimizer.api.recommender.PolicyActor.JobExecuteContext;
 import org.apache.gravitino.optimizer.recommender.util.ExpressionEvaluator;
 import org.apache.gravitino.optimizer.recommender.util.QLExpressionEvaluator;
-import org.apache.gravitino.optimizer.updater.SingleStatisticImpl;
+import org.apache.gravitino.optimizer.updater.StatisticEntryImpl;
 import org.apache.gravitino.rel.Table;
 import org.apache.gravitino.stats.StatisticValues;
 import org.apache.iceberg.actions.RewriteDataFiles;
@@ -45,12 +45,12 @@ class TestCompactionPolicyActor {
 
   @Test
   void testShouldTriggerCompaction() {
-    List<SingleStatistic<?>> stats =
-        Arrays.asList(new SingleStatisticImpl("datafile_mse", StatisticValues.longValue(2000L)));
+    List<StatisticEntry<?>> stats =
+        Arrays.asList(new StatisticEntryImpl("datafile_mse", StatisticValues.longValue(2000L)));
     Assertions.assertEquals(
         true, CompactionPolicyActor.shouldTriggerCompaction(policy, stats, evaluator));
 
-    stats = Arrays.asList(new SingleStatisticImpl("datafile_mse", StatisticValues.longValue(10L)));
+    stats = Arrays.asList(new StatisticEntryImpl("datafile_mse", StatisticValues.longValue(10L)));
     Assertions.assertEquals(
         false, CompactionPolicyActor.shouldTriggerCompaction(policy, stats, evaluator));
 

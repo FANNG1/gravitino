@@ -19,15 +19,12 @@
 
 package org.apache.gravitino.optimizer.api.common;
 
-import org.apache.gravitino.annotation.DeveloperApi;
+/**
+ * Represents one partition entry in a table. If the table has multiple levels of partitions, this
+ * class represents one partition entry, like `p1=a` in the whole `p1=a/p2=b` partition.
+ */
+public interface PartitionEntry {
+  String partitionName();
 
-/** Represents a single metric data point with a timestamp and associated statistic. */
-@DeveloperApi
-public interface SingleMetric {
-
-  /** Metric event time in epoch milliseconds. */
-  long timestamp();
-
-  /** The statistic value sampled at this timestamp. */
-  SingleStatistic<?> statistic();
+  String partitionValue();
 }

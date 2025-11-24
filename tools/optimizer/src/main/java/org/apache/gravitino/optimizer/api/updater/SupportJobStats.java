@@ -22,7 +22,7 @@ package org.apache.gravitino.optimizer.api.updater;
 import java.util.List;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.annotation.DeveloperApi;
-import org.apache.gravitino.optimizer.api.common.SingleStatistic;
+import org.apache.gravitino.optimizer.api.common.StatisticEntry;
 
 /** Represents a provider that supports job statistics. */
 @DeveloperApi
@@ -33,5 +33,5 @@ public interface SupportJobStats extends StatsComputer {
    * @param jobIdentifier job identifier
    * @return list of statistics; empty when none are produced
    */
-  List<SingleStatistic<?>> computeJobStats(NameIdentifier jobIdentifier);
+  List<StatisticEntry<?>> computeJobStats(NameIdentifier jobIdentifier);
 }

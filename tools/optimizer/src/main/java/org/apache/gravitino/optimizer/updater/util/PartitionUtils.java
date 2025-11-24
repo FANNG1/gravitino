@@ -21,11 +21,11 @@ package org.apache.gravitino.optimizer.updater.util;
 
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.gravitino.optimizer.common.PartitionImpl;
-import org.apache.gravitino.optimizer.common.SinglePartition;
+import org.apache.gravitino.optimizer.api.common.PartitionEntry;
+import org.apache.gravitino.optimizer.common.PartitionEntryImpl;
 
 public class PartitionUtils {
-  public static String getGravitinoPartitionName(List<SinglePartition> partitions) {
+  public static String getGravitinoPartitionName(List<PartitionEntry> partitions) {
     return partitions.stream()
         .map(
             partition ->
@@ -33,13 +33,13 @@ public class PartitionUtils {
         .collect(Collectors.joining("/"));
   }
 
-  public static List<SinglePartition> parseGravitinoPartitionName(String gravitinoPartitionName) {
+  public static List<PartitionEntry> parseGravitinoPartitionName(String gravitinoPartitionName) {
     // Support multi partitions by splitting with "/"
     return List.of(gravitinoPartitionName.split("/")).stream()
         .map(
             partition -> {
               String[] keyValue = partition.split("=");
-              return new PartitionImpl(keyValue[0], keyValue[1]);
+              return new PartitionEntryImpl(keyValue[0], keyValue[1]);
             })
         .collect(Collectors.toList());
   }

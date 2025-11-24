@@ -22,15 +22,15 @@ package org.apache.gravitino.optimizer.updater;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.optimizer.api.common.SingleMetric;
-import org.apache.gravitino.optimizer.api.common.SingleStatistic;
+import org.apache.gravitino.optimizer.api.common.MetricsPoint;
+import org.apache.gravitino.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.optimizer.api.updater.MetricsUpdater;
 import org.apache.gravitino.optimizer.api.updater.StatsComputer;
 import org.apache.gravitino.optimizer.api.updater.StatsUpdater;
 import org.apache.gravitino.optimizer.api.updater.SupportJobStats;
 import org.apache.gravitino.optimizer.api.updater.SupportTableStats;
+import org.apache.gravitino.optimizer.common.MetricPointImpl;
 import org.apache.gravitino.optimizer.common.OptimizerEnv;
-import org.apache.gravitino.optimizer.common.SingleMetricImpl;
 import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;
 import org.apache.gravitino.optimizer.common.util.InstanceLoaderUtils;
 import org.apache.gravitino.optimizer.common.util.ProviderUtils;
@@ -54,12 +54,12 @@ public class Updater {
     for (NameIdentifier nameIdentifier : nameIdentifiers) {
       if (computer instanceof SupportTableStats) {
         SupportTableStats supportTableStats = ((SupportTableStats) computer);
-        List<SingleStatistic<?>> statistics = supportTableStats.computeTableStats(nameIdentifier);
+        List<StatisticEntry<?>> statistics = supportTableStats.computeTableStats(nameIdentifier);
         updateTable(statistics, nameIdentifier, updateType);
       }
       if (computer instanceof SupportJobStats && updateType.equals(UpdateType.METRICS)) {
         SupportJobStats supportJobStats = ((SupportJobStats) computer);
-        List<SingleStatistic<?>> statistics = supportJobStats.computeJobStats(nameIdentifier);
+        List<StatisticEntry<?>> statistics = supportJobStats.computeJobStats(nameIdentifier);
         updateJob(statistics, nameIdentifier);
       }
     }
@@ -71,7 +71,7 @@ public class Updater {
   }
 
   private void updateTable(
-      List<SingleStatistic<?>> statistics, NameIdentifier tableIdentifier, UpdateType updateType) {
+      List<StatisticEntry<?>> statistics, NameIdentifier tableIdentifier, UpdateType updateType) {
     switch (updateType) {
       case STATS:
         statsUpdater.updateTableStatistics(tableIdentifier, statistics);
@@ -82,13 +82,13 @@ public class Updater {
     }
   }
 
-  private void updateJob(List<SingleStatistic<?>> statistics, NameIdentifier jobIdentifier) {
+  private void updateJob(List<StatisticEntry<?>> statistics, NameIdentifier jobIdentifier) {
     metricsUpdater.updateJobMetrics(jobIdentifier, toMetrics(statistics));
   }
 
-  private List<SingleMetric> toMetrics(List<SingleStatistic<?>> statistics) {
+  private List<MetricsPoint> toMetrics(List<StatisticEntry<?>> statistics) {
     return statistics.stream()
-        .map(stat -> (SingleMetric) new SingleMetricImpl(System.currentTimeMillis() / 1000, stat))
+        .map(stat -> (MetricsPoint) new MetricPointImpl(System.currentTimeMillis() / 1000, stat))
         .toList();
   }
 

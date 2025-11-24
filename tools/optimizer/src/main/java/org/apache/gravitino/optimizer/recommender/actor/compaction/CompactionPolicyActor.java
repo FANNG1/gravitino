@@ -27,9 +27,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.optimizer.api.common.PartitionStatistic;
+import org.apache.gravitino.optimizer.api.common.PartitionStatisticEntry;
 import org.apache.gravitino.optimizer.api.common.RecommenderPolicy;
-import org.apache.gravitino.optimizer.api.common.SingleStatistic;
+import org.apache.gravitino.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.optimizer.api.recommender.PolicyActor;
 import org.apache.gravitino.optimizer.api.recommender.PolicyActorContext;
 import org.apache.gravitino.optimizer.recommender.util.ExpressionEvaluator;
@@ -42,8 +42,8 @@ import org.apache.gravitino.rel.Table;
 public class CompactionPolicyActor implements PolicyActor {
   private ExpressionEvaluator expressionEvaluator;
   private RecommenderPolicy policy;
-  private List<SingleStatistic<?>> tableStats;
-  private List<PartitionStatistic> partitionStats;
+  private List<StatisticEntry<?>> tableStats;
+  private List<PartitionStatisticEntry> partitionStats;
   private Table tableMetadata;
   private NameIdentifier nameIdentifier;
 
@@ -99,7 +99,7 @@ public class CompactionPolicyActor implements PolicyActor {
 
   @VisibleForTesting
   static boolean shouldTriggerCompaction(
-      RecommenderPolicy policy, List<SingleStatistic<?>> stats, ExpressionEvaluator evaluator) {
+      RecommenderPolicy policy, List<StatisticEntry<?>> stats, ExpressionEvaluator evaluator) {
     String triggerExpression = PolicyUtils.getTriggerExpression(policy);
     Map<String, Object> context = buildExpressionContext(policy, stats);
     return evaluator.evaluateBool(triggerExpression, context);
@@ -112,7 +112,7 @@ public class CompactionPolicyActor implements PolicyActor {
 
   @SuppressWarnings("EmptyCatch")
   private static Map<String, Object> buildExpressionContext(
-      RecommenderPolicy policy, List<SingleStatistic<?>> stats) {
+      RecommenderPolicy policy, List<StatisticEntry<?>> stats) {
     Map<String, Object> context = new HashMap<>();
     context.putAll(StatsUtils.buildStatsContext(stats));
     policy
