@@ -19,25 +19,18 @@
 
 package org.apache.gravitino.optimizer.api.recommender;
 
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.optimizer.api.common.PartitionStatistic;
+import org.apache.gravitino.annotation.DeveloperApi;
 import org.apache.gravitino.optimizer.api.common.RecommenderPolicy;
-import org.apache.gravitino.optimizer.api.common.SingleStatistic;
-import org.apache.gravitino.rel.Table;
 
+@DeveloperApi
 public interface PolicyActor {
-  interface requireTableMetadata {
-    void setTableMetadata(Table tableMetadata);
-  }
-
-  interface requireTableStats {
-    void setTableStats(List<SingleStatistic<?>> tableStats);
-  }
-
-  interface requirePartitionStats {
-    void setPartitionStats(List<PartitionStatistic> partitionStats);
+  enum DataRequirement {
+    TABLE_METADATA,
+    TABLE_STATISTICS,
+    PARTITION_STATISTICS
   }
 
   interface JobExecuteContext {
@@ -49,7 +42,12 @@ public interface PolicyActor {
     RecommenderPolicy policy();
   }
 
-  void initialize(NameIdentifier nameIdentifier, RecommenderPolicy policy);
+  /** Declares which pieces of data this actor needs before it can be initialized. */
+  default Set<DataRequirement> requiredData() {
+    return Set.of();
+  }
+
+  void initialize(PolicyActorContext context);
 
   String policyType();
 

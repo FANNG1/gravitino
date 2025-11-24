@@ -20,14 +20,18 @@
 package org.apache.gravitino.optimizer.recommender.actor.compaction;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.optimizer.api.common.PartitionStatistic;
 import org.apache.gravitino.optimizer.api.common.RecommenderPolicy;
 import org.apache.gravitino.optimizer.api.common.SingleStatistic;
 import org.apache.gravitino.optimizer.api.recommender.PolicyActor;
+import org.apache.gravitino.optimizer.api.recommender.PolicyActorContext;
 import org.apache.gravitino.optimizer.recommender.util.ExpressionEvaluator;
 import org.apache.gravitino.optimizer.recommender.util.PolicyUtils;
 import org.apache.gravitino.optimizer.recommender.util.QLExpressionEvaluator;
@@ -35,11 +39,7 @@ import org.apache.gravitino.optimizer.recommender.util.StatsUtils;
 import org.apache.gravitino.rel.Table;
 
 @SuppressWarnings("UnusedVariable")
-public class CompactionPolicyActor
-    implements PolicyActor,
-        PolicyActor.requirePartitionStats,
-        PolicyActor.requireTableStats,
-        PolicyActor.requireTableMetadata {
+public class CompactionPolicyActor implements PolicyActor {
   private ExpressionEvaluator expressionEvaluator;
   private RecommenderPolicy policy;
   private List<SingleStatistic<?>> tableStats;
@@ -48,9 +48,20 @@ public class CompactionPolicyActor
   private NameIdentifier nameIdentifier;
 
   @Override
-  public void initialize(NameIdentifier nameIdentifier, RecommenderPolicy policy) {
-    this.nameIdentifier = nameIdentifier;
-    this.policy = policy;
+  public Set<DataRequirement> requiredData() {
+    return EnumSet.of(
+        DataRequirement.TABLE_METADATA,
+        DataRequirement.TABLE_STATISTICS,
+        DataRequirement.PARTITION_STATISTICS);
+  }
+
+  @Override
+  public void initialize(PolicyActorContext context) {
+    this.nameIdentifier = context.identifier();
+    this.policy = context.policy();
+    this.tableMetadata = context.tableMetadata().orElse(null);
+    this.tableStats = context.tableStatistics();
+    this.partitionStats = context.partitionStatistics();
     this.expressionEvaluator = new QLExpressionEvaluator();
   }
 
@@ -86,21 +97,6 @@ public class CompactionPolicyActor
     return null;
   }
 
-  @Override
-  public void setPartitionStats(List<PartitionStatistic> partitionStats) {
-    this.partitionStats = partitionStats;
-  }
-
-  @Override
-  public void setTableMetadata(Table tableMetadata) {
-    this.tableMetadata = tableMetadata;
-  }
-
-  @Override
-  public void setTableStats(List<SingleStatistic<?>> tableStats) {
-    this.tableStats = tableStats;
-  }
-
   @VisibleForTesting
   static boolean shouldTriggerCompaction(
       RecommenderPolicy policy, List<SingleStatistic<?>> stats, ExpressionEvaluator evaluator) {
@@ -110,6 +106,7 @@ public class CompactionPolicyActor
   }
 
   private boolean isPartitioned() {
+    Preconditions.checkState(tableMetadata != null, "Table metadata must be provided");
     return tableMetadata.partitioning().length > 0;
   }
 

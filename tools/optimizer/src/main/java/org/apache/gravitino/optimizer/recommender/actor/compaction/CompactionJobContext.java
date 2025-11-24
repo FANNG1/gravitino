@@ -63,7 +63,7 @@ public class CompactionJobContext implements JobExecuteContext {
   }
 
   public Optional<Long> targetFileSize() {
-    return Optional.ofNullable((long) config.get(RewriteDataFiles.TARGET_FILE_SIZE_BYTES));
+    return Optional.ofNullable((Long) config.get(RewriteDataFiles.TARGET_FILE_SIZE_BYTES));
   }
 
   public Optional<List<String>> partitionNames() {
