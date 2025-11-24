@@ -19,8 +19,12 @@
 
 package org.apache.gravitino.optimizer.recommender;
 
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -30,7 +34,9 @@ import org.apache.gravitino.optimizer.api.common.RecommenderPolicy;
 import org.apache.gravitino.optimizer.api.common.SingleStatistic;
 import org.apache.gravitino.optimizer.api.recommender.JobSubmitter;
 import org.apache.gravitino.optimizer.api.recommender.PolicyActor;
+import org.apache.gravitino.optimizer.api.recommender.PolicyActor.DataRequirement;
 import org.apache.gravitino.optimizer.api.recommender.PolicyActor.JobExecuteContext;
+import org.apache.gravitino.optimizer.api.recommender.PolicyActorContext;
 import org.apache.gravitino.optimizer.api.recommender.PolicyProvider;
 import org.apache.gravitino.optimizer.api.recommender.StatsProvider;
 import org.apache.gravitino.optimizer.api.recommender.SupportTableStats;
@@ -90,9 +96,12 @@ public class Recommender {
   }
 
   public void recommendForPolicyType(List<NameIdentifier> nameIdentifiers, String policyType) {
-    List<String> policyNames = getPolicyNames(nameIdentifiers, policyType);
-    for (String policyName : policyNames) {
-      List<JobExecuteContext> jobConfigs = recommendForOnePolicy(nameIdentifiers, policyName);
+    Map<String, List<NameIdentifier>> policiesByTable =
+        getPolicyTables(nameIdentifiers, policyType);
+
+    for (Map.Entry<String, List<NameIdentifier>> entry : policiesByTable.entrySet()) {
+      String policyName = entry.getKey();
+      List<JobExecuteContext> jobConfigs = recommendForOnePolicy(entry.getValue(), policyName);
       for (JobExecuteContext jobConfig : jobConfigs) {
         jobSubmitter.submitJob(policyType, jobConfig);
       }
@@ -101,21 +110,38 @@ public class Recommender {
 
   private PolicyActor loadPolicyActor(RecommenderPolicy policy, NameIdentifier tableIdentifier) {
     PolicyActor policyActor = getPolicyActor(policy.policyType());
-    policyActor.initialize(tableIdentifier, policy);
 
-    if (policyActor instanceof PolicyActor.requireTableMetadata) {
-      Table tableMetadata = tableMetadataProvider.getTableMetadata(tableIdentifier);
-      ((PolicyActor.requireTableMetadata) policyActor).setTableMetadata(tableMetadata);
+    Set<DataRequirement> declaredRequirements = policyActor.requiredData();
+    EnumSet<DataRequirement> requirements =
+        declaredRequirements.isEmpty()
+            ? EnumSet.noneOf(DataRequirement.class)
+            : EnumSet.copyOf(declaredRequirements);
+    Table tableMetadata = null;
+    List<SingleStatistic<?>> tableStats = Collections.emptyList();
+    List<PartitionStatistic> partitionStats = Collections.emptyList();
+
+    if (requirements.contains(DataRequirement.TABLE_METADATA)) {
+      tableMetadata = tableMetadataProvider.getTableMetadata(tableIdentifier);
     }
 
-    if (policyActor instanceof PolicyActor.requireTableStats) {
-      List<SingleStatistic<?>> tableStats =
-          ((SupportTableStats) statsProvider).getTableStats(tableIdentifier);
-      ((PolicyActor.requireTableStats) policyActor).setTableStats(tableStats);
-      List<PartitionStatistic> partitionStats =
-          ((SupportTableStats) statsProvider).getPartitionStats(tableIdentifier);
-      ((PolicyActor.requirePartitionStats) policyActor).setPartitionStats(partitionStats);
+    if (requirements.contains(DataRequirement.TABLE_STATISTICS)
+        || requirements.contains(DataRequirement.PARTITION_STATISTICS)) {
+      SupportTableStats supportTableStats = requireTableStatsProvider();
+      if (requirements.contains(DataRequirement.TABLE_STATISTICS)) {
+        tableStats = supportTableStats.getTableStats(tableIdentifier);
+      }
+      if (requirements.contains(DataRequirement.PARTITION_STATISTICS)) {
+        partitionStats = supportTableStats.getPartitionStats(tableIdentifier);
+      }
     }
+
+    PolicyActorContext context =
+        PolicyActorContext.builder(tableIdentifier, policy)
+            .withTableMetadata(tableMetadata)
+            .withTableStatistics(tableStats)
+            .withPartitionStatistics(partitionStats)
+            .build();
+    policyActor.initialize(context);
 
     return policyActor;
   }
@@ -124,16 +150,19 @@ public class Recommender {
     return InstanceLoaderUtils.createActorInstance(policyType);
   }
 
-  private List<String> getPolicyNames(List<NameIdentifier> tableIdentifiers, String policyType) {
-    Set<String> policyNames = new HashSet<>();
+  private Map<String, List<NameIdentifier>> getPolicyTables(
+      List<NameIdentifier> tableIdentifiers, String policyType) {
+    Map<String, List<NameIdentifier>> tablesByPolicy = new HashMap<>();
     for (NameIdentifier tableIdentifier : tableIdentifiers) {
-      policyNames.addAll(
-          policyProvider.getTablePolicy(tableIdentifier).stream()
-              .filter(policy -> policy.policyType().equals(policyType))
-              .map(RecommenderPolicy::name)
-              .collect(Collectors.toList()));
+      policyProvider.getTablePolicy(tableIdentifier).stream()
+          .filter(policy -> policy.policyType().equals(policyType))
+          .forEach(
+              policy ->
+                  tablesByPolicy
+                      .computeIfAbsent(policy.name(), key -> new ArrayList<>())
+                      .add(tableIdentifier));
     }
-    return policyNames.stream().toList();
+    return tablesByPolicy;
   }
 
   private PolicyProvider loadPolicyProvider(OptimizerConfig config) {
@@ -154,5 +183,15 @@ public class Recommender {
   private JobSubmitter loadJobSubmitter(OptimizerConfig config) {
     String jobSubmitterName = config.get(OptimizerConfig.JOB_SUBMITTER_CONFIG);
     return ProviderUtils.createJobSubmitterInstance(jobSubmitterName);
+  }
+
+  private SupportTableStats requireTableStatsProvider() {
+    if (statsProvider instanceof SupportTableStats) {
+      return (SupportTableStats) statsProvider;
+    }
+    throw new IllegalStateException(
+        String.format(
+            "Stats provider %s does not support table or partition statistics",
+            statsProvider.name()));
   }
 }
