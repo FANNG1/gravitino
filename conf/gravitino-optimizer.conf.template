@@ -17,8 +17,32 @@
 # under the License.
 #
 
-gravitino.optimizer.gravitino-metalake = test
+# Core Gravitino connection (URI default matches local dev; metalake is required)
 gravitino.optimizer.gravitino-uri = http://localhost:8090
+gravitino.optimizer.gravitino-metalake = test
+# Optional default catalog used when identifiers are missing a catalog prefix
 gravitino.optimizer.gravitino-default-catalog = iceberg
 
+# Recommender plugins (defaults point to built-in Gravitino implementations)
+# The stats provider for the recommender.
+gravitino.optimizer.recommender.stats-provider = gravitino-stats-provider
+# The policy provider for the recommender.
+gravitino.optimizer.recommender.policy-provider = gravitino-policy-provider
+# The table metadata provider for the recommender.
+gravitino.optimizer.recommender.table-meta-provider = gravitino-table-metadata-provider
+# The job submitter for the recommender (noop keeps recommendations local).
 gravitino.optimizer.recommender.job-submitter = noop
+
+# Updater plugins (push stats/metrics back into Gravitino)
+# The stats updater for the recommender/update_stats tool.
+gravitino.optimizer.updater.stats-updater = gravitino-stats-updater
+# The metrics updater for the recommender/update_metrics tool.
+gravitino.optimizer.updater.metrics-updater = gravitino-metrics-updater
+
+# Monitor plugins (pull metrics and evaluate actions)
+# The metrics provider for the monitor.
+gravitino.optimizer.monitor.metrics-provider = gravitino-metrics-provider
+# The job provider for the monitor (dummy by default).
+gravitino.optimizer.monitor.job-provider = dummy-job-provider
+# The metrics evaluator for the monitor.
+gravitino.optimizer.monitor.metrics-evaluator = gravitino-metrics-evaluator

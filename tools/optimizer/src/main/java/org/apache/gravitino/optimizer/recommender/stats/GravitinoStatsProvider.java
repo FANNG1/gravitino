@@ -41,7 +41,7 @@ import org.apache.gravitino.stats.Statistic;
 
 public class GravitinoStatsProvider implements SupportTableStats {
 
-  public static final String GRAVITINO_STATS_PROVIDER_NAME = "gravitino";
+  public static final String GRAVITINO_STATS_PROVIDER_NAME = "gravitino-stats-provider";
   private GravitinoClient gravitinoClient;
   private String defaultCatalogName;
 
