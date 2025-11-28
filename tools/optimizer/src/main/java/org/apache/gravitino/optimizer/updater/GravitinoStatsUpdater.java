@@ -36,7 +36,7 @@ import org.apache.gravitino.stats.StatisticValue;
 
 public class GravitinoStatsUpdater implements StatsUpdater {
 
-  public static final String GRAVITINO_STATS_UPDATER_NAME = "gravitino-status-updater";
+  public static final String GRAVITINO_STATS_UPDATER_NAME = "gravitino-stats-updater";
   private GravitinoClient gravitinoClient;
   private String defaultCatalogName;
 

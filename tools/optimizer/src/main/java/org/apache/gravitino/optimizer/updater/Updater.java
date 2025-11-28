@@ -27,15 +27,19 @@ import org.apache.gravitino.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.optimizer.api.updater.MetricsUpdater;
 import org.apache.gravitino.optimizer.api.updater.StatsComputer;
 import org.apache.gravitino.optimizer.api.updater.StatsUpdater;
+import org.apache.gravitino.optimizer.api.updater.SupportComputeTableStats;
 import org.apache.gravitino.optimizer.api.updater.SupportJobStats;
-import org.apache.gravitino.optimizer.api.updater.SupportTableStats;
 import org.apache.gravitino.optimizer.common.MetricPointImpl;
 import org.apache.gravitino.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;
 import org.apache.gravitino.optimizer.common.util.InstanceLoaderUtils;
 import org.apache.gravitino.optimizer.common.util.ProviderUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Updater {
+  private static final Logger LOG = LoggerFactory.getLogger(Updater.class);
+
   private StatsUpdater statsUpdater;
   private MetricsUpdater metricsUpdater;
   private OptimizerEnv optimizerEnv;
@@ -52,16 +56,41 @@ public class Updater {
       String statsComputerName, List<NameIdentifier> nameIdentifiers, UpdateType updateType) {
     StatsComputer computer = getStatsComputer(statsComputerName);
     for (NameIdentifier nameIdentifier : nameIdentifiers) {
-      if (computer instanceof SupportTableStats) {
-        SupportTableStats supportTableStats = ((SupportTableStats) computer);
+      if (computer instanceof SupportComputeTableStats) {
+        SupportComputeTableStats supportTableStats = ((SupportComputeTableStats) computer);
         List<StatisticEntry<?>> statistics = supportTableStats.computeTableStats(nameIdentifier);
+        LOG.info(
+            "Updating table stats/metrics: computer={}, updateType={}, identifier={}",
+            statsComputerName,
+            updateType,
+            nameIdentifier);
         updateTable(statistics, nameIdentifier, updateType);
       }
       if (computer instanceof SupportJobStats && updateType.equals(UpdateType.METRICS)) {
         SupportJobStats supportJobStats = ((SupportJobStats) computer);
         List<StatisticEntry<?>> statistics = supportJobStats.computeJobStats(nameIdentifier);
+        LOG.info(
+            "Updating job metrics: computer={}, identifier={}", statsComputerName, nameIdentifier);
         updateJob(statistics, nameIdentifier);
       }
+    }
+  }
+
+  public void updateAll(String statsComputerName, UpdateType updateType) {
+    StatsComputer computer = getStatsComputer(statsComputerName);
+
+    if (computer instanceof SupportComputeTableStats supportTableStats) {
+      java.util.Map<NameIdentifier, List<StatisticEntry<?>>> allTableStats =
+          supportTableStats.computeAllTableStats();
+      allTableStats.forEach(
+          (identifier, statistics) -> updateTable(statistics, identifier, updateType));
+    }
+
+    if (computer instanceof SupportJobStats supportJobStats
+        && UpdateType.METRICS.equals(updateType)) {
+      java.util.Map<NameIdentifier, List<StatisticEntry<?>>> allJobStats =
+          supportJobStats.computeAllJobStats();
+      allJobStats.forEach((identifier, statistics) -> updateJob(statistics, identifier));
     }
   }
 
@@ -74,16 +103,47 @@ public class Updater {
       List<StatisticEntry<?>> statistics, NameIdentifier tableIdentifier, UpdateType updateType) {
     switch (updateType) {
       case STATS:
+        LOG.info(
+            "Persisting table stats: identifier={}, count={}, details={}",
+            tableIdentifier,
+            statistics != null ? statistics.size() : 0,
+            summarize(statistics));
         statsUpdater.updateTableStatistics(tableIdentifier, statistics);
         break;
       case METRICS:
+        LOG.info(
+            "Persisting table metrics: identifier={}, count={}, details={}",
+            tableIdentifier,
+            statistics != null ? statistics.size() : 0,
+            summarize(statistics));
         metricsUpdater.updateTableMetrics(tableIdentifier, toMetrics(statistics));
         break;
     }
   }
 
   private void updateJob(List<StatisticEntry<?>> statistics, NameIdentifier jobIdentifier) {
+    LOG.info(
+        "Persisting job metrics: identifier={}, count={}, details={}",
+        jobIdentifier,
+        statistics != null ? statistics.size() : 0,
+        summarize(statistics));
     metricsUpdater.updateJobMetrics(jobIdentifier, toMetrics(statistics));
+  }
+
+  private String summarize(List<StatisticEntry<?>> statistics) {
+    if (statistics == null || statistics.isEmpty()) {
+      return "[]";
+    }
+    int limit = Math.min(statistics.size(), 20);
+    String summary =
+        statistics.stream()
+            .limit(limit)
+            .map(stat -> stat.name() + "=" + stat.value().value())
+            .collect(java.util.stream.Collectors.joining(", ", "[", "]"));
+    if (statistics.size() > limit) {
+      summary = summary + " ... (" + statistics.size() + " total)";
+    }
+    return summary;
   }
 
   private List<MetricsPoint> toMetrics(List<StatisticEntry<?>> statistics) {

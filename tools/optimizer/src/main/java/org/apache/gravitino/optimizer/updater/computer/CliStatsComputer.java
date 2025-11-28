@@ -25,14 +25,16 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.optimizer.api.common.StatisticEntry;
+import org.apache.gravitino.optimizer.api.updater.SupportComputeTableStats;
 import org.apache.gravitino.optimizer.api.updater.SupportJobStats;
-import org.apache.gravitino.optimizer.api.updater.SupportTableStats;
+import org.apache.gravitino.optimizer.common.OptimizerContent;
 import org.apache.gravitino.optimizer.common.OptimizerEnv;
+import org.apache.gravitino.optimizer.common.StatsComputerContent;
 import org.apache.gravitino.optimizer.updater.StatisticEntryImpl;
 import org.apache.gravitino.stats.StatisticValue;
 import org.apache.gravitino.stats.StatisticValues;
 
-public class CliStatsComputer implements SupportTableStats, SupportJobStats {
+public class CliStatsComputer implements SupportComputeTableStats, SupportJobStats {
 
   public static final String NAME = "gravitino-cli";
   private List<StatisticEntry<?>> tableStatistics = new ArrayList<>();
@@ -45,14 +47,18 @@ public class CliStatsComputer implements SupportTableStats, SupportJobStats {
 
   @Override
   public void initialize(OptimizerEnv optimizerEnv) {
-    String customContent = optimizerEnv.customContent();
-    Preconditions.checkArgument(StringUtils.isNotBlank(customContent), "custom content is empty");
-    if (customContent.startsWith("table:")) {
-      this.tableStatistics = getStatistics(customContent.substring("table:".length()));
-    } else if (customContent.startsWith("job:")) {
-      this.jobStatistics = getStatistics(customContent.substring("job:".length()));
+    OptimizerContent content = optimizerEnv.content();
+    Preconditions.checkArgument(
+        content instanceof StatsComputerContent,
+        "StatsComputerContent is required for CliStatsComputer");
+    String statsPayload = ((StatsComputerContent) content).statsPayload();
+    Preconditions.checkArgument(StringUtils.isNotBlank(statsPayload), "stats payload is empty");
+    if (statsPayload.startsWith("table:")) {
+      this.tableStatistics = getStatistics(statsPayload.substring("table:".length()));
+    } else if (statsPayload.startsWith("job:")) {
+      this.jobStatistics = getStatistics(statsPayload.substring("job:".length()));
     } else {
-      throw new IllegalArgumentException("custom content format is invalid: " + customContent);
+      throw new IllegalArgumentException("stats payload format is invalid: " + statsPayload);
     }
   }
 
@@ -66,10 +72,10 @@ public class CliStatsComputer implements SupportTableStats, SupportJobStats {
     return jobStatistics;
   }
 
-  static List<StatisticEntry<?>> getStatistics(String customContent) {
+  static List<StatisticEntry<?>> getStatistics(String statsPayload) {
 
     List<StatisticEntry<?>> statistics = new ArrayList<>();
-    String[] stats = customContent.split(",");
+    String[] stats = statsPayload.split(",");
     for (String stat : stats) {
       // 3. For each stat part, split it by equal sign
       String[] statPartParts = stat.split("=");

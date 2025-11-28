@@ -25,14 +25,14 @@ import java.util.List;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.optimizer.api.common.PartitionEntry;
 import org.apache.gravitino.optimizer.api.common.StatisticEntry;
-import org.apache.gravitino.optimizer.api.updater.SupportTableStats;
+import org.apache.gravitino.optimizer.api.updater.SupportComputeTableStats;
 import org.apache.gravitino.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.optimizer.common.PartitionEntryImpl;
 import org.apache.gravitino.optimizer.updater.PartitionStatisticEntryImpl;
 import org.apache.gravitino.optimizer.updater.StatisticEntryImpl;
 import org.apache.gravitino.stats.StatisticValues;
 
-public class DummyTableStatsComputer implements SupportTableStats {
+public class DummyTableStatsComputer implements SupportComputeTableStats {
 
   public static final String DUMMY_TABLE_STAT = "dummy-table-stat";
   public static final String TABLE_STAT_NAME = "custom-dummy-table-stat-name";

@@ -19,40 +19,20 @@
 
 package org.apache.gravitino.optimizer.common;
 
-import org.apache.gravitino.optimizer.common.conf.OptimizerConfig;
+public class StatsComputerContent implements OptimizerContent {
+  private final String statsFilePath;
+  private final String statsPayload;
 
-public class OptimizerEnv {
-  private OptimizerConfig config;
-  private OptimizerContent content;
-
-  private OptimizerEnv() {}
-
-  private static class InstanceHolder {
-    private static final OptimizerEnv INSTANCE = new OptimizerEnv();
+  public StatsComputerContent(String statsFilePath, String statsPayload) {
+    this.statsFilePath = statsFilePath;
+    this.statsPayload = statsPayload;
   }
 
-  public static OptimizerEnv getInstance() {
-    return InstanceHolder.INSTANCE;
+  public String statsFilePath() {
+    return statsFilePath;
   }
 
-  public void initialize(OptimizerConfig config) {
-    initialize(config, null);
-  }
-
-  public void initialize(OptimizerConfig config, OptimizerContent content) {
-    this.config = config;
-    this.content = content;
-  }
-
-  public OptimizerConfig config() {
-    return config;
-  }
-
-  public OptimizerContent content() {
-    return content;
-  }
-
-  public void setContent(OptimizerContent content) {
-    this.content = content;
+  public String statsPayload() {
+    return statsPayload;
   }
 }

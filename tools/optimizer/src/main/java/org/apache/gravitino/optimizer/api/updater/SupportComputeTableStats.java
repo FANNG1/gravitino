@@ -20,30 +20,31 @@
 package org.apache.gravitino.optimizer.api.updater;
 
 import java.util.List;
+import java.util.Map;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.annotation.DeveloperApi;
 import org.apache.gravitino.optimizer.api.common.StatisticEntry;
 
-/** Represents a provider that supports job statistics. */
+/** Represents a provider that supports table statistics. */
 @DeveloperApi
-public interface SupportJobStats extends StatsComputer {
+public interface SupportComputeTableStats extends StatsComputer {
   /**
-   * Compute job-level statistics to be persisted.
+   * Compute table-level statistics to be persisted.
    *
-   * @param jobIdentifier job identifier
+   * @param tableIdentifier catalog/schema/table identifier
    * @return list of statistics; empty when none are produced
    */
-  List<StatisticEntry<?>> computeJobStats(NameIdentifier jobIdentifier);
+  List<StatisticEntry<?>> computeTableStats(NameIdentifier tableIdentifier);
 
   /**
-   * Compute job-level statistics for all identifiers discoverable by this computer.
+   * Compute table-level statistics for all identifiers discoverable by this computer.
    *
    * <p>Implementations should override to provide bulk computation. The default implementation
    * throws to keep existing implementations unchanged.
    *
-   * @return map of job identifier to its statistics; empty when none are produced
+   * @return map of table identifier to its statistics; empty when none are produced
    */
-  default java.util.Map<NameIdentifier, List<StatisticEntry<?>>> computeAllJobStats() {
-    throw new UnsupportedOperationException("Bulk job stats computation not supported");
+  default Map<NameIdentifier, List<StatisticEntry<?>>> computeAllTableStats() {
+    throw new UnsupportedOperationException("Bulk table stats computation not supported");
   }
 }

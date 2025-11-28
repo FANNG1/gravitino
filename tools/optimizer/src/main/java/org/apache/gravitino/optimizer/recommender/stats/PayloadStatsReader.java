@@ -17,21 +17,28 @@
  * under the License.
  */
 
-package org.apache.gravitino.optimizer.api.updater;
+package org.apache.gravitino.optimizer.recommender.stats;
 
-import java.util.List;
-import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.annotation.DeveloperApi;
-import org.apache.gravitino.optimizer.api.common.StatisticEntry;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.StringReader;
+import org.apache.commons.lang3.StringUtils;
 
-/** Represents a provider that supports table statistics. */
-@DeveloperApi
-public interface SupportTableStats extends StatsComputer {
-  /**
-   * Compute table-level statistics to be persisted.
-   *
-   * @param tableIdentifier catalog/schema/table identifier
-   * @return list of statistics; empty when none are produced
-   */
-  List<StatisticEntry<?>> computeTableStats(NameIdentifier tableIdentifier);
+/** Reader for inline JSON-lines stats payloads. */
+public class PayloadStatsReader extends AbstractStatsReader {
+
+  private final String payload;
+
+  public PayloadStatsReader(String payload, String defaultCatalogName) {
+    super(defaultCatalogName);
+    if (StringUtils.isBlank(payload)) {
+      throw new IllegalArgumentException("Stats payload must be provided");
+    }
+    this.payload = payload;
+  }
+
+  @Override
+  protected BufferedReader openReader() throws IOException {
+    return new BufferedReader(new StringReader(payload));
+  }
 }

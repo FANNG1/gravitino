@@ -27,7 +27,7 @@ import lombok.Builder;
 import lombok.Data;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.optimizer.api.common.StatisticEntry;
-import org.apache.gravitino.optimizer.api.updater.SupportTableStats;
+import org.apache.gravitino.optimizer.api.updater.SupportComputeTableStats;
 import org.apache.gravitino.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.optimizer.updater.StatisticEntryImpl;
 import org.apache.gravitino.optimizer.updater.util.ToStatistic;
@@ -37,7 +37,7 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema;
 
-public class IcebergTableDataStatsComputer implements SupportTableStats {
+public class IcebergTableDataStatsComputer implements SupportComputeTableStats {
 
   public static final String NAME = "gravitino-iceberg-datasize";
   private SparkSession sparkSession;

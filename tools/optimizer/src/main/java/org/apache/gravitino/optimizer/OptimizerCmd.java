@@ -33,8 +33,10 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.optimizer.common.OptimizerContent;
 import org.apache.gravitino.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.optimizer.common.StartMode;
+import org.apache.gravitino.optimizer.common.StatsComputerContent;
 import org.apache.gravitino.optimizer.common.util.EnvUtils;
 import org.apache.gravitino.optimizer.monitor.Monitor;
 import org.apache.gravitino.optimizer.recommender.Recommender;
@@ -83,6 +85,13 @@ public class OptimizerCmd {
 
     options.addOption(
         Option.builder()
+            .longOpt("all-identifiers")
+            .required(false)
+            .desc("Compute for all identifiers (mutually exclusive with --identifiers)")
+            .build());
+
+    options.addOption(
+        Option.builder()
             .longOpt("policy-type")
             .hasArg()
             .required(false)
@@ -115,18 +124,28 @@ public class OptimizerCmd {
 
     options.addOption(
         Option.builder()
-            .longOpt("custom-content")
+            .longOpt("stats-payload")
             .hasArg()
             .required(false)
-            .desc("The custom content which saved in OptimizerEnv")
+            .desc("Inline stats payload for CliStatsComputer")
+            .build());
+
+    options.addOption(
+        Option.builder()
+            .longOpt("stats-file")
+            .hasArg()
+            .required(false)
+            .desc("Path to stats payload file for CliStatsComputer")
             .build());
 
     String computerName;
     String confPath;
     String[] identifiers;
+    boolean allIdentifiers;
     String policyType;
     OptimizerType optimizerType;
-    String customContent;
+    String statsPayload;
+    String statsFile;
 
     CommandLineParser parser = new DefaultParser();
     try {
@@ -136,12 +155,13 @@ public class OptimizerCmd {
       StartMode mode = StartMode.fromString(modeStr);
       Preconditions.checkArgument(mode == StartMode.CLI, "Only CLI mode is supported currently.");
 
-      customContent = cmd.getOptionValue("custom-content", "");
+      statsPayload = cmd.getOptionValue("stats-payload");
+      statsFile = cmd.getOptionValue("stats-file");
       confPath = cmd.getOptionValue("conf-path", Paths.get("conf", EnvUtils.CONF_FILE).toString());
-      OptimizerEnv optimizerEnv = EnvUtils.getInitializedEnv(confPath, customContent);
 
       computerName = cmd.getOptionValue("computer-name");
       identifiers = cmd.getOptionValues("identifiers");
+      allIdentifiers = cmd.hasOption("all-identifiers");
       policyType = cmd.getOptionValue("policy-type");
       String actionTime = cmd.getOptionValue("action-time");
       long defaultRangeSeconds = 24 * 3600;
@@ -150,8 +170,13 @@ public class OptimizerCmd {
       String typeStr = cmd.getOptionValue("type");
       checkRequiredOption("type", typeStr);
       optimizerType = OptimizerType.valueOf(typeStr.toUpperCase(Locale.ROOT));
+      checkMutualExclusion(allIdentifiers, identifiers);
+
+      OptimizerEnv optimizerEnv = EnvUtils.getInitializedEnv(confPath);
       switch (optimizerType) {
         case RECOMMEND_POLICY_TYPE:
+          Preconditions.checkArgument(
+              !allIdentifiers, "--all-identifiers is not supported for recommend policy type");
           checkRequiredOption("identifiers", identifiers);
           checkRequiredOption("policy-type", policyType);
 
@@ -164,30 +189,46 @@ public class OptimizerCmd {
               });
           break;
         case UPDATE_STATS:
-          checkRequiredOption("identifiers", identifiers);
           checkRequiredOption("computer-name", computerName);
 
           runWithoutException(
               () -> {
-                List<NameIdentifier> nameIdentifiers =
-                    Arrays.stream(identifiers).map(NameIdentifier::parse).toList();
+                OptimizerContent optimizerContent =
+                    buildStatsComputerContent(statsPayload, statsFile);
+                optimizerEnv.setContent(optimizerContent);
                 Updater updater = new Updater(optimizerEnv);
-                updater.update(computerName, nameIdentifiers, UpdateType.STATS);
+                if (allIdentifiers) {
+                  updater.updateAll(computerName, UpdateType.STATS);
+                } else {
+                  checkRequiredOption("identifiers", identifiers);
+                  List<NameIdentifier> nameIdentifiers =
+                      Arrays.stream(identifiers).map(NameIdentifier::parse).toList();
+                  updater.update(computerName, nameIdentifiers, UpdateType.STATS);
+                }
               });
           break;
         case UPDATE_METRICS:
-          checkRequiredOption("identifiers", identifiers);
           checkRequiredOption("computer-name", computerName);
 
           runWithoutException(
               () -> {
-                List<NameIdentifier> nameIdentifiers =
-                    Arrays.stream(identifiers).map(NameIdentifier::parse).toList();
+                OptimizerContent optimizerContent =
+                    buildStatsComputerContent(statsPayload, statsFile);
+                optimizerEnv.setContent(optimizerContent);
                 Updater updater = new Updater(optimizerEnv);
-                updater.update(computerName, nameIdentifiers, UpdateType.METRICS);
+                if (allIdentifiers) {
+                  updater.updateAll(computerName, UpdateType.METRICS);
+                } else {
+                  checkRequiredOption("identifiers", identifiers);
+                  List<NameIdentifier> nameIdentifiers =
+                      Arrays.stream(identifiers).map(NameIdentifier::parse).toList();
+                  updater.update(computerName, nameIdentifiers, UpdateType.METRICS);
+                }
               });
           break;
         case MONITOR_METRICS:
+          Preconditions.checkArgument(
+              !allIdentifiers, "--all-identifiers is not supported for monitor metrics");
           checkRequiredOption("identifiers", identifiers);
           checkRequiredOption("action-time", actionTime);
           Long actionTimeLong = Long.parseLong(actionTime);
@@ -220,6 +261,24 @@ public class OptimizerCmd {
   private static void checkRequiredOption(String optionName, String[] optionValue) {
     Preconditions.checkArgument(
         optionValue != null, String.format("Option %s is required.", optionName));
+  }
+
+  private static void checkMutualExclusion(boolean allIdentifiers, String[] identifiers) {
+    Preconditions.checkArgument(
+        !(allIdentifiers && identifiers != null),
+        "--all-identifiers and --identifiers cannot be used together");
+  }
+
+  private static OptimizerContent buildStatsComputerContent(
+      String statsPayload, String statsFilePath) {
+    boolean hasPayload = StringUtils.isNotBlank(statsPayload);
+    boolean hasFile = StringUtils.isNotBlank(statsFilePath);
+
+    Preconditions.checkArgument(
+        !(hasPayload && hasFile), "--stats-payload and --stats-file cannot be used together");
+
+    return new StatsComputerContent(
+        hasFile ? statsFilePath : null, hasPayload ? statsPayload : null);
   }
 
   private static void runWithoutException(Runnable runnable) {

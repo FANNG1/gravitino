@@ -138,7 +138,8 @@ Common parameters:
 - `--type`: optimizer action (`update_stats`, `update_metrics`, `recommend_policy_type`, `monitor_metrics`).
 - `--computer-name`: the computer/provider to pull stats/metrics from (default `gravitino-cli` reads inline values).
 - `--identifiers`: comma-separated table identifiers; use fully qualified `catalog.schema.table` if you work across catalogs.
-- `--custom-content`: inline payload for the chosen type, comma-separated (for example, `table:TABLE_STORAGE_COST=1000`).
+- `--stats-payload`: inline payload for stats/metrics computers that consume CLI payloads (for example, `table:TABLE_STORAGE_COST=1000`).
+- `--stats-file`: path to a file containing the same payload format; useful when the payload is large.
 - `--policy-type`: which policy to recommend (for example, `compaction`).
 - `--action-time`: epoch seconds used by `monitor_metrics` to compare before/after metrics.
 
@@ -229,8 +230,11 @@ Please refer to https://gravitino.apache.org/docs/1.0.0/manage-policies-in-gravi
 The optimizer provides a built-in `gravitino-cli` computer to get stats from the CLI; you can also implement your own computer to compute stats from external systems.
 
 ```shell
-./bin/gravitino-optimizer.sh -type update_stats -computer-name gravitino-cli -identifiers db.table1 --custom-content table:custom-position_delete_file_number=0,custom-datafile_size_mse=10000.2
-./bin/gravitino-optimizer.sh -type update_stats -computer-name gravitino-cli -identifiers db.table2 --custom-content table:custom-position_delete_file_number=100,custom-datafile_size_mse=100.2
+./bin/gravitino-optimizer.sh -type update_stats -computer-name gravitino-cli -identifiers db.table1 --stats-payload table:custom-position_delete_file_number=0,custom-datafile_size_mse=10000.2
+./bin/gravitino-optimizer.sh -type update_stats -computer-name gravitino-cli -identifiers db.table2 --stats-payload table:custom-position_delete_file_number=100,custom-datafile_size_mse=100.2
+
+# Alternatively, load the payload from a file (same prefix and comma-separated key=value entries):
+./bin/gravitino-optimizer.sh -type update_stats -computer-name gravitino-cli -identifiers db.table1 --stats-file /path/to/stats.txt
 ```
 
 By default , the stats are stored in Gravitino's internal stats system. You can also implement your own stats updater to push stats to external systems.
@@ -240,8 +244,8 @@ By default , the stats are stored in Gravitino's internal stats system. You can 
 The difference between stats and metrics are the metrics has a timestamp.
 
 ```shell
-./bin/gravitino-optimizer.sh -type update_metrics -computer-name gravitino-cli -identifiers db.table1 --custom-content table:TABLE_STORAGE_COST=1000,DATAFILE_AVG_SIZE=100
-./bin/gravitino-optimizer.sh -type update_metrics -computer-name gravitino-cli -identifiers db.table2 --custom-content table:TABLE_STORAGE_COST=2000,DATAFILE_AVG_SIZE=200
+./bin/gravitino-optimizer.sh -type update_metrics -computer-name gravitino-cli -identifiers db.table1 --stats-payload table:TABLE_STORAGE_COST=1000,DATAFILE_AVG_SIZE=100
+./bin/gravitino-optimizer.sh -type update_metrics -computer-name gravitino-cli -identifiers db.table2 --stats-payload table:TABLE_STORAGE_COST=2000,DATAFILE_AVG_SIZE=200
 ```
    
 5. Use the recommender to rank tables for the policy
