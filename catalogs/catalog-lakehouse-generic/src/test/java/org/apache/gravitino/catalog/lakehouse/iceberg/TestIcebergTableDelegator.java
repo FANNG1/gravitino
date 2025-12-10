@@ -43,7 +43,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.apache.gravitino.Catalog;
 import org.apache.gravitino.Config;
@@ -146,9 +145,7 @@ public class TestIcebergTableDelegator {
 
     ops = new GenericCatalogOperations(store, idGenerator);
     ops.initialize(
-        Collections.emptyMap(),
-        Mockito.mock(CatalogInfo.class),
-        new GenericPropertiesMetadata());
+        Collections.emptyMap(), Mockito.mock(CatalogInfo.class), new GenericPropertiesMetadata());
   }
 
   @AfterAll
@@ -216,8 +213,7 @@ public class TestIcebergTableDelegator {
         IcebergTableDelegator.ICEBERG_TABLE_FORMAT,
         createdTable.properties().get(Table.PROPERTY_TABLE_FORMAT));
     Assertions.assertEquals(
-        tableLocation.toString() + "/",
-        createdTable.properties().get(Table.PROPERTY_LOCATION));
+        tableLocation.toString() + "/", createdTable.properties().get(Table.PROPERTY_LOCATION));
 
     Table loadedTable = ops.loadTable(tableIdent);
     Assertions.assertEquals(

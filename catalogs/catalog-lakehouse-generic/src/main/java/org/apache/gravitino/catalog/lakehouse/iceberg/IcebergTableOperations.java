@@ -38,8 +38,8 @@ import org.apache.gravitino.storage.IdGenerator;
 
 /**
  * Minimal Iceberg table operations for the generic lakehouse catalog. These operations persist
- * table metadata in the entity store and currently do not manage physical Iceberg metadata or
- * data files.
+ * table metadata in the entity store and currently do not manage physical Iceberg metadata or data
+ * files.
  */
 public class IcebergTableOperations extends ManagedTableOperations {
 
