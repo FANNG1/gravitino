@@ -685,6 +685,7 @@ tasks {
       ":authorizations:copyLibAndConfig",
       ":iceberg:iceberg-rest-server:copyLibAndConfigs",
       ":lance:lance-rest-server:copyLibAndConfigs",
+      ":maintenance:optimizer:copyLibAndConfigs",
       ":web:web:build"
     )
 
@@ -966,6 +967,7 @@ tasks {
         it.name != "integration-test" &&
         it.name != "trino-connector" &&
         it.parent?.name != "bundles" &&
+        it.parent?.name != "maintenance" &&
         it.name != "mcp-server"
       ) {
         from(it.configurations.runtimeClasspath)
@@ -999,6 +1001,7 @@ tasks {
         it.name != "docs" &&
         it.name != "hadoop-common" &&
         it.parent?.name != "bundles" &&
+        it.parent?.name != "maintenance" &&
         it.name != "mcp-server"
       ) {
         dependsOn("${it.name}:build")
