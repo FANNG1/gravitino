@@ -35,7 +35,7 @@ public class StatisticsUtils {
       return context;
     }
     for (StatisticEntry<?> statistic : tableStatistics) {
-      if (statistic != null && statistic.name() != null) {
+      if (statistic != null && statistic.name() != null && statistic.value() != null) {
         context.put(statistic.name(), statistic.value().value());
       }
     }

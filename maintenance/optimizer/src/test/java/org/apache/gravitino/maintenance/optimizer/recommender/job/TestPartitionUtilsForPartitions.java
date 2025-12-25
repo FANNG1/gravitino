@@ -32,7 +32,7 @@ import org.apache.gravitino.rel.expressions.transforms.Transforms;
 import org.apache.gravitino.rel.types.Types;
 import org.junit.jupiter.api.Test;
 
-public class PartitionUtilsTest {
+public class TestPartitionUtilsForPartitions {
 
   @Test
   public void whereClauseCombinesMultiplePartitionsWithParenthesesForStringColumns() {

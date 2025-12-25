@@ -19,27 +19,44 @@
 
 package org.apache.gravitino.maintenance.optimizer.recommender.util;
 
+import com.google.common.base.Preconditions;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionEntry;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
 import org.apache.gravitino.maintenance.optimizer.common.PartitionEntryImpl;
 
 public class PartitionUtils {
+  private static final String PARTITION_ENTRY_SEPARATOR = "/";
+  private static final String PARTITION_KV_SEPARATOR = "=";
+
+  private PartitionUtils() {}
+
   public static String getGravitinoPartitionName(PartitionPath partitionPath) {
     return partitionPath.entries().stream()
         .map(
             partition ->
-                partition.partitionName().replace("=", "_") + "=" + partition.partitionValue())
-        .collect(Collectors.joining("/"));
+                partition.partitionName().replace(PARTITION_KV_SEPARATOR, "_")
+                    + PARTITION_KV_SEPARATOR
+                    + partition.partitionValue())
+        .collect(Collectors.joining(PARTITION_ENTRY_SEPARATOR));
   }
 
   public static PartitionPath parseGravitinoPartitionName(String gravitinoPartitionName) {
+    Preconditions.checkArgument(
+        StringUtils.isNotBlank(gravitinoPartitionName),
+        "gravitinoPartitionName must not be blank");
     List<PartitionEntry> entries =
-        List.of(gravitinoPartitionName.split("/")).stream()
+        Arrays.stream(gravitinoPartitionName.split(PARTITION_ENTRY_SEPARATOR))
             .map(
                 partition -> {
-                  String[] keyValue = partition.split("=");
+                  String[] keyValue = partition.split(PARTITION_KV_SEPARATOR, 2);
+                  Preconditions.checkArgument(
+                      keyValue.length == 2,
+                      "Invalid partition entry '%s', expected key=value format",
+                      partition);
                   return new PartitionEntryImpl(keyValue[0], keyValue[1]);
                 })
             .collect(Collectors.toList());

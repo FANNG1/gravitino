@@ -36,14 +36,15 @@ import org.apache.gravitino.rel.types.Type;
 
 public class PartitionUtils {
 
+  private PartitionUtils() {}
+
   public static String getWhereClauseForPartitions(
       List<List<PartitionEntry>> partitions, Column[] columns, Transform[] partitioning) {
     Preconditions.checkArgument(
         partitions != null && !partitions.isEmpty(), "partitions cannot be null or empty");
     Preconditions.checkArgument(ArrayUtils.isNotEmpty(columns), "columns cannot be null or empty");
     Preconditions.checkArgument(
-        partitioning != null && partitioning.length == partitions.size(),
-        "partitioning must match the size of partition entries");
+        ArrayUtils.isNotEmpty(partitioning), "partitioning cannot be null or empty");
 
     List<String> predicates = Lists.newArrayListWithExpectedSize(partitions.size());
     for (List<PartitionEntry> partition : partitions) {
@@ -80,6 +81,9 @@ public class PartitionUtils {
     for (int i = 0; i < partition.size(); i++) {
       PartitionEntry entry = partition.get(i);
       Transform transform = partitioning[i];
+
+      Preconditions.checkArgument(
+          entry.partitionValue() != null, "Partition value must not be null");
 
       String columnName = getColumnName(transform);
       Column column =

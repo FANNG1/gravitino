@@ -45,9 +45,11 @@ public class IdentifierUtils {
   }
 
   public static NameIdentifier removeCatalogFromIdentifier(NameIdentifier tableIdentifier) {
+    Preconditions.checkArgument(tableIdentifier != null, "tableIdentifier must not be null");
     Namespace namespace = tableIdentifier.namespace();
     Preconditions.checkArgument(
-        namespace != null && (namespace.levels().length == 1 || namespace.levels().length == 2));
+        namespace != null && (namespace.levels().length == 1 || namespace.levels().length == 2),
+        "Identifier must be schema.table or catalog.schema.table");
     if (namespace.levels().length == 1) {
       return tableIdentifier;
     }
@@ -57,9 +59,15 @@ public class IdentifierUtils {
 
   public static String getCatalogNameFromTableIdentifier(
       NameIdentifier tableIdentifier, String defaultCatalogName) {
+    Preconditions.checkArgument(tableIdentifier != null, "tableIdentifier must not be null");
     Namespace namespace = tableIdentifier.namespace();
-    Preconditions.checkArgument(namespace != null && namespace.levels().length >= 1);
+    Preconditions.checkArgument(
+        namespace != null && namespace.levels().length >= 1,
+        "Identifier must be schema.table or catalog.schema.table");
     if (namespace.levels().length == 1) {
+      Preconditions.checkArgument(
+          StringUtils.isNotBlank(defaultCatalogName),
+          "Default catalog name is required when identifier has no catalog");
       return defaultCatalogName;
     }
 

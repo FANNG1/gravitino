@@ -93,5 +93,9 @@ public class GravitinoStrategyProvider implements StrategyProvider {
   }
 
   @Override
-  public void close() throws Exception {}
+  public void close() throws Exception {
+    if (gravitinoClient != null) {
+      gravitinoClient.close();
+    }
+  }
 }

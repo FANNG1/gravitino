@@ -19,6 +19,7 @@
 
 package org.apache.gravitino.maintenance.optimizer.recommender.util;
 
+import com.google.common.base.Preconditions;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.gravitino.maintenance.optimizer.api.common.Strategy;
@@ -32,7 +33,7 @@ public class StrategyUtils {
   public static final String SCORE_EXPR = "score-expr";
 
   public static String getTriggerExpression(Strategy strategy) {
-    return strategy.rules().get(TRIGGER_EXPR).toString();
+    return requireRule(strategy, TRIGGER_EXPR).toString();
   }
 
   public static String getJobTemplateName(Strategy strategy) {
@@ -40,20 +41,35 @@ public class StrategyUtils {
   }
 
   public static String getScoreExpression(Strategy strategy) {
-    return strategy.rules().get(SCORE_EXPR).toString();
+    return requireRule(strategy, SCORE_EXPR).toString();
   }
 
   public static Map<String, Object> getJobConfigFromStrategy(Strategy strategy) {
     Map<String, Object> jobConfig = new HashMap<>();
-    strategy
-        .rules()
-        .forEach(
-            (k, v) -> {
-              if (k.startsWith(JOB_ROLE_PREFIX)) {
-                jobConfig.put(k.substring(JOB_ROLE_PREFIX.length()), v);
-              }
-            });
-    strategy.jobOptions().forEach(jobConfig::putIfAbsent);
+    if (strategy.rules() != null) {
+      strategy
+          .rules()
+          .forEach(
+              (k, v) -> {
+                if (k.startsWith(JOB_ROLE_PREFIX)) {
+                  jobConfig.put(k.substring(JOB_ROLE_PREFIX.length()), v);
+                }
+              });
+    }
+    if (strategy.jobOptions() != null) {
+      strategy.jobOptions().forEach(jobConfig::putIfAbsent);
+    }
     return jobConfig;
+  }
+
+  private static Object requireRule(Strategy strategy, String ruleKey) {
+    Preconditions.checkArgument(
+        strategy.rules() != null,
+        "Strategy rules are required for %s but were null",
+        strategy.name());
+    Object value = strategy.rules().get(ruleKey);
+    Preconditions.checkArgument(
+        value != null, "Strategy rule '%s' is required for %s", ruleKey, strategy.name());
+    return value;
   }
 }

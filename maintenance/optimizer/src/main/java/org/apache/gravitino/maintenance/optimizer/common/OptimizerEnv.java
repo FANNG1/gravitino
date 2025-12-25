@@ -19,6 +19,7 @@
 
 package org.apache.gravitino.maintenance.optimizer.common;
 
+import com.google.common.base.Preconditions;
 import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
 
 /**
@@ -45,15 +46,18 @@ public class OptimizerEnv {
   }
 
   public void initialize(OptimizerConfig config, OptimizerContent content) {
+    Preconditions.checkNotNull(config, "config must not be null");
     this.config = config;
     this.content = content;
   }
 
   public OptimizerConfig config() {
+    Preconditions.checkState(config != null, "OptimizerEnv is not initialized");
     return config;
   }
 
   public OptimizerContent content() {
+    Preconditions.checkState(config != null, "OptimizerEnv is not initialized");
     return content;
   }
 

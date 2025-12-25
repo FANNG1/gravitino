@@ -60,7 +60,11 @@ public class GravitinoJobSubmitter implements JobSubmitter {
   }
 
   @Override
-  public void close() throws Exception {}
+  public void close() throws Exception {
+    if (gravitinoClient != null) {
+      gravitinoClient.close();
+    }
+  }
 
   @VisibleForTesting
   GravitinoJobAdapter loadJobAdapter(
