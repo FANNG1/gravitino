@@ -22,25 +22,8 @@ package org.apache.gravitino.maintenance.optimizer.common;
 import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.stats.StatisticValue;
 
-public class StatisticEntryImpl<T> implements StatisticEntry<T> {
-  private final String name;
-  private final StatisticValue<T> value;
-
-  public StatisticEntryImpl(String name, StatisticValue<T> value) {
-    this.name = name;
-    this.value = value;
-  }
-
-  @Override
-  public String name() {
-    return name;
-  }
-
-  @Override
-  public StatisticValue<T> value() {
-    return value;
-  }
-
+public record StatisticEntryImpl<T>(String name, StatisticValue<T> value)
+    implements StatisticEntry<T> {
   @Override
   public String toString() {
     return "{ " + name + " : " + value.value() + '}';

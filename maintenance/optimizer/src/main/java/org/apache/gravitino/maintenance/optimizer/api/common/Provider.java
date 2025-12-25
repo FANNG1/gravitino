@@ -25,7 +25,8 @@ import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
 /**
  * Base SPI for optimizer plug-ins (statistics, strategies, submitters). Implementations are
  * discovered through {@link java.util.ServiceLoader} and follow a simple lifecycle: instantiated
- * via default constructor, {@link #initialize(OptimizerEnv)} is called once before use.
+ * via default constructor, {@link #initialize(OptimizerEnv)} is called once before use, then {@link
+ * #close()} is invoked when the optimizer shuts down.
  */
 @DeveloperApi
 public interface Provider extends AutoCloseable {
@@ -45,12 +46,4 @@ public interface Provider extends AutoCloseable {
    * @param optimizerEnv shared optimizer environment/configuration
    */
   void initialize(OptimizerEnv optimizerEnv);
-
-  /**
-   * Close resources held by this provider.
-   *
-   * @throws Exception if closing fails
-   */
-  @Override
-  void close() throws Exception;
 }

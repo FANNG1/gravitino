@@ -19,44 +19,7 @@
 
 package org.apache.gravitino.maintenance.optimizer.common;
 
-import lombok.ToString;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionEntry;
 
-@ToString
-public class PartitionEntryImpl implements PartitionEntry {
-  private final String partitionName;
-  private final String partitionValue;
-
-  public PartitionEntryImpl(String partitionName, String partitionValue) {
-    this.partitionName = partitionName;
-    this.partitionValue = partitionValue;
-  }
-
-  @Override
-  public String partitionName() {
-    return partitionName;
-  }
-
-  @Override
-  public String partitionValue() {
-    return partitionValue;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (!(o instanceof PartitionEntryImpl)) {
-      return false;
-    }
-    PartitionEntryImpl that = (PartitionEntryImpl) o;
-    return java.util.Objects.equals(partitionName, that.partitionName)
-        && java.util.Objects.equals(partitionValue, that.partitionValue);
-  }
-
-  @Override
-  public int hashCode() {
-    return java.util.Objects.hash(partitionName, partitionValue);
-  }
-}
+public record PartitionEntryImpl(String partitionName, String partitionValue)
+    implements PartitionEntry {}

@@ -117,4 +117,34 @@ class TestIdentifierUtils {
         IllegalArgumentException.class,
         () -> IdentifierUtils.normalizeTableIdentifier(identifier, ""));
   }
+
+  @Test
+  void checkTableIdentifierNormalizedReturnsTrueWhenCatalogMatches() {
+    NameIdentifier identifier = NameIdentifier.of("catalog", "schema", "tableName");
+
+    Assertions.assertTrue(IdentifierUtils.checkTableIdentifierNormalized(identifier, "catalog"));
+  }
+
+  @Test
+  void checkTableIdentifierNormalizedReturnsFalseWhenCatalogDiffers() {
+    NameIdentifier identifier = NameIdentifier.of("catalog", "schema", "tableName");
+
+    Assertions.assertFalse(IdentifierUtils.checkTableIdentifierNormalized(identifier, "other"));
+  }
+
+  @Test
+  void checkTableIdentifierNormalizedReturnsFalseWhenCatalogMissing() {
+    NameIdentifier identifier = NameIdentifier.of("schema", "tableName");
+
+    Assertions.assertFalse(IdentifierUtils.checkTableIdentifierNormalized(identifier, "catalog"));
+  }
+
+  @Test
+  void checkTableIdentifierNormalizedThrowsForBlankCatalogName() {
+    NameIdentifier identifier = NameIdentifier.of("catalog", "schema", "tableName");
+
+    Assertions.assertThrowsExactly(
+        IllegalArgumentException.class,
+        () -> IdentifierUtils.checkTableIdentifierNormalized(identifier, " "));
+  }
 }

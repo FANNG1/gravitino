@@ -73,4 +73,16 @@ public class IdentifierUtils {
 
     return namespace.levels()[0];
   }
+
+  public static boolean checkTableIdentifierNormalized(
+      NameIdentifier tableIdentifier, String catalogName) {
+    Preconditions.checkArgument(tableIdentifier != null, "tableIdentifier must not be null");
+    Preconditions.checkArgument(
+        StringUtils.isNotBlank(catalogName), "catalogName must not be blank");
+    Namespace namespace = tableIdentifier.namespace();
+    Preconditions.checkArgument(
+        namespace != null && namespace.levels().length >= 1,
+        "Identifier must be schema.table or catalog.schema.table");
+    return namespace.levels().length == 2 && catalogName.equals(namespace.levels()[0]);
+  }
 }

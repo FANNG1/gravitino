@@ -19,7 +19,6 @@
 
 package org.apache.gravitino.maintenance.optimizer.common;
 
-import com.google.common.base.Preconditions;
 import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
 
 /**
@@ -28,40 +27,14 @@ import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
  * handles, metrics) as the optimizer matures.
  */
 public class OptimizerEnv {
-  private OptimizerConfig config;
-  private OptimizerContent content;
+  // The config items from the config file
+  private final OptimizerConfig config;
 
-  private OptimizerEnv() {}
-
-  private static class InstanceHolder {
-    private static final OptimizerEnv INSTANCE = new OptimizerEnv();
-  }
-
-  public static OptimizerEnv getInstance() {
-    return InstanceHolder.INSTANCE;
-  }
-
-  public void initialize(OptimizerConfig config) {
-    initialize(config, null);
-  }
-
-  public void initialize(OptimizerConfig config, OptimizerContent content) {
-    Preconditions.checkNotNull(config, "config must not be null");
+  public OptimizerEnv(OptimizerConfig config) {
     this.config = config;
-    this.content = content;
   }
 
   public OptimizerConfig config() {
-    Preconditions.checkState(config != null, "OptimizerEnv is not initialized");
     return config;
-  }
-
-  public OptimizerContent content() {
-    Preconditions.checkState(config != null, "OptimizerEnv is not initialized");
-    return content;
-  }
-
-  public void setContent(OptimizerContent content) {
-    this.content = content;
   }
 }

@@ -46,8 +46,7 @@ public class PartitionUtils {
 
   public static PartitionPath parseGravitinoPartitionName(String gravitinoPartitionName) {
     Preconditions.checkArgument(
-        StringUtils.isNotBlank(gravitinoPartitionName),
-        "gravitinoPartitionName must not be blank");
+        StringUtils.isNotBlank(gravitinoPartitionName), "gravitinoPartitionName must not be blank");
     List<PartitionEntry> entries =
         Arrays.stream(gravitinoPartitionName.split(PARTITION_ENTRY_SEPARATOR))
             .map(
