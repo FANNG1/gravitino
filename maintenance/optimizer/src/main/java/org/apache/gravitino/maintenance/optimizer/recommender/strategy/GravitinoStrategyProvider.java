@@ -43,15 +43,12 @@ public class GravitinoStrategyProvider implements StrategyProvider {
   public static final String NAME = "gravitino-strategy-provider";
   private GravitinoClient gravitinoClient;
 
-  private String defaultCatalogName;
-
   @Override
   public void initialize(OptimizerEnv optimizerEnv) {
     OptimizerConfig config = optimizerEnv.config();
     String uri = config.get(OptimizerConfig.GRAVITINO_URI_CONFIG);
     String metalake = config.get(OptimizerConfig.GRAVITINO_METALAKE_CONFIG);
     this.gravitinoClient = GravitinoClient.builder(uri).withMetalake(metalake).build();
-    this.defaultCatalogName = config.get(OptimizerConfig.GRAVITINO_DEFAULT_CATALOG_CONFIG);
   }
 
   @Override
@@ -64,13 +61,12 @@ public class GravitinoStrategyProvider implements StrategyProvider {
     LOG.info(
         "Get table strategy: tableIdentifier={}, catalog={}, table={}",
         nameIdentifier,
-        IdentifierUtils.getCatalogNameFromTableIdentifier(nameIdentifier, defaultCatalogName),
+        IdentifierUtils.getCatalogNameFromTableIdentifier(nameIdentifier),
         IdentifierUtils.removeCatalogFromIdentifier(nameIdentifier));
     Table t =
         gravitinoClient
             .loadCatalog(
-                IdentifierUtils.getCatalogNameFromTableIdentifier(
-                    nameIdentifier, defaultCatalogName))
+                IdentifierUtils.getCatalogNameFromTableIdentifier(nameIdentifier))
             .asTableCatalog()
             .loadTable(IdentifierUtils.removeCatalogFromIdentifier(nameIdentifier));
     String[] policyNames = t.supportsPolicies().listPolicies();

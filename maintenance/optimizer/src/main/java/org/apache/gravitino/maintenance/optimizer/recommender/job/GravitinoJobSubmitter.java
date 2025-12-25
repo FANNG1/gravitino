@@ -27,7 +27,6 @@ import org.apache.gravitino.maintenance.optimizer.api.recommender.JobSubmitter;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
 
-@SuppressWarnings("unused")
 public class GravitinoJobSubmitter implements JobSubmitter {
 
   public static final String NAME = "gravitino-job-submitter";
@@ -46,8 +45,6 @@ public class GravitinoJobSubmitter implements JobSubmitter {
     String uri = optimizerEnv.config().get(OptimizerConfig.GRAVITINO_URI_CONFIG);
     String metalake = optimizerEnv.config().get(OptimizerConfig.GRAVITINO_METALAKE_CONFIG);
     this.gravitinoClient = GravitinoClient.builder(uri).withMetalake(metalake).build();
-    // this.defaultCatalogName =
-    // optimizerEnv.config().get(OptimizerConfig.GRAVITINO_DEFAULT_CATALOG_CONFIG);
   }
 
   @Override
@@ -60,7 +57,7 @@ public class GravitinoJobSubmitter implements JobSubmitter {
   }
 
   @Override
-  public void close() throws Exception {
+  public void close() {
     if (gravitinoClient != null) {
       gravitinoClient.close();
     }

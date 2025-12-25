@@ -27,13 +27,13 @@ import org.junit.jupiter.api.Test;
 class TestIdentifierUtils {
 
   @Test
-  void removeCatalogFromIdentifierReturnsSameIdentifierForSingleLevelNamespace() {
+  void removeCatalogFromIdentifierThrowsWhenCatalogMissing() {
     Namespace namespace = Namespace.of("singleLevel");
     NameIdentifier identifier = NameIdentifier.of(namespace, "tableName");
 
-    NameIdentifier result = IdentifierUtils.removeCatalogFromIdentifier(identifier);
-
-    Assertions.assertEquals(identifier, result);
+    Assertions.assertThrowsExactly(
+        IllegalArgumentException.class,
+        () -> IdentifierUtils.removeCatalogFromIdentifier(identifier));
   }
 
   @Test
@@ -58,13 +58,13 @@ class TestIdentifierUtils {
   }
 
   @Test
-  void getCatalogNameFromTableIdentifierReturnsDefaultForSingleLevelNamespace() {
+  void getCatalogNameFromTableIdentifierThrowsWhenCatalogMissing() {
     Namespace namespace = Namespace.of("schema");
     NameIdentifier identifier = NameIdentifier.of(namespace, "tableName");
 
-    String result = IdentifierUtils.getCatalogNameFromTableIdentifier(identifier, "defaultCatalog");
-
-    Assertions.assertEquals("defaultCatalog", result);
+    Assertions.assertThrowsExactly(
+        IllegalArgumentException.class,
+        () -> IdentifierUtils.getCatalogNameFromTableIdentifier(identifier));
   }
 
   @Test
@@ -72,7 +72,7 @@ class TestIdentifierUtils {
     Namespace namespace = Namespace.of("catalog", "schema");
     NameIdentifier identifier = NameIdentifier.of(namespace, "tableName");
 
-    String result = IdentifierUtils.getCatalogNameFromTableIdentifier(identifier, "defaultCatalog");
+    String result = IdentifierUtils.getCatalogNameFromTableIdentifier(identifier);
 
     Assertions.assertEquals("catalog", result);
   }
@@ -84,67 +84,20 @@ class TestIdentifierUtils {
 
     Assertions.assertThrowsExactly(
         IllegalArgumentException.class,
-        () -> IdentifierUtils.getCatalogNameFromTableIdentifier(identifier, "defaultCatalog"));
+        () -> IdentifierUtils.getCatalogNameFromTableIdentifier(identifier));
   }
 
   @Test
-  void normalizeTableIdentifierKeepsExistingCatalog() {
+  void checkTableIdentifierNormalizedReturnsTrueWhenCatalogPresent() {
     NameIdentifier identifier = NameIdentifier.of("catalog", "schema", "tableName");
 
-    NameIdentifier normalized =
-        IdentifierUtils.normalizeTableIdentifier(identifier, "defaultCatalog");
-
-    Assertions.assertEquals(identifier, normalized);
-  }
-
-  @Test
-  void normalizeTableIdentifierAddsDefaultCatalogWhenMissing() {
-    NameIdentifier identifier = NameIdentifier.of("schema", "tableName");
-
-    NameIdentifier normalized =
-        IdentifierUtils.normalizeTableIdentifier(identifier, "defaultCatalog");
-
-    Assertions.assertEquals("defaultCatalog", normalized.namespace().levels()[0]);
-    Assertions.assertEquals("schema", normalized.namespace().levels()[1]);
-    Assertions.assertEquals("tableName", normalized.name());
-  }
-
-  @Test
-  void normalizeTableIdentifierWithoutDefaultCatalogThrows() {
-    NameIdentifier identifier = NameIdentifier.of("schema", "tableName");
-
-    Assertions.assertThrowsExactly(
-        IllegalArgumentException.class,
-        () -> IdentifierUtils.normalizeTableIdentifier(identifier, ""));
-  }
-
-  @Test
-  void checkTableIdentifierNormalizedReturnsTrueWhenCatalogMatches() {
-    NameIdentifier identifier = NameIdentifier.of("catalog", "schema", "tableName");
-
-    Assertions.assertTrue(IdentifierUtils.checkTableIdentifierNormalized(identifier, "catalog"));
-  }
-
-  @Test
-  void checkTableIdentifierNormalizedReturnsFalseWhenCatalogDiffers() {
-    NameIdentifier identifier = NameIdentifier.of("catalog", "schema", "tableName");
-
-    Assertions.assertFalse(IdentifierUtils.checkTableIdentifierNormalized(identifier, "other"));
+    Assertions.assertTrue(IdentifierUtils.checkTableIdentifierNormalized(identifier));
   }
 
   @Test
   void checkTableIdentifierNormalizedReturnsFalseWhenCatalogMissing() {
     NameIdentifier identifier = NameIdentifier.of("schema", "tableName");
 
-    Assertions.assertFalse(IdentifierUtils.checkTableIdentifierNormalized(identifier, "catalog"));
-  }
-
-  @Test
-  void checkTableIdentifierNormalizedThrowsForBlankCatalogName() {
-    NameIdentifier identifier = NameIdentifier.of("catalog", "schema", "tableName");
-
-    Assertions.assertThrowsExactly(
-        IllegalArgumentException.class,
-        () -> IdentifierUtils.checkTableIdentifierNormalized(identifier, " "));
+    Assertions.assertFalse(IdentifierUtils.checkTableIdentifierNormalized(identifier));
   }
 }

@@ -20,69 +20,35 @@
 package org.apache.gravitino.maintenance.optimizer.common.util;
 
 import com.google.common.base.Preconditions;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.Namespace;
 
 public class IdentifierUtils {
 
-  public static NameIdentifier normalizeTableIdentifier(
-      NameIdentifier tableIdentifier, String defaultCatalogName) {
-    Preconditions.checkArgument(tableIdentifier != null, "tableIdentifier must not be null");
-    Namespace namespace = tableIdentifier.namespace();
-    Preconditions.checkArgument(namespace != null, "Identifier must include a namespace");
-    Preconditions.checkArgument(
-        namespace.levels().length == 1 || namespace.levels().length == 2,
-        "Identifier must be schema.table or catalog.schema.table");
-    if (namespace.levels().length == 2) {
-      return tableIdentifier;
-    }
-
-    Preconditions.checkArgument(
-        StringUtils.isNotBlank(defaultCatalogName),
-        "Default catalog name is required when identifier has no catalog");
-    return NameIdentifier.of(defaultCatalogName, namespace.levels()[0], tableIdentifier.name());
-  }
-
   public static NameIdentifier removeCatalogFromIdentifier(NameIdentifier tableIdentifier) {
     Preconditions.checkArgument(tableIdentifier != null, "tableIdentifier must not be null");
     Namespace namespace = tableIdentifier.namespace();
     Preconditions.checkArgument(
-        namespace != null && (namespace.levels().length == 1 || namespace.levels().length == 2),
-        "Identifier must be schema.table or catalog.schema.table");
-    if (namespace.levels().length == 1) {
-      return tableIdentifier;
-    }
-
+        namespace != null && namespace.levels().length == 2,
+        "Identifier must be catalog.schema.table");
     return NameIdentifier.of(namespace.levels()[1], tableIdentifier.name());
   }
 
-  public static String getCatalogNameFromTableIdentifier(
-      NameIdentifier tableIdentifier, String defaultCatalogName) {
+  public static String getCatalogNameFromTableIdentifier(NameIdentifier tableIdentifier) {
     Preconditions.checkArgument(tableIdentifier != null, "tableIdentifier must not be null");
     Namespace namespace = tableIdentifier.namespace();
     Preconditions.checkArgument(
-        namespace != null && namespace.levels().length >= 1,
-        "Identifier must be schema.table or catalog.schema.table");
-    if (namespace.levels().length == 1) {
-      Preconditions.checkArgument(
-          StringUtils.isNotBlank(defaultCatalogName),
-          "Default catalog name is required when identifier has no catalog");
-      return defaultCatalogName;
-    }
-
+        namespace != null && namespace.levels().length == 2,
+        "Identifier must be catalog.schema.table");
     return namespace.levels()[0];
   }
 
-  public static boolean checkTableIdentifierNormalized(
-      NameIdentifier tableIdentifier, String catalogName) {
+  public static boolean checkTableIdentifierNormalized(NameIdentifier tableIdentifier) {
     Preconditions.checkArgument(tableIdentifier != null, "tableIdentifier must not be null");
-    Preconditions.checkArgument(
-        StringUtils.isNotBlank(catalogName), "catalogName must not be blank");
     Namespace namespace = tableIdentifier.namespace();
     Preconditions.checkArgument(
         namespace != null && namespace.levels().length >= 1,
-        "Identifier must be schema.table or catalog.schema.table");
-    return namespace.levels().length == 2 && catalogName.equals(namespace.levels()[0]);
+        "Identifier must be catalog.schema.table");
+    return namespace.levels().length == 2;
   }
 }

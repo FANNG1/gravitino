@@ -43,7 +43,6 @@ public class GravitinoStatisticsProvider implements SupportTableStatistics {
 
   public static final String NAME = "gravitino-statistics-provider";
   private GravitinoClient gravitinoClient;
-  private String defaultCatalogName;
 
   @Override
   public void initialize(OptimizerEnv optimizerEnv) {
@@ -51,7 +50,6 @@ public class GravitinoStatisticsProvider implements SupportTableStatistics {
     String uri = config.get(OptimizerConfig.GRAVITINO_URI_CONFIG);
     String metalake = config.get(OptimizerConfig.GRAVITINO_METALAKE_CONFIG);
     this.gravitinoClient = GravitinoClient.builder(uri).withMetalake(metalake).build();
-    this.defaultCatalogName = config.get(OptimizerConfig.GRAVITINO_DEFAULT_CATALOG_CONFIG);
   }
 
   @Override
@@ -59,8 +57,7 @@ public class GravitinoStatisticsProvider implements SupportTableStatistics {
     Table t =
         gravitinoClient
             .loadCatalog(
-                IdentifierUtils.getCatalogNameFromTableIdentifier(
-                    tableIdentifier, defaultCatalogName))
+                IdentifierUtils.getCatalogNameFromTableIdentifier(tableIdentifier))
             .asTableCatalog()
             .loadTable(IdentifierUtils.removeCatalogFromIdentifier(tableIdentifier));
     List<Statistic> statistics = t.supportsStatistics().listStatistics();
@@ -79,8 +76,7 @@ public class GravitinoStatisticsProvider implements SupportTableStatistics {
     Table t =
         gravitinoClient
             .loadCatalog(
-                IdentifierUtils.getCatalogNameFromTableIdentifier(
-                    tableIdentifier, defaultCatalogName))
+                IdentifierUtils.getCatalogNameFromTableIdentifier(tableIdentifier))
             .asTableCatalog()
             .loadTable(IdentifierUtils.removeCatalogFromIdentifier(tableIdentifier));
     List<PartitionStatistics> partitionStatistics =
