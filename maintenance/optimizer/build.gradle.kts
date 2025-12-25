@@ -108,9 +108,6 @@ tasks {
     from("src/main/resources")
     into("$rootDir/distribution/package/optimizer/conf")
 
-    include("core-site.xml.template")
-    include("hdfs-site.xml.template")
-
     rename { original ->
       if (original.endsWith(".template")) {
         original.replace(".template", "")
@@ -125,10 +122,6 @@ tasks {
   register("copyLibAndConfigs", Copy::class) {
     dependsOn("copyLibs", "copyConfigs")
   }
-
-  named<JavaCompile>("compileJava") {
-    dependsOn(":catalogs:catalog-lakehouse-iceberg:runtimeJars")
-  }
 }
 
 tasks.test {
@@ -139,13 +132,7 @@ tasks.test {
   } else {
     dependsOn(tasks.jar)
     dependsOn(":server:jar")
-    dependsOn(":catalogs:catalog-lakehouse-iceberg:jar")
-    dependsOn(":catalogs:catalog-lakehouse-generic:jar")
   }
-}
-
-tasks.clean {
-  delete("spark-warehouse")
 }
 
 tasks.getByName("generateMetadataFileForMavenJavaPublication") {
