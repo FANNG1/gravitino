@@ -42,8 +42,7 @@ public class GravitinoTableMetadataProvider implements TableMetadataProvider {
   @Override
   public Table tableMetadata(NameIdentifier tableIdentifier) {
     return gravitinoClient
-        .loadCatalog(
-            IdentifierUtils.getCatalogNameFromTableIdentifier(tableIdentifier))
+        .loadCatalog(IdentifierUtils.getCatalogNameFromTableIdentifier(tableIdentifier))
         .asTableCatalog()
         .loadTable(IdentifierUtils.removeCatalogFromIdentifier(tableIdentifier));
   }

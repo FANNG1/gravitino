@@ -56,8 +56,7 @@ public class GravitinoStatisticsProvider implements SupportTableStatistics {
   public List<StatisticEntry<?>> tableStatistics(NameIdentifier tableIdentifier) {
     Table t =
         gravitinoClient
-            .loadCatalog(
-                IdentifierUtils.getCatalogNameFromTableIdentifier(tableIdentifier))
+            .loadCatalog(IdentifierUtils.getCatalogNameFromTableIdentifier(tableIdentifier))
             .asTableCatalog()
             .loadTable(IdentifierUtils.removeCatalogFromIdentifier(tableIdentifier));
     List<Statistic> statistics = t.supportsStatistics().listStatistics();
@@ -75,8 +74,7 @@ public class GravitinoStatisticsProvider implements SupportTableStatistics {
       NameIdentifier tableIdentifier) {
     Table t =
         gravitinoClient
-            .loadCatalog(
-                IdentifierUtils.getCatalogNameFromTableIdentifier(tableIdentifier))
+            .loadCatalog(IdentifierUtils.getCatalogNameFromTableIdentifier(tableIdentifier))
             .asTableCatalog()
             .loadTable(IdentifierUtils.removeCatalogFromIdentifier(tableIdentifier));
     List<PartitionStatistics> partitionStatistics =

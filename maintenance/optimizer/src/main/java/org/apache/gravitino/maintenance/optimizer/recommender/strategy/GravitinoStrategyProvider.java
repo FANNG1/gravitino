@@ -65,8 +65,7 @@ public class GravitinoStrategyProvider implements StrategyProvider {
         IdentifierUtils.removeCatalogFromIdentifier(nameIdentifier));
     Table t =
         gravitinoClient
-            .loadCatalog(
-                IdentifierUtils.getCatalogNameFromTableIdentifier(nameIdentifier))
+            .loadCatalog(IdentifierUtils.getCatalogNameFromTableIdentifier(nameIdentifier))
             .asTableCatalog()
             .loadTable(IdentifierUtils.removeCatalogFromIdentifier(nameIdentifier));
     String[] policyNames = t.supportsPolicies().listPolicies();
