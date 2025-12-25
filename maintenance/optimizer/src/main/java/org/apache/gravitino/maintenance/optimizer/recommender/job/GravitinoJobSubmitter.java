@@ -74,9 +74,7 @@ public class GravitinoJobSubmitter implements JobSubmitter {
     return gravitinoClient.runJob(jobAdapter.jobTemplateName(), jobAdapter.jobConfig()).jobId();
   }
 
-  /**
-   * Closes the underlying Gravitino client.
-   */
+  /** Closes the underlying Gravitino client. */
   @Override
   public void close() {
     if (gravitinoClient != null) {

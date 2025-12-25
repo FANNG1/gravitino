@@ -19,7 +19,6 @@
 
 package org.apache.gravitino.maintenance.optimizer.recommender.table;
 
-import com.google.common.base.Preconditions;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.client.GravitinoClient;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.TableMetadataProvider;

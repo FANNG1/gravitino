@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
@@ -44,6 +45,7 @@ import org.apache.gravitino.maintenance.optimizer.api.recommender.StrategyHandle
 import org.apache.gravitino.maintenance.optimizer.api.recommender.StrategyProvider;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.SupportTableStatistics;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.TableMetadataProvider;
+import org.apache.gravitino.maintenance.optimizer.common.CloseableGroup;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
 import org.apache.gravitino.maintenance.optimizer.common.util.ProviderUtils;
@@ -70,16 +72,17 @@ import org.slf4j.LoggerFactory;
  *       {@link JobSubmitter}.
  * </ol>
  */
-public class Recommender {
+public class Recommender implements AutoCloseable {
   private static final Logger LOG = LoggerFactory.getLogger(Recommender.class);
   private final StrategyProvider strategyProvider;
   private final StatisticsProvider statisticsProvider;
   private final TableMetadataProvider tableMetadataProvider;
   private final JobSubmitter jobSubmitter;
+  private final CloseableGroup closeableGroup = new CloseableGroup();
 
   /**
    * Create a recommender whose providers and submitter are resolved from the optimizer
-   * configuration. All components are initialized eagerly.
+   * configuration. All components are initialized eagerly and closed together via {@link #close()}.
    *
    * @param optimizerEnv shared optimizer environment supplying configuration
    */
@@ -99,6 +102,8 @@ public class Recommender {
     this.statisticsProvider.initialize(optimizerEnv);
     this.tableMetadataProvider.initialize(optimizerEnv);
     this.jobSubmitter.initialize(optimizerEnv);
+
+    addToCloseableGroup();
   }
 
   @VisibleForTesting
@@ -111,6 +116,8 @@ public class Recommender {
     this.statisticsProvider = statisticsProvider;
     this.tableMetadataProvider = tableMetadataProvider;
     this.jobSubmitter = jobSubmitter;
+
+    addToCloseableGroup();
   }
 
   /**
@@ -142,15 +149,20 @@ public class Recommender {
     }
   }
 
-  /**
-   * Evaluates a single strategy across the provided identifiers and returns ordered job contexts.
-   *
-   * @param identifiers fully qualified table identifiers
-   * @param strategyName strategy name to evaluate
-   * @return ordered list of job execution contexts
-   */
-  @VisibleForTesting
-  public List<JobExecutionContext> recommendForOneStrategy(
+  /** Close all registered providers and job submitter, suppressing secondary failures. */
+  @Override
+  public void close() throws Exception {
+    closeableGroup.close();
+  }
+
+  private void addToCloseableGroup() {
+    closeableGroup.register(strategyProvider, "strategy provider");
+    closeableGroup.register(statisticsProvider, "statistics provider");
+    closeableGroup.register(tableMetadataProvider, "table metadata provider");
+    closeableGroup.register(jobSubmitter, "job submitter");
+  }
+
+  private List<JobExecutionContext> recommendForOneStrategy(
       List<NameIdentifier> identifiers, String strategyName) {
     LOG.info("Recommend strategy {} for identifiers {}", strategyName, identifiers);
     Strategy strategy = strategyProvider.strategy(strategyName);
@@ -171,11 +183,9 @@ public class Recommender {
       scoreQueue.add(evaluation);
     }
 
-    List<JobExecutionContext> jobContexts = new ArrayList<>(scoreQueue.size());
-    while (!scoreQueue.isEmpty()) {
-      jobContexts.add(scoreQueue.poll().jobExecutionContext());
-    }
-    return jobContexts;
+    return scoreQueue.stream()
+        .map(StrategyEvaluation::jobExecutionContext)
+        .collect(Collectors.toList());
   }
 
   private StrategyHandler loadStrategyHandler(Strategy strategy, NameIdentifier nameIdentifier) {
@@ -216,8 +226,7 @@ public class Recommender {
     return strategyHandler;
   }
 
-  @VisibleForTesting
-  protected StrategyHandler createStrategyHandler(String strategyType) {
+  private StrategyHandler createStrategyHandler(String strategyType) {
     String strategyHandlerClassName = getStrategyHandlerClassName(strategyType);
     Preconditions.checkArgument(
         StringUtils.isNotBlank(strategyHandlerClassName),
