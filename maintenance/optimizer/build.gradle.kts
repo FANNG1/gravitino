@@ -24,16 +24,9 @@ plugins {
   id("idea")
 }
 
-val scalaVersion: String = project.properties["scalaVersion"] as? String ?: extra["defaultScalaVersion"].toString()
-val sparkVersion: String = libs.versions.spark34.get()
-val sparkMajorVersion: String = sparkVersion.substringBeforeLast(".")
-val icebergVersion: String = libs.versions.iceberg.get()
-val scalaCollectionCompatVersion: String = libs.versions.scala.collection.compat.get()
-
 dependencies {
   implementation(project(":api"))
   implementation(project(":catalogs:catalog-common"))
-  implementation(project(":catalogs:catalog-lakehouse-iceberg"))
   implementation(project(":clients:client-java"))
   implementation(project(":core")) {
     exclude("*")
@@ -42,49 +35,12 @@ dependencies {
     exclude("*")
   }
 
-  implementation(libs.bundles.iceberg)
   implementation(libs.bundles.log4j)
+  implementation(libs.jackson.annotations)
   implementation(libs.commons.lang3)
-  implementation(libs.commons.cli.new)
   implementation(libs.guava)
-  implementation(libs.h2db)
-  compileOnly("org.apache.spark:spark-sql_$scalaVersion:$sparkVersion") {
-    exclude("org.apache.avro")
-    exclude("org.apache.hadoop")
-    exclude("org.apache.zookeeper")
-    exclude("io.dropwizard.metrics")
-    exclude("org.rocksdb")
-  }
-
-  annotationProcessor(libs.lombok)
-  compileOnly(libs.lombok)
-
-  testImplementation(project(":iceberg:iceberg-common"))
-  testImplementation(project(":integration-test-common", "testArtifacts"))
-  testImplementation(project(":server"))
-
-  testImplementation("org.apache.iceberg:iceberg-spark-runtime-${sparkMajorVersion}_$scalaVersion:$icebergVersion")
-  testImplementation("org.apache.spark:spark-sql_$scalaVersion:$sparkVersion") {
-    exclude("org.apache.avro")
-    exclude("org.apache.hadoop")
-    exclude("org.apache.zookeeper")
-    exclude("io.dropwizard.metrics")
-    exclude("org.rocksdb")
-  }
-
-  testImplementation(libs.jersey.test.framework.core) {
-    exclude(group = "org.junit.jupiter")
-  }
-  testImplementation(libs.jersey.test.framework.provider.jetty) {
-    exclude(group = "org.junit.jupiter")
-  }
   testImplementation(libs.junit.jupiter.api)
   testImplementation(libs.junit.jupiter.params)
-  testImplementation(libs.postgresql.driver)
-  testImplementation(libs.mockito.core)
-  testImplementation(libs.sqlite.jdbc)
-  testImplementation(libs.slf4j.api)
-  testImplementation(libs.testcontainers)
 
   testRuntimeOnly(libs.junit.jupiter.engine)
 }
