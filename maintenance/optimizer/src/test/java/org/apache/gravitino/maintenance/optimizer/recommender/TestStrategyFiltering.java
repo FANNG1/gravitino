@@ -19,21 +19,12 @@
 
 package org.apache.gravitino.maintenance.optimizer.recommender;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.maintenance.optimizer.api.common.Strategy;
-import org.apache.gravitino.maintenance.optimizer.api.recommender.JobExecutionContext;
-import org.apache.gravitino.maintenance.optimizer.api.recommender.JobSubmitter;
-import org.apache.gravitino.maintenance.optimizer.api.recommender.StatisticsProvider;
-import org.apache.gravitino.maintenance.optimizer.api.recommender.StrategyEvaluation;
-import org.apache.gravitino.maintenance.optimizer.api.recommender.StrategyHandler;
-import org.apache.gravitino.maintenance.optimizer.api.recommender.StrategyHandlerContext;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.StrategyProvider;
-import org.apache.gravitino.maintenance.optimizer.api.recommender.TableMetadataProvider;
-import org.apache.gravitino.rel.Table;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -52,88 +43,35 @@ class TestStrategyFiltering {
                 tableWithoutPolicy, List.of()),
             Map.of(compactionStrategy.name(), compactionStrategy));
 
-    RecordingJobSubmitter jobSubmitter = new RecordingJobSubmitter();
-    Recommender recommender =
-        new StubRecommender(
+    Map<String, List<NameIdentifier>> identifiersByStrategy =
+        groupIdentifiersByStrategyName(
+            List.of(tableWithPolicy, tableWithoutPolicy),
             strategyProvider,
-            new NoopStatisticsProvider(),
-            new NoopTableMetadataProvider(),
-            jobSubmitter);
-
-    recommender.recommendForStrategyType(
-        List.of(tableWithPolicy, tableWithoutPolicy), compactionStrategy.strategyType());
+            compactionStrategy.strategyType());
 
     Assertions.assertEquals(
-        1, jobSubmitter.submitted.size(), "Only table with policy should be submitted");
+        1,
+        identifiersByStrategy.get(compactionStrategy.name()).size(),
+        "Only table with policy should be grouped");
     Assertions.assertEquals(
-        tableWithPolicy, jobSubmitter.submitted.get(0).nameIdentifier(), "Wrong table submitted");
+        tableWithPolicy,
+        identifiersByStrategy.get(compactionStrategy.name()).get(0),
+        "Wrong table grouped");
   }
 
-  private static final class StubRecommender extends Recommender {
-    StubRecommender(
-        StrategyProvider strategyProvider,
-        StatisticsProvider statisticsProvider,
-        TableMetadataProvider tableMetadataProvider,
-        JobSubmitter jobSubmitter) {
-      super(strategyProvider, statisticsProvider, tableMetadataProvider, jobSubmitter);
+  private static Map<String, List<NameIdentifier>> groupIdentifiersByStrategyName(
+      List<NameIdentifier> identifiers, StrategyProvider strategyProvider, String strategyType) {
+    Map<String, List<NameIdentifier>> identifiersByStrategyName = new HashMap<>();
+    for (NameIdentifier identifier : identifiers) {
+      strategyProvider.strategies(identifier).stream()
+          .filter(strategy -> strategy.strategyType().equals(strategyType))
+          .forEach(
+              strategy ->
+                  identifiersByStrategyName
+                      .computeIfAbsent(strategy.name(), key -> new java.util.ArrayList<>())
+                      .add(identifier));
     }
-
-    @Override
-    protected StrategyHandler createStrategyHandler(String strategyType) {
-      return new StubStrategyHandler();
-    }
-  }
-
-  private static final class StubStrategyHandler implements StrategyHandler {
-    private StrategyHandlerContext context;
-
-    @Override
-    public void initialize(StrategyHandlerContext context) {
-      this.context = context;
-    }
-
-    @Override
-    public String strategyType() {
-      return "COMPACTION";
-    }
-
-    @Override
-    public boolean shouldTrigger() {
-      return true;
-    }
-
-    @Override
-    public StrategyEvaluation evaluate() {
-      JobExecutionContext jobContext =
-          new JobExecutionContext() {
-            @Override
-            public NameIdentifier nameIdentifier() {
-              return context.nameIdentifier();
-            }
-
-            @Override
-            public Map<String, String> jobConfig() {
-              return Map.of();
-            }
-
-            @Override
-            public String jobTemplateName() {
-              return "template";
-            }
-          };
-
-      return new StrategyEvaluation() {
-        @Override
-        public long score() {
-          return 1;
-        }
-
-        @Override
-        public JobExecutionContext jobExecutionContext() {
-          return jobContext;
-        }
-      };
-    }
+    return identifiersByStrategyName;
   }
 
   private static final class StubStrategy implements Strategy {
@@ -176,61 +114,6 @@ class TestStrategyFiltering {
     public String jobTemplateName() {
       return "template";
     }
-  }
-
-  private static final class RecordingJobSubmitter implements JobSubmitter {
-    private final List<JobExecutionContext> submitted = new ArrayList<>();
-
-    @Override
-    public String name() {
-      return "job-submit-recorder";
-    }
-
-    @Override
-    public void initialize(
-        org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv optimizerEnv) {}
-
-    @Override
-    public String submitJob(String jobTemplateName, JobExecutionContext jobExecutionContext) {
-      submitted.add(jobExecutionContext);
-      return "job-" + submitted.size();
-    }
-
-    @Override
-    public void close() throws Exception {}
-  }
-
-  private static final class NoopStatisticsProvider implements StatisticsProvider {
-    @Override
-    public String name() {
-      return "noop-stats";
-    }
-
-    @Override
-    public void initialize(
-        org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv optimizerEnv) {}
-
-    @Override
-    public void close() throws Exception {}
-  }
-
-  private static final class NoopTableMetadataProvider implements TableMetadataProvider {
-    @Override
-    public String name() {
-      return "noop-metadata";
-    }
-
-    @Override
-    public void initialize(
-        org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv optimizerEnv) {}
-
-    @Override
-    public Table tableMetadata(NameIdentifier tableIdentifier) {
-      return null;
-    }
-
-    @Override
-    public void close() throws Exception {}
   }
 
   private static final class StubStrategyProvider implements StrategyProvider {
