@@ -25,8 +25,6 @@ import org.apache.gravitino.stats.StatisticValue;
 /**
  * Immutable {@link StatisticEntry} implementation backed by a Java record.
  *
- * @param name statistic name
- * @param value statistic value wrapper
  * @param <T> underlying value type
  */
 public record StatisticEntryImpl<T>(String name, StatisticValue<T> value)
