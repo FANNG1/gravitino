@@ -22,11 +22,32 @@ package org.apache.gravitino.maintenance.optimizer.recommender.job;
 import java.util.Map;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.JobExecutionContext;
 
+/**
+ * Translates optimizer job execution context into Gravitino job submission inputs.
+ *
+ * <p>Implementations are instantiated per job template and configured from the provided execution
+ * context.
+ */
 public interface GravitinoJobAdapter {
 
+  /**
+   * Initializes the adapter from a job execution context.
+   *
+   * @param jobExecutionContext job execution context
+   */
   void initialize(JobExecutionContext jobExecutionContext);
 
+  /**
+   * Returns the Gravitino job template name to submit.
+   *
+   * @return job template name
+   */
   String jobTemplateName();
 
+  /**
+   * Returns the Gravitino job configuration map.
+   *
+   * @return job configuration map
+   */
   Map<String, String> jobConfig();
 }

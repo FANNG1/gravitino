@@ -25,11 +25,19 @@ import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/** Job submitter that logs requests without submitting any jobs. */
 public class NoopJobSubmitter implements JobSubmitter {
   private final Logger LOG = LoggerFactory.getLogger(NoopJobSubmitter.class);
 
   public static final String NAME = "noop";
 
+  /**
+   * Logs the job submission request and returns an empty job id.
+   *
+   * @param jobTemplateName job template name
+   * @param jobExecutionContext job execution context
+   * @return empty job id
+   */
   @Override
   public String submitJob(String jobTemplateName, JobExecutionContext jobExecutionContext) {
     LOG.info(
@@ -40,14 +48,29 @@ public class NoopJobSubmitter implements JobSubmitter {
     return "";
   }
 
+  /**
+   * Returns the provider name for configuration lookup.
+   *
+   * @return provider name
+   */
   @Override
   public String name() {
     return NAME;
   }
 
+  /**
+   * No-op initialization hook.
+   *
+   * @param optimizerEnv optimizer environment
+   */
   @Override
   public void initialize(OptimizerEnv optimizerEnv) {}
 
+  /**
+   * No-op close hook.
+   *
+   * @throws Exception never thrown
+   */
   @Override
   public void close() throws Exception {}
 }

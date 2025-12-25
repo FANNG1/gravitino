@@ -28,12 +28,19 @@ import org.apache.gravitino.maintenance.optimizer.api.common.PartitionEntry;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
 import org.apache.gravitino.maintenance.optimizer.common.PartitionEntryImpl;
 
+/** Helpers for converting between Gravitino partition names and {@link PartitionPath}. */
 public class PartitionUtils {
   private static final String PARTITION_ENTRY_SEPARATOR = "/";
   private static final String PARTITION_KV_SEPARATOR = "=";
 
   private PartitionUtils() {}
 
+  /**
+   * Encodes a {@link PartitionPath} into a Gravitino partition name string.
+   *
+   * @param partitionPath partition path
+   * @return encoded partition name
+   */
   public static String getGravitinoPartitionName(PartitionPath partitionPath) {
     return partitionPath.entries().stream()
         .map(
@@ -44,6 +51,12 @@ public class PartitionUtils {
         .collect(Collectors.joining(PARTITION_ENTRY_SEPARATOR));
   }
 
+  /**
+   * Parses a Gravitino partition name into a {@link PartitionPath}.
+   *
+   * @param gravitinoPartitionName encoded partition name
+   * @return parsed partition path
+   */
   public static PartitionPath parseGravitinoPartitionName(String gravitinoPartitionName) {
     Preconditions.checkArgument(
         StringUtils.isNotBlank(gravitinoPartitionName), "gravitinoPartitionName must not be blank");

@@ -39,11 +39,17 @@ import org.apache.gravitino.stats.PartitionRange;
 import org.apache.gravitino.stats.PartitionStatistics;
 import org.apache.gravitino.stats.Statistic;
 
+/** Statistics provider that reads table and partition statistics from Gravitino. */
 public class GravitinoStatisticsProvider implements SupportTableStatistics {
 
   public static final String NAME = "gravitino-statistics-provider";
   private GravitinoClient gravitinoClient;
 
+  /**
+   * Initializes the provider with a Gravitino client derived from the optimizer configuration.
+   *
+   * @param optimizerEnv optimizer environment
+   */
   @Override
   public void initialize(OptimizerEnv optimizerEnv) {
     OptimizerConfig config = optimizerEnv.config();
@@ -52,8 +58,15 @@ public class GravitinoStatisticsProvider implements SupportTableStatistics {
     this.gravitinoClient = GravitinoClient.builder(uri).withMetalake(metalake).build();
   }
 
+  /**
+   * Returns table-level statistics for the given table identifier.
+   *
+   * @param tableIdentifier fully qualified table identifier
+   * @return list of statistics entries
+   */
   @Override
   public List<StatisticEntry<?>> tableStatistics(NameIdentifier tableIdentifier) {
+    IdentifierUtils.requireTableIdentifierNormalized(tableIdentifier);
     Table t =
         gravitinoClient
             .loadCatalog(IdentifierUtils.getCatalogNameFromTableIdentifier(tableIdentifier))
@@ -69,9 +82,16 @@ public class GravitinoStatisticsProvider implements SupportTableStatistics {
         .collect(Collectors.toList());
   }
 
+  /**
+   * Returns partition-level statistics for the given table identifier.
+   *
+   * @param tableIdentifier fully qualified table identifier
+   * @return statistics grouped by partition path
+   */
   @Override
   public Map<PartitionPath, List<StatisticEntry<?>>> partitionStatistics(
       NameIdentifier tableIdentifier) {
+    IdentifierUtils.requireTableIdentifierNormalized(tableIdentifier);
     Table t =
         gravitinoClient
             .loadCatalog(IdentifierUtils.getCatalogNameFromTableIdentifier(tableIdentifier))
@@ -100,11 +120,21 @@ public class GravitinoStatisticsProvider implements SupportTableStatistics {
                     .add(new StatisticEntryImpl<>(statistic.name(), statistic.value().get())));
   }
 
+  /**
+   * Returns the provider name for configuration lookup.
+   *
+   * @return provider name
+   */
   @Override
   public String name() {
     return NAME;
   }
 
+  /**
+   * Closes the underlying Gravitino client.
+   *
+   * @throws Exception if closing fails
+   */
   @Override
   public void close() throws Exception {
     if (gravitinoClient != null) {

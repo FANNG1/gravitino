@@ -142,6 +142,13 @@ public class Recommender {
     }
   }
 
+  /**
+   * Evaluates a single strategy across the provided identifiers and returns ordered job contexts.
+   *
+   * @param identifiers fully qualified table identifiers
+   * @param strategyName strategy name to evaluate
+   * @return ordered list of job execution contexts
+   */
   @VisibleForTesting
   public List<JobExecutionContext> recommendForOneStrategy(
       List<NameIdentifier> identifiers, String strategyName) {

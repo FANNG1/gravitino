@@ -88,16 +88,19 @@ class TestIdentifierUtils {
   }
 
   @Test
-  void checkTableIdentifierNormalizedReturnsTrueWhenCatalogPresent() {
+  void requireTableIdentifierNormalizedSucceedsWhenCatalogPresent() {
     NameIdentifier identifier = NameIdentifier.of("catalog", "schema", "tableName");
 
-    Assertions.assertTrue(IdentifierUtils.checkTableIdentifierNormalized(identifier));
+    Assertions.assertDoesNotThrow(
+        () -> IdentifierUtils.requireTableIdentifierNormalized(identifier));
   }
 
   @Test
-  void checkTableIdentifierNormalizedReturnsFalseWhenCatalogMissing() {
+  void requireTableIdentifierNormalizedThrowsWhenCatalogMissing() {
     NameIdentifier identifier = NameIdentifier.of("schema", "tableName");
 
-    Assertions.assertFalse(IdentifierUtils.checkTableIdentifierNormalized(identifier));
+    Assertions.assertThrowsExactly(
+        IllegalArgumentException.class,
+        () -> IdentifierUtils.requireTableIdentifierNormalized(identifier));
   }
 }

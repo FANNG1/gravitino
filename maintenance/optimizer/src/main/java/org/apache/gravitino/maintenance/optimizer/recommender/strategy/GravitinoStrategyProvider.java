@@ -19,10 +19,12 @@
 
 package org.apache.gravitino.maintenance.optimizer.recommender.strategy;
 
+import com.google.common.base.Preconditions;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.client.GravitinoClient;
 import org.apache.gravitino.exceptions.NotFoundException;
@@ -36,6 +38,7 @@ import org.apache.gravitino.rel.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/** Strategy provider that loads policies from Gravitino. */
 public class GravitinoStrategyProvider implements StrategyProvider {
 
   private static final Logger LOG = LoggerFactory.getLogger(GravitinoStrategyProvider.class);
@@ -43,6 +46,11 @@ public class GravitinoStrategyProvider implements StrategyProvider {
   public static final String NAME = "gravitino-strategy-provider";
   private GravitinoClient gravitinoClient;
 
+  /**
+   * Initializes the provider with a Gravitino client derived from the optimizer configuration.
+   *
+   * @param optimizerEnv optimizer environment
+   */
   @Override
   public void initialize(OptimizerEnv optimizerEnv) {
     OptimizerConfig config = optimizerEnv.config();
@@ -51,13 +59,25 @@ public class GravitinoStrategyProvider implements StrategyProvider {
     this.gravitinoClient = GravitinoClient.builder(uri).withMetalake(metalake).build();
   }
 
+  /**
+   * Returns the provider name for configuration lookup.
+   *
+   * @return provider name
+   */
   @Override
   public String name() {
     return NAME;
   }
 
+  /**
+   * Lists strategies attached to the specified table identifier.
+   *
+   * @param nameIdentifier fully qualified table identifier
+   * @return list of strategies, possibly empty
+   */
   @Override
   public List<Strategy> strategies(NameIdentifier nameIdentifier) {
+    IdentifierUtils.requireTableIdentifierNormalized(nameIdentifier);
     LOG.info(
         "Get table strategy: tableIdentifier={}, catalog={}, table={}",
         nameIdentifier,
@@ -78,8 +98,17 @@ public class GravitinoStrategyProvider implements StrategyProvider {
     return policies;
   }
 
+  /**
+   * Returns a strategy by name.
+   *
+   * @param strategyName strategy name
+   * @return strategy
+   * @throws NotFoundException if the strategy does not exist
+   */
   @Override
   public Strategy strategy(String strategyName) throws NotFoundException {
+    Preconditions.checkArgument(
+        StringUtils.isNotBlank(strategyName), "strategyName must not be blank");
     return toStrategy(gravitinoClient.getPolicy(strategyName));
   }
 
@@ -87,6 +116,11 @@ public class GravitinoStrategyProvider implements StrategyProvider {
     return new GravitinoStrategy(policy);
   }
 
+  /**
+   * Closes the underlying Gravitino client.
+   *
+   * @throws Exception if closing fails
+   */
   @Override
   public void close() throws Exception {
     if (gravitinoClient != null) {

@@ -19,6 +19,7 @@
 
 package org.apache.gravitino.maintenance.optimizer.recommender.table;
 
+import com.google.common.base.Preconditions;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.client.GravitinoClient;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.TableMetadataProvider;
@@ -27,10 +28,16 @@ import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
 import org.apache.gravitino.maintenance.optimizer.common.util.IdentifierUtils;
 import org.apache.gravitino.rel.Table;
 
+/** Table metadata provider backed by Gravitino catalog tables. */
 public class GravitinoTableMetadataProvider implements TableMetadataProvider {
   public static final String NAME = "gravitino-table-metadata-provider";
   private GravitinoClient gravitinoClient;
 
+  /**
+   * Initializes the provider with a Gravitino client derived from the optimizer configuration.
+   *
+   * @param optimizerEnv optimizer environment
+   */
   @Override
   public void initialize(OptimizerEnv optimizerEnv) {
     OptimizerConfig config = optimizerEnv.config();
@@ -39,19 +46,36 @@ public class GravitinoTableMetadataProvider implements TableMetadataProvider {
     this.gravitinoClient = GravitinoClient.builder(uri).withMetalake(metalake).build();
   }
 
+  /**
+   * Loads table metadata for the given table identifier.
+   *
+   * @param tableIdentifier fully qualified table identifier
+   * @return table metadata
+   */
   @Override
   public Table tableMetadata(NameIdentifier tableIdentifier) {
+    IdentifierUtils.requireTableIdentifierNormalized(tableIdentifier);
     return gravitinoClient
         .loadCatalog(IdentifierUtils.getCatalogNameFromTableIdentifier(tableIdentifier))
         .asTableCatalog()
         .loadTable(IdentifierUtils.removeCatalogFromIdentifier(tableIdentifier));
   }
 
+  /**
+   * Returns the provider name for configuration lookup.
+   *
+   * @return provider name
+   */
   @Override
   public String name() {
     return NAME;
   }
 
+  /**
+   * Closes the underlying Gravitino client.
+   *
+   * @throws Exception if closing fails
+   */
   @Override
   public void close() throws Exception {
     if (gravitinoClient != null) {

@@ -23,32 +23,52 @@ import com.google.common.base.Preconditions;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.Namespace;
 
+/** Utilities for working with fully qualified table identifiers. */
 public class IdentifierUtils {
 
+  private static final String NORMALIZED_IDENTIFIER_MESSAGE =
+      "Identifier must be catalog.schema.table";
+
+  /**
+   * Removes the catalog level from a catalog.schema.table identifier.
+   *
+   * @param tableIdentifier fully qualified table identifier
+   * @return schema.table identifier
+   * @throws IllegalArgumentException if the identifier is not catalog.schema.table
+   */
   public static NameIdentifier removeCatalogFromIdentifier(NameIdentifier tableIdentifier) {
     Preconditions.checkArgument(tableIdentifier != null, "tableIdentifier must not be null");
     Namespace namespace = tableIdentifier.namespace();
     Preconditions.checkArgument(
-        namespace != null && namespace.levels().length == 2,
-        "Identifier must be catalog.schema.table");
+        namespace != null && namespace.levels().length == 2, NORMALIZED_IDENTIFIER_MESSAGE);
     return NameIdentifier.of(namespace.levels()[1], tableIdentifier.name());
   }
 
+  /**
+   * Returns the catalog name from a catalog.schema.table identifier.
+   *
+   * @param tableIdentifier fully qualified table identifier
+   * @return catalog name
+   * @throws IllegalArgumentException if the identifier is not catalog.schema.table
+   */
   public static String getCatalogNameFromTableIdentifier(NameIdentifier tableIdentifier) {
     Preconditions.checkArgument(tableIdentifier != null, "tableIdentifier must not be null");
     Namespace namespace = tableIdentifier.namespace();
     Preconditions.checkArgument(
-        namespace != null && namespace.levels().length == 2,
-        "Identifier must be catalog.schema.table");
+        namespace != null && namespace.levels().length == 2, NORMALIZED_IDENTIFIER_MESSAGE);
     return namespace.levels()[0];
   }
 
-  public static boolean checkTableIdentifierNormalized(NameIdentifier tableIdentifier) {
+  /**
+   * Validates that a table identifier is normalized as catalog.schema.table.
+   *
+   * @param tableIdentifier identifier to validate
+   * @throws IllegalArgumentException if the identifier is not catalog.schema.table
+   */
+  public static void requireTableIdentifierNormalized(NameIdentifier tableIdentifier) {
     Preconditions.checkArgument(tableIdentifier != null, "tableIdentifier must not be null");
     Namespace namespace = tableIdentifier.namespace();
     Preconditions.checkArgument(
-        namespace != null && namespace.levels().length >= 1,
-        "Identifier must be catalog.schema.table");
-    return namespace.levels().length == 2;
+        namespace != null && namespace.levels().length == 2, NORMALIZED_IDENTIFIER_MESSAGE);
   }
 }

@@ -22,8 +22,20 @@ package org.apache.gravitino.maintenance.optimizer.common;
 import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.stats.StatisticValue;
 
+/**
+ * Immutable {@link StatisticEntry} implementation backed by a Java record.
+ *
+ * @param name statistic name
+ * @param value statistic value wrapper
+ * @param <T> underlying value type
+ */
 public record StatisticEntryImpl<T>(String name, StatisticValue<T> value)
     implements StatisticEntry<T> {
+  /**
+   * Returns a concise string for logging and diagnostics.
+   *
+   * @return formatted string containing the statistic name and value
+   */
   @Override
   public String toString() {
     return "{ " + name + " : " + value.value() + '}';

@@ -27,6 +27,7 @@ import org.apache.gravitino.maintenance.optimizer.api.recommender.JobSubmitter;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
 
+/** Submits optimizer jobs to Gravitino using job template adapters. */
 public class GravitinoJobSubmitter implements JobSubmitter {
 
   public static final String NAME = "gravitino-job-submitter";
@@ -35,11 +36,21 @@ public class GravitinoJobSubmitter implements JobSubmitter {
 
   private final Map<String, Class<? extends GravitinoJobAdapter>> jobAdapters = Map.of();
 
+  /**
+   * Returns the provider name for configuration lookup.
+   *
+   * @return provider name
+   */
   @Override
   public String name() {
     return NAME;
   }
 
+  /**
+   * Initializes the submitter with a Gravitino client derived from the optimizer configuration.
+   *
+   * @param optimizerEnv optimizer environment
+   */
   @Override
   public void initialize(OptimizerEnv optimizerEnv) {
     String uri = optimizerEnv.config().get(OptimizerConfig.GRAVITINO_URI_CONFIG);
@@ -47,6 +58,13 @@ public class GravitinoJobSubmitter implements JobSubmitter {
     this.gravitinoClient = GravitinoClient.builder(uri).withMetalake(metalake).build();
   }
 
+  /**
+   * Submits a job through Gravitino using the resolved job adapter.
+   *
+   * @param jobTemplateName template name used to select an adapter
+   * @param jobExecutionContext execution context for the job
+   * @return submitted job identifier
+   */
   @Override
   public String submitJob(String jobTemplateName, JobExecutionContext jobExecutionContext) {
     GravitinoJobAdapter jobAdapter = loadJobAdapter(jobTemplateName, jobExecutionContext);
@@ -56,6 +74,9 @@ public class GravitinoJobSubmitter implements JobSubmitter {
     return gravitinoClient.runJob(jobAdapter.jobTemplateName(), jobAdapter.jobConfig()).jobId();
   }
 
+  /**
+   * Closes the underlying Gravitino client.
+   */
   @Override
   public void close() {
     if (gravitinoClient != null) {
