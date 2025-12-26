@@ -110,7 +110,7 @@ public class GravitinoStatisticsProvider implements SupportTableStatistics {
       PartitionStatistics partitionStatistics,
       Map<PartitionPath, List<StatisticEntry<?>>> statisticsByPartition) {
     PartitionPath partitions =
-        PartitionUtils.parseGravitinoPartitionName(partitionStatistics.partitionName());
+        PartitionUtils.decodePartitionPath(partitionStatistics.partitionName());
     Arrays.stream(partitionStatistics.statistics())
         .filter(statistic -> statistic.value().isPresent())
         .forEach(

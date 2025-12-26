@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test;
 class TestIdentifierUtils {
 
   @Test
-  void removeCatalogFromIdentifierThrowsWhenCatalogMissing() {
+  void testRemoveCatalogFromIdentifierThrowsWhenCatalogMissing() {
     Namespace namespace = Namespace.of("singleLevel");
     NameIdentifier identifier = NameIdentifier.of(namespace, "tableName");
 
@@ -37,7 +37,7 @@ class TestIdentifierUtils {
   }
 
   @Test
-  void removeCatalogFromIdentifierRemovesFirstLevelForTwoLevelNamespace() {
+  void testRemoveCatalogFromIdentifierRemovesFirstLevelForTwoLevelNamespace() {
     Namespace namespace = Namespace.of("catalog", "schema");
     NameIdentifier identifier = NameIdentifier.of(namespace, "tableName");
 
@@ -48,7 +48,7 @@ class TestIdentifierUtils {
   }
 
   @Test
-  void removeCatalogFromIdentifierThrowsExceptionForInvalidNamespace() {
+  void testRemoveCatalogFromIdentifierThrowsExceptionForInvalidNamespace() {
     Namespace namespace = Namespace.of();
     NameIdentifier identifier = NameIdentifier.of(namespace, "tableName");
 
@@ -58,7 +58,7 @@ class TestIdentifierUtils {
   }
 
   @Test
-  void getCatalogNameFromTableIdentifierThrowsWhenCatalogMissing() {
+  void testGetCatalogNameFromTableIdentifierThrowsWhenCatalogMissing() {
     Namespace namespace = Namespace.of("schema");
     NameIdentifier identifier = NameIdentifier.of(namespace, "tableName");
 
@@ -68,7 +68,7 @@ class TestIdentifierUtils {
   }
 
   @Test
-  void getCatalogNameFromTableIdentifierReturnsFirstLevelForMultiLevelNamespace() {
+  void testGetCatalogNameFromTableIdentifierReturnsFirstLevelForMultiLevelNamespace() {
     Namespace namespace = Namespace.of("catalog", "schema");
     NameIdentifier identifier = NameIdentifier.of(namespace, "tableName");
 
@@ -78,7 +78,7 @@ class TestIdentifierUtils {
   }
 
   @Test
-  void getCatalogNameFromTableIdentifierThrowsExceptionForInvalidNamespace() {
+  void testGetCatalogNameFromTableIdentifierThrowsExceptionForInvalidNamespace() {
     Namespace namespace = Namespace.of();
     NameIdentifier identifier = NameIdentifier.of(namespace, "tableName");
 
@@ -88,7 +88,7 @@ class TestIdentifierUtils {
   }
 
   @Test
-  void requireTableIdentifierNormalizedSucceedsWhenCatalogPresent() {
+  void testRequireTableIdentifierNormalizedSucceedsWhenCatalogPresent() {
     NameIdentifier identifier = NameIdentifier.of("catalog", "schema", "tableName");
 
     Assertions.assertDoesNotThrow(
@@ -96,7 +96,7 @@ class TestIdentifierUtils {
   }
 
   @Test
-  void requireTableIdentifierNormalizedThrowsWhenCatalogMissing() {
+  void testRequireTableIdentifierNormalizedThrowsWhenCatalogMissing() {
     NameIdentifier identifier = NameIdentifier.of("schema", "tableName");
 
     Assertions.assertThrowsExactly(

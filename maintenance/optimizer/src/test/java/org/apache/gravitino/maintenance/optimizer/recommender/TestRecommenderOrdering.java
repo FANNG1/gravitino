@@ -32,7 +32,7 @@ import org.junit.jupiter.api.Test;
 class TestRecommenderOrdering {
 
   @Test
-  void recommendForOneStrategyOrdersByScoreDescending() {
+  void testRecommendForOneStrategyOrdersByScoreDescending() {
     NameIdentifier tableA = NameIdentifier.of("db", "t1");
     NameIdentifier tableB = NameIdentifier.of("db", "t2");
     NameIdentifier tableC = NameIdentifier.of("db", "t3");

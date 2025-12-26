@@ -31,7 +31,7 @@ import org.junit.jupiter.api.Test;
 class TestStrategyFiltering {
 
   @Test
-  void recommendOnlyTablesWithStrategy() {
+  void testRecommendOnlyTablesWithStrategy() {
     NameIdentifier tableWithPolicy = NameIdentifier.of("db", "t_with_policy");
     NameIdentifier tableWithoutPolicy = NameIdentifier.of("db", "t_without_policy");
 

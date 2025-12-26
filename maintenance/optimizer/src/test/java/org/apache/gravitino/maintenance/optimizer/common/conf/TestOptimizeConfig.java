@@ -23,10 +23,10 @@ import java.util.Map;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-class OptimizerConfigTest {
+class TestOptimizerConfig {
 
   @Test
-  void optimizerConfigLoadsPropertiesCorrectly() {
+  void testOptimizerConfigLoadsPropertiesCorrectly() {
     Map<String, String> properties =
         Map.of(
             OptimizerConfig.GRAVITINO_URI, "http://example.com",
@@ -42,7 +42,7 @@ class OptimizerConfigTest {
   }
 
   @Test
-  void optimizerConfigHandlesMissingPropertiesGracefully() {
+  void testOptimizerConfigHandlesMissingPropertiesGracefully() {
     Map<String, String> properties = Map.of();
     OptimizerConfig config = new OptimizerConfig(properties);
 
