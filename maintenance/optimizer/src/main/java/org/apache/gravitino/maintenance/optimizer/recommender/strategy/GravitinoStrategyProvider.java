@@ -27,21 +27,18 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.client.GravitinoClient;
+import org.apache.gravitino.exceptions.NoSuchPolicyException;
 import org.apache.gravitino.exceptions.NotFoundException;
 import org.apache.gravitino.maintenance.optimizer.api.common.Strategy;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.StrategyProvider;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
-import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
+import org.apache.gravitino.maintenance.optimizer.common.util.GravitinoClientUtils;
 import org.apache.gravitino.maintenance.optimizer.common.util.IdentifierUtils;
 import org.apache.gravitino.policy.Policy;
 import org.apache.gravitino.rel.Table;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** Strategy provider that loads policies from Gravitino. */
 public class GravitinoStrategyProvider implements StrategyProvider {
-
-  private static final Logger LOG = LoggerFactory.getLogger(GravitinoStrategyProvider.class);
 
   public static final String NAME = "gravitino-strategy-provider";
   private GravitinoClient gravitinoClient;
@@ -53,10 +50,7 @@ public class GravitinoStrategyProvider implements StrategyProvider {
    */
   @Override
   public void initialize(OptimizerEnv optimizerEnv) {
-    OptimizerConfig config = optimizerEnv.config();
-    String uri = config.get(OptimizerConfig.GRAVITINO_URI_CONFIG);
-    String metalake = config.get(OptimizerConfig.GRAVITINO_METALAKE_CONFIG);
-    this.gravitinoClient = GravitinoClient.builder(uri).withMetalake(metalake).build();
+    this.gravitinoClient = GravitinoClientUtils.createClient(optimizerEnv);
   }
 
   /**
@@ -78,11 +72,6 @@ public class GravitinoStrategyProvider implements StrategyProvider {
   @Override
   public List<Strategy> strategies(NameIdentifier nameIdentifier) {
     IdentifierUtils.requireTableIdentifierNormalized(nameIdentifier);
-    LOG.info(
-        "Get table strategy: tableIdentifier={}, catalog={}, table={}",
-        nameIdentifier,
-        IdentifierUtils.getCatalogNameFromTableIdentifier(nameIdentifier),
-        IdentifierUtils.removeCatalogFromIdentifier(nameIdentifier));
     Table t =
         gravitinoClient
             .loadCatalog(IdentifierUtils.getCatalogNameFromTableIdentifier(nameIdentifier))
@@ -109,7 +98,11 @@ public class GravitinoStrategyProvider implements StrategyProvider {
   public Strategy strategy(String strategyName) throws NotFoundException {
     Preconditions.checkArgument(
         StringUtils.isNotBlank(strategyName), "strategyName must not be blank");
-    return toStrategy(gravitinoClient.getPolicy(strategyName));
+    try {
+      return toStrategy(gravitinoClient.getPolicy(strategyName));
+    } catch (NoSuchPolicyException e) {
+      throw new NotFoundException(e, "Strategy '%s' not found", strategyName);
+    }
   }
 
   private Strategy toStrategy(Policy policy) {

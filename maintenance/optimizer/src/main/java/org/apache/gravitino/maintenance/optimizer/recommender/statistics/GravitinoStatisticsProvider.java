@@ -31,7 +31,7 @@ import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.SupportTableStatistics;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.maintenance.optimizer.common.StatisticEntryImpl;
-import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
+import org.apache.gravitino.maintenance.optimizer.common.util.GravitinoClientUtils;
 import org.apache.gravitino.maintenance.optimizer.common.util.IdentifierUtils;
 import org.apache.gravitino.maintenance.optimizer.recommender.util.PartitionUtils;
 import org.apache.gravitino.rel.Table;
@@ -52,10 +52,7 @@ public class GravitinoStatisticsProvider implements SupportTableStatistics {
    */
   @Override
   public void initialize(OptimizerEnv optimizerEnv) {
-    OptimizerConfig config = optimizerEnv.config();
-    String uri = config.get(OptimizerConfig.GRAVITINO_URI_CONFIG);
-    String metalake = config.get(OptimizerConfig.GRAVITINO_METALAKE_CONFIG);
-    this.gravitinoClient = GravitinoClient.builder(uri).withMetalake(metalake).build();
+    this.gravitinoClient = GravitinoClientUtils.createClient(optimizerEnv);
   }
 
   /**

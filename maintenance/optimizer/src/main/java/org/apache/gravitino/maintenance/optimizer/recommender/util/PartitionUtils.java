@@ -80,8 +80,7 @@ public class PartitionUtils {
    */
   public static PartitionPath decodePartitionPath(String encodedPartitionPath) {
     Preconditions.checkArgument(
-        StringUtils.isNotBlank(encodedPartitionPath),
-        "encodedPartitionPath must not be blank");
+        StringUtils.isNotBlank(encodedPartitionPath), "encodedPartitionPath must not be blank");
     List<Map<String, String>> decoded;
     try {
       decoded = JsonUtils.objectMapper().readValue(encodedPartitionPath, PARTITION_PATH_TYPE);

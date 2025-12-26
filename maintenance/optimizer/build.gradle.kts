@@ -36,6 +36,7 @@ dependencies {
   }
 
   implementation(libs.bundles.log4j)
+  implementation(libs.jackson.databind)
   implementation(libs.jackson.annotations)
   implementation(libs.commons.lang3)
   implementation(libs.guava)
