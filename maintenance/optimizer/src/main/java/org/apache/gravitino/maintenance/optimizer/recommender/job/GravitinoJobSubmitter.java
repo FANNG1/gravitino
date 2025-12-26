@@ -76,7 +76,7 @@ public class GravitinoJobSubmitter implements JobSubmitter {
 
   /** Closes the underlying Gravitino client. */
   @Override
-  public void close() {
+  public void close() throws Exception {
     if (gravitinoClient != null) {
       gravitinoClient.close();
     }
