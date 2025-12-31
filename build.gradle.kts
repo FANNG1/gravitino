@@ -308,24 +308,26 @@ subprojects {
   }
 
   fun compatibleWithJDK8(project: Project): Boolean {
+    val name = project.name.lowercase()
+    val path = project.path.lowercase()
+    if (path.startsWith(":maintenance:jobs") ||
+      name == "api" ||
+      name == "common" ||
+      name == "catalog-common" ||
+      name == "hadoop-common"
+    ) {
+      return true
+    }
+
     val isReleaseRun = gradle.startParameter.taskNames.any { it == "release" || it == "publish" || it == "publishToMavenLocal" }
     if (!isReleaseRun) {
       return false
     }
 
-    val name = project.name.lowercase()
-    val path = project.path.lowercase()
-
     if (path.startsWith(":client") ||
       path.startsWith(":spark-connector") ||
       path.startsWith(":flink-connector") ||
       path.startsWith(":bundles")
-    ) {
-      return true
-    }
-
-    if (name == "api" || name == "common" ||
-      name == "catalog-common" || name == "hadoop-common"
     ) {
       return true
     }
@@ -707,6 +709,7 @@ tasks {
       "copySubprojectDependencies",
       "copySubprojectLib",
       "copyCliLib",
+      "copyJobsLib",
       ":authorizations:copyLibAndConfig",
       ":iceberg:iceberg-rest-server:copyLibAndConfigs",
       ":lance:lance-rest-server:copyLibAndConfigs",
@@ -1007,6 +1010,15 @@ tasks {
     from("clients/cli/build/libs")
     into("distribution/package/auxlib")
     include("gravitino-cli-*.jar")
+    setDuplicatesStrategy(DuplicatesStrategy.EXCLUDE)
+  }
+
+  register("copyJobsLib", Copy::class) {
+    dependsOn(":maintenance:jobs:build")
+    from("maintenance/jobs/build/libs")
+    into("distribution/package/auxlib")
+    include("gravitino-jobs-*.jar")
+    exclude("*-empty.jar")
     setDuplicatesStrategy(DuplicatesStrategy.EXCLUDE)
   }
 
