@@ -67,11 +67,10 @@ public class GravitinoJobSubmitter implements JobSubmitter {
    */
   @Override
   public String submitJob(String jobTemplateName, JobExecutionContext jobExecutionContext) {
-    GravitinoJobAdapter jobAdapter = loadJobAdapter(jobTemplateName, jobExecutionContext);
-    if (jobAdapter == null) {
-      throw new IllegalArgumentException("No job adapter found for template: " + jobTemplateName);
-    }
-    return gravitinoClient.runJob(jobAdapter.jobTemplateName(), jobAdapter.jobConfig()).jobId();
+    GravitinoJobAdapter jobAdapter = loadJobAdapter(jobTemplateName);
+    return gravitinoClient
+        .runJob(jobTemplateName, jobAdapter.jobConfig(jobExecutionContext))
+        .jobId();
   }
 
   /** Closes the underlying Gravitino client. */
@@ -83,18 +82,15 @@ public class GravitinoJobSubmitter implements JobSubmitter {
   }
 
   @VisibleForTesting
-  GravitinoJobAdapter loadJobAdapter(
-      String jobTemplateName, JobExecutionContext jobExecutionContext) {
+  GravitinoJobAdapter loadJobAdapter(String jobTemplateName) {
     Class<? extends GravitinoJobAdapter> jobAdapterClz = jobAdapters.get(jobTemplateName);
     if (jobAdapterClz == null) {
-      return null;
+      throw new IllegalArgumentException("No job adapter found for template: " + jobTemplateName);
     }
     try {
-      GravitinoJobAdapter jobAdapter = jobAdapterClz.getDeclaredConstructor().newInstance();
-      jobAdapter.initialize(jobExecutionContext);
-      return jobAdapter;
+      return jobAdapterClz.getDeclaredConstructor().newInstance();
     } catch (Exception e) {
-      throw new IllegalArgumentException(
+      throw new RuntimeException(
           "Failed to create job adapter for template: " + jobTemplateName, e);
     }
   }

@@ -19,8 +19,20 @@
 
 package org.apache.gravitino.maintenance.optimizer.common;
 
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
+import lombok.experimental.Accessors;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionEntry;
 
-/** Immutable {@link PartitionEntry} implementation backed by a Java record. */
-public record PartitionEntryImpl(String partitionName, String partitionValue)
-    implements PartitionEntry {}
+/** Immutable {@link PartitionEntry} implementation backed by Lombok. */
+@Accessors(fluent = true)
+@AllArgsConstructor
+@EqualsAndHashCode
+@Getter
+@ToString
+public final class PartitionEntryImpl implements PartitionEntry {
+  private final String partitionName;
+  private final String partitionValue;
+}

@@ -19,16 +19,26 @@
 
 package org.apache.gravitino.maintenance.optimizer.common;
 
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.stats.StatisticValue;
 
 /**
- * Immutable {@link StatisticEntry} implementation backed by a Java record.
+ * Immutable {@link StatisticEntry} implementation backed by Lombok.
  *
  * @param <T> underlying value type
  */
-public record StatisticEntryImpl<T>(String name, StatisticValue<T> value)
-    implements StatisticEntry<T> {
+@Accessors(fluent = true)
+@AllArgsConstructor
+@EqualsAndHashCode
+@Getter
+public final class StatisticEntryImpl<T> implements StatisticEntry<T> {
+  private final String name;
+  private final StatisticValue<T> value;
+
   /**
    * Returns a concise string for logging and diagnostics.
    *

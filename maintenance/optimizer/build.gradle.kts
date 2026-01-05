@@ -35,6 +35,8 @@ dependencies {
     exclude("*")
   }
 
+  annotationProcessor(libs.lombok)
+  compileOnly(libs.lombok)
   implementation(libs.bundles.log4j)
   implementation(libs.jackson.databind)
   implementation(libs.jackson.annotations)
@@ -42,6 +44,8 @@ dependencies {
   implementation(libs.guava)
   testImplementation(libs.junit.jupiter.api)
   testImplementation(libs.junit.jupiter.params)
+  testAnnotationProcessor(libs.lombok)
+  testCompileOnly(libs.lombok)
 
   testRuntimeOnly(libs.junit.jupiter.engine)
 }
