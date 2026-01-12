@@ -28,7 +28,6 @@ import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
  */
 public class OptimizerEnv {
   private OptimizerConfig config;
-  private OptimizerContent content;
 
   private OptimizerEnv() {}
 
@@ -41,23 +40,10 @@ public class OptimizerEnv {
   }
 
   public void initialize(OptimizerConfig config) {
-    initialize(config, null);
-  }
-
-  public void initialize(OptimizerConfig config, OptimizerContent content) {
     this.config = config;
-    this.content = content;
   }
 
   public OptimizerConfig config() {
     return config;
-  }
-
-  public OptimizerContent content() {
-    return content;
-  }
-
-  public void setContent(OptimizerContent content) {
-    this.content = content;
   }
 }
