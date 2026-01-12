@@ -103,4 +103,31 @@ public class PartitionUtils {
 
     return PartitionPath.of(entries);
   }
+
+  /**
+   * Parses a legacy partition path formatted as {@code col1=val1/col2=val2}.
+   *
+   * @param partitionPathStr partition path string
+   * @return parsed partition path
+   */
+  public static PartitionPath parseLegacyPartitionPath(String partitionPathStr) {
+    Preconditions.checkArgument(
+        StringUtils.isNotBlank(partitionPathStr), "partitionPathStr must not be blank");
+    List<String> segments = java.util.Arrays.asList(partitionPathStr.split("/"));
+    Preconditions.checkArgument(
+        !segments.isEmpty()
+            && segments.stream()
+                .allMatch(segment -> segment.contains("=") && segment.indexOf('=') > 0),
+        "Invalid partition path: %s. Expected format col1=val1/col2=val2",
+        partitionPathStr);
+    List<PartitionEntry> entries =
+        segments.stream()
+            .map(
+                segment -> {
+                  String[] keyValue = segment.split("=", 2);
+                  return new PartitionEntryImpl(keyValue[0], keyValue[1]);
+                })
+            .collect(java.util.stream.Collectors.toList());
+    return PartitionPath.of(entries);
+  }
 }

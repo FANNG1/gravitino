@@ -39,12 +39,16 @@ dependencies {
   implementation(libs.jackson.databind)
   implementation(libs.jackson.annotations)
   implementation(libs.guava)
+  implementation(libs.bundles.iceberg)
+  implementation(libs.ql.expression)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)
 
   testImplementation(libs.junit.jupiter.api)
   testImplementation(libs.junit.jupiter.params)
+  testImplementation(libs.mockito.core)
+  testImplementation(libs.testcontainers)
   testAnnotationProcessor(libs.lombok)
   testCompileOnly(libs.lombok)
 

@@ -20,12 +20,14 @@
 package org.apache.gravitino.maintenance.optimizer.recommender.job;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import org.apache.gravitino.client.GravitinoClient;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.JobExecutionContext;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.JobSubmitter;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.maintenance.optimizer.common.util.GravitinoClientUtils;
+import org.apache.gravitino.maintenance.optimizer.recommender.util.StrategyUtils;
 
 /** Submits optimizer jobs to Gravitino using job template adapters. */
 public class GravitinoJobSubmitter implements JobSubmitter {
@@ -34,13 +36,14 @@ public class GravitinoJobSubmitter implements JobSubmitter {
 
   private GravitinoClient gravitinoClient;
 
-  private final Map<String, Class<? extends GravitinoJobAdapter>> jobAdapters = Map.of();
-
   /**
    * Returns the provider name for configuration lookup.
    *
    * @return provider name
    */
+  private final Map<String, Class<? extends GravitinoJobAdapter>> jobAdapters =
+      ImmutableMap.of(StrategyUtils.COMPACTION_STRATEGY_TYPE, GravitinoCompactionJobAdapter.class);
+
   @Override
   public String name() {
     return NAME;

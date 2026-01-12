@@ -49,6 +49,7 @@ import org.apache.gravitino.maintenance.optimizer.common.CloseableGroup;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
 import org.apache.gravitino.maintenance.optimizer.common.util.ProviderUtils;
+import org.apache.gravitino.maintenance.optimizer.recommender.util.StrategyUtils;
 import org.apache.gravitino.rel.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -139,12 +140,21 @@ public class Recommender implements AutoCloseable {
 
     for (Map.Entry<String, List<NameIdentifier>> entry : identifiersByStrategyName.entrySet()) {
       String strategyName = entry.getKey();
-      List<JobExecutionContext> jobConfigs =
-          recommendForOneStrategy(entry.getValue(), strategyName);
-      for (JobExecutionContext jobConfig : jobConfigs) {
+      List<StrategyEvaluation> evaluations =
+          recommendForOneStrategyWithResults(entry.getValue(), strategyName);
+      for (StrategyEvaluation evaluation : evaluations) {
+        JobExecutionContext jobConfig = evaluation.jobExecutionContext();
         String templateName = jobConfig.jobTemplateName();
         String jobId = jobSubmitter.submitJob(templateName, jobConfig);
         LOG.info("Submit job {} for strategy {} with context {}", jobId, strategyName, jobConfig);
+        System.out.println(
+            String.format(
+                "RECOMMEND: strategy=%s identifier=%s score=%d jobTemplate=%s jobConfig=%s",
+                strategyName,
+                jobConfig.nameIdentifier(),
+                evaluation.score(),
+                jobConfig.jobTemplateName(),
+                jobConfig.jobConfig()));
       }
     }
   }
@@ -162,7 +172,16 @@ public class Recommender implements AutoCloseable {
     closeableGroup.register(jobSubmitter, "job submitter");
   }
 
-  private List<JobExecutionContext> recommendForOneStrategy(
+  @VisibleForTesting
+  public List<JobExecutionContext> recommendForOneStrategy(
+      List<NameIdentifier> identifiers, String strategyName) {
+    return recommendForOneStrategyWithResults(identifiers, strategyName).stream()
+        .map(StrategyEvaluation::jobExecutionContext)
+        .collect(Collectors.toList());
+  }
+
+  @VisibleForTesting
+  List<StrategyEvaluation> recommendForOneStrategyWithResults(
       List<NameIdentifier> identifiers, String strategyName) {
     LOG.info("Recommend strategy {} for identifiers {}", strategyName, identifiers);
     Strategy strategy = strategyProvider.strategy(strategyName);
@@ -183,9 +202,11 @@ public class Recommender implements AutoCloseable {
       scoreQueue.add(evaluation);
     }
 
-    return scoreQueue.stream()
-        .map(StrategyEvaluation::jobExecutionContext)
-        .collect(Collectors.toList());
+    List<StrategyEvaluation> results = new ArrayList<>();
+    while (!scoreQueue.isEmpty()) {
+      results.add(scoreQueue.poll());
+    }
+    return results;
   }
 
   private StrategyHandler loadStrategyHandler(Strategy strategy, NameIdentifier nameIdentifier) {
@@ -226,7 +247,8 @@ public class Recommender implements AutoCloseable {
     return strategyHandler;
   }
 
-  private StrategyHandler createStrategyHandler(String strategyType) {
+  @VisibleForTesting
+  protected StrategyHandler createStrategyHandler(String strategyType) {
     String strategyHandlerClassName = getStrategyHandlerClassName(strategyType);
     Preconditions.checkArgument(
         StringUtils.isNotBlank(strategyHandlerClassName),
@@ -253,6 +275,9 @@ public class Recommender implements AutoCloseable {
    */
   @SuppressWarnings("UnusedVariable")
   private String getStrategyHandlerClassName(String strategyType) {
+    if (StrategyUtils.COMPACTION_STRATEGY_TYPE.equalsIgnoreCase(strategyType)) {
+      return "org.apache.gravitino.maintenance.optimizer.recommender.actor.compaction.CompactionStrategyHandler";
+    }
     return "";
   }
 
