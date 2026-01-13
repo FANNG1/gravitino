@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 import org.apache.gravitino.dto.rel.ColumnDTO;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionEntry;
+import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
 import org.apache.gravitino.maintenance.optimizer.common.PartitionEntryImpl;
 import org.apache.gravitino.rel.Column;
 import org.apache.gravitino.rel.expressions.transforms.Transform;
@@ -102,7 +103,7 @@ public class TestPartitionUtils {
         Arrays.asList(new PartitionEntryImpl("p1", "x1"), new PartitionEntryImpl("p1", "y1"));
     List<PartitionEntry> p2 =
         Arrays.asList(new PartitionEntryImpl("p2", "x2"), new PartitionEntryImpl("p2", "y2"));
-    List<List<PartitionEntry>> partitions = Arrays.asList(p1, p2);
+    List<PartitionPath> partitions = Arrays.asList(PartitionPath.of(p1), PartitionPath.of(p2));
 
     Transform[] partitioning = new Transform[] {Transforms.identity("a"), Transforms.identity("b")};
 
@@ -120,7 +121,7 @@ public class TestPartitionUtils {
         Arrays.asList(new PartitionEntryImpl("p1", "123"), new PartitionEntryImpl("p1", "45.6"));
     List<PartitionEntry> p2 =
         Arrays.asList(new PartitionEntryImpl("p2", "456"), new PartitionEntryImpl("p2", "78.9"));
-    List<List<PartitionEntry>> partitions = Arrays.asList(p1, p2);
+    List<PartitionPath> partitions = Arrays.asList(PartitionPath.of(p1), PartitionPath.of(p2));
 
     Transform[] partitioning =
         new Transform[] {Transforms.identity("id"), Transforms.identity("score")};
@@ -135,7 +136,7 @@ public class TestPartitionUtils {
     Column[] columns = new Column[] {column("dt", Types.DateType.get())};
 
     List<PartitionEntry> p1 = Arrays.asList(new PartitionEntryImpl("p", "2024-01-01"));
-    List<List<PartitionEntry>> partitions = Arrays.asList(p1);
+    List<PartitionPath> partitions = Arrays.asList(PartitionPath.of(p1));
 
     Transform[] partitioning = new Transform[] {Transforms.identity("dt")};
 
@@ -157,7 +158,7 @@ public class TestPartitionUtils {
   @Test
   void testEmptyColumnsThrowsIllegalArgumentException() {
     List<PartitionEntry> p1 = Arrays.asList(new PartitionEntryImpl("p", "v"));
-    List<List<PartitionEntry>> partitions = Arrays.asList(p1);
+    List<PartitionPath> partitions = Arrays.asList(PartitionPath.of(p1));
     Column[] columns = new Column[0];
     Transform[] partitioning = new Transform[] {Transforms.identity("p")};
 

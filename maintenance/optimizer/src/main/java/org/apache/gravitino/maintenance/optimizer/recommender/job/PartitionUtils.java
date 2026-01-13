@@ -29,6 +29,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionEntry;
+import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
 import org.apache.gravitino.rel.Column;
 import org.apache.gravitino.rel.expressions.transforms.Transform;
 import org.apache.gravitino.rel.expressions.transforms.Transforms;
@@ -37,17 +38,16 @@ import org.apache.gravitino.rel.types.Type;
 public class PartitionUtils {
 
   public static String getWhereClauseForPartitions(
-      List<List<PartitionEntry>> partitions, Column[] columns, Transform[] partitioning) {
+      List<PartitionPath> partitions, Column[] columns, Transform[] partitioning) {
     Preconditions.checkArgument(
         partitions != null && !partitions.isEmpty(), "partitions cannot be null or empty");
     Preconditions.checkArgument(ArrayUtils.isNotEmpty(columns), "columns cannot be null or empty");
     Preconditions.checkArgument(
-        partitioning != null && partitioning.length == partitions.size(),
-        "partitioning must match the size of partition entries");
+        partitioning != null && partitioning.length > 0, "partitioning cannot be null or empty");
 
     List<String> predicates = Lists.newArrayListWithExpectedSize(partitions.size());
-    for (List<PartitionEntry> partition : partitions) {
-      predicates.add(getWhereClauseForPartition(partition, columns, partitioning));
+    for (PartitionPath partition : partitions) {
+      predicates.add(getWhereClauseForPartition(partition.entries(), columns, partitioning));
     }
     // Wrap each partition-level predicate in parentheses to preserve logical grouping
     // e.g. "(col1 = v1 AND col2 = v2) AND (col1 = v3 AND col2 = v4)"

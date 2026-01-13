@@ -21,11 +21,8 @@ package org.apache.gravitino.maintenance.optimizer.recommender.job;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import org.apache.gravitino.maintenance.optimizer.api.common.PartitionEntry;
-import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.JobExecutionContext;
 import org.apache.gravitino.maintenance.optimizer.recommender.actor.compaction.CompactionJobContext;
 
@@ -51,14 +48,12 @@ public class GravitinoCompactionJobAdapter implements GravitinoJobAdapter {
     if (jobContext.getPartitions().isEmpty()) {
       return "";
     }
-    List<List<PartitionEntry>> partitionEntries =
-        jobContext.getPartitions().stream().map(PartitionPath::entries).toList();
     // generate where clause from jobContext.partitionNames()
     // 1. get partition column type
     // 2. generate partition filter name, like day(xxx)
     // 3. generate partition filter value, like '2023-10-01', TIMESTAMP 'xxx'
     return PartitionUtils.getWhereClauseForPartitions(
-        partitionEntries, jobContext.getColumns(), jobContext.getPartitioning());
+        jobContext.getPartitions(), jobContext.getColumns(), jobContext.getPartitioning());
   }
 
   private String getOptions(JobExecutionContext jobExecutionContext) {
