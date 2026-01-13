@@ -26,30 +26,33 @@ import lombok.Getter;
 import lombok.ToString;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
-import org.apache.gravitino.maintenance.optimizer.api.common.Strategy;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.JobExecutionContext;
 import org.apache.gravitino.maintenance.optimizer.recommender.util.PartitionUtils;
-import org.apache.gravitino.rel.Table;
+import org.apache.gravitino.rel.Column;
+import org.apache.gravitino.rel.expressions.transforms.Transform;
 
 @ToString
 public class CompactionJobContext implements JobExecutionContext {
   static final String TARGET_FILE_SIZE_BYTES = "target-file-size-bytes";
   private final NameIdentifier name;
   private final Map<String, String> config;
-  @Getter private final Strategy strategy;
-  @Getter private final Table tableMetadata;
+  private final String jobTemplateName;
+  @Getter private final Column[] columns;
+  @Getter private final Transform[] partitioning;
   @Getter private final List<PartitionPath> partitions;
 
   public CompactionJobContext(
       NameIdentifier name,
       Map<String, String> jobOptions,
-      Strategy strategy,
-      Table tableMetadata,
+      String jobTemplateName,
+      Column[] columns,
+      Transform[] partitioning,
       List<PartitionPath> partitions) {
-    this.strategy = strategy;
     this.name = name;
     this.config = jobOptions;
-    this.tableMetadata = tableMetadata;
+    this.jobTemplateName = jobTemplateName;
+    this.columns = columns;
+    this.partitioning = partitioning;
     this.partitions = partitions;
   }
 
@@ -65,7 +68,7 @@ public class CompactionJobContext implements JobExecutionContext {
 
   @Override
   public String jobTemplateName() {
-    return strategy.jobTemplateName();
+    return jobTemplateName;
   }
 
   public Optional<Long> targetFileSize() {

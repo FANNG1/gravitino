@@ -23,22 +23,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.maintenance.optimizer.api.common.Strategy;
-import org.apache.gravitino.rel.Table;
+import org.apache.gravitino.rel.Column;
+import org.apache.gravitino.rel.expressions.transforms.Transform;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 class TestCompactionJobContext {
 
-  private final Strategy strategy = new CompactionStrategyForTest();
   private final NameIdentifier tableId = NameIdentifier.of("db", "table");
-  private final Table tableMetadata = Mockito.mock(Table.class);
+  private static final String JOB_TEMPLATE_NAME = "compaction-job-template";
+  private final Column[] columns = new Column[0];
+  private final Transform[] partitioning = new Transform[0];
 
   @Test
   void targetFileSizeReturnsEmptyWhenMissing() {
     CompactionJobContext context =
-        new CompactionJobContext(tableId, new HashMap<>(), strategy, tableMetadata, List.of());
+        new CompactionJobContext(
+            tableId, new HashMap<>(), JOB_TEMPLATE_NAME, columns, partitioning, List.of());
 
     Assertions.assertTrue(context.targetFileSize().isEmpty());
   }
@@ -48,7 +49,8 @@ class TestCompactionJobContext {
     Map<String, String> config = new HashMap<>();
     config.put(CompactionJobContext.TARGET_FILE_SIZE_BYTES, "1024");
     CompactionJobContext context =
-        new CompactionJobContext(tableId, config, strategy, tableMetadata, List.of());
+        new CompactionJobContext(
+            tableId, config, JOB_TEMPLATE_NAME, columns, partitioning, List.of());
 
     Assertions.assertEquals(1024L, context.targetFileSize().orElse(-1L));
   }

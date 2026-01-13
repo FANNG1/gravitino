@@ -22,12 +22,11 @@ package org.apache.gravitino.maintenance.optimizer.recommender.job;
 import java.util.List;
 import java.util.Map;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.maintenance.optimizer.api.common.Strategy;
 import org.apache.gravitino.maintenance.optimizer.recommender.actor.compaction.CompactionJobContext;
-import org.apache.gravitino.rel.Table;
+import org.apache.gravitino.rel.Column;
+import org.apache.gravitino.rel.expressions.transforms.Transform;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 public class TestGravitinoCompactionJobAdapter {
 
@@ -43,11 +42,16 @@ public class TestGravitinoCompactionJobAdapter {
   }
 
   private CompactionJobContext mockCompactionJobContext() {
-    Strategy strategy = Mockito.mock(Strategy.class);
-    Mockito.when(strategy.jobTemplateName()).thenReturn("compaction-job-template");
-    Table table = Mockito.mock(Table.class);
+    String jobTemplateName = "compaction-job-template";
+    Column[] columns = new Column[0];
+    Transform[] partitioning = new Transform[0];
     Map<String, String> jobConfig = Map.of("target_file_size_bytes", "1073741824");
     return new CompactionJobContext(
-        NameIdentifier.of("db", "table"), jobConfig, strategy, table, List.of());
+        NameIdentifier.of("db", "table"),
+        jobConfig,
+        jobTemplateName,
+        columns,
+        partitioning,
+        List.of());
   }
 }

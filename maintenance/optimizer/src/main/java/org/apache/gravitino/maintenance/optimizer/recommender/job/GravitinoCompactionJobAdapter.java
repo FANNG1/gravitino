@@ -58,9 +58,7 @@ public class GravitinoCompactionJobAdapter implements GravitinoJobAdapter {
     // 2. generate partition filter name, like day(xxx)
     // 3. generate partition filter value, like '2023-10-01', TIMESTAMP 'xxx'
     return PartitionUtils.getWhereClauseForPartitions(
-        partitionEntries,
-        jobContext.getTableMetadata().columns(),
-        jobContext.getTableMetadata().partitioning());
+        partitionEntries, jobContext.getColumns(), jobContext.getPartitioning());
   }
 
   private String getOptions(JobExecutionContext jobExecutionContext) {

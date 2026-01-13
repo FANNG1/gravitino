@@ -59,6 +59,11 @@ public class CompactionStrategyHandler extends BaseExpressionStrategyHandler {
       Map<String, String> jobOptions) {
     List<PartitionPath> resolvedPartitions = partitions == null ? List.of() : partitions;
     return new CompactionJobContext(
-        nameIdentifier, jobOptions, strategy, tableMetadata, resolvedPartitions);
+        nameIdentifier,
+        jobOptions,
+        strategy.jobTemplateName(),
+        tableMetadata.columns(),
+        tableMetadata.partitioning(),
+        resolvedPartitions);
   }
 }
