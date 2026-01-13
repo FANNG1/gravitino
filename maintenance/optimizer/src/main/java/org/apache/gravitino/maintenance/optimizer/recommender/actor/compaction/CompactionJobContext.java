@@ -21,13 +21,11 @@ package org.apache.gravitino.maintenance.optimizer.recommender.actor.compaction;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import lombok.Getter;
 import lombok.ToString;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.JobExecutionContext;
-import org.apache.gravitino.maintenance.optimizer.recommender.util.PartitionUtils;
 import org.apache.gravitino.rel.Column;
 import org.apache.gravitino.rel.expressions.transforms.Transform;
 
@@ -69,23 +67,5 @@ public class CompactionJobContext implements JobExecutionContext {
   @Override
   public String jobTemplateName() {
     return jobTemplateName;
-  }
-
-  public Optional<Long> targetFileSize() {
-    if (!config.containsKey(TARGET_FILE_SIZE_BYTES)) {
-      return Optional.empty();
-    }
-    try {
-      return Optional.of(Long.parseLong(config.get(TARGET_FILE_SIZE_BYTES).trim()));
-    } catch (NumberFormatException e) {
-      return Optional.empty();
-    }
-  }
-
-  public Optional<List<String>> partitionNames() {
-    if (partitions == null || partitions.isEmpty()) {
-      return Optional.empty();
-    }
-    return Optional.of(partitions.stream().map(PartitionUtils::encodePartitionPath).toList());
   }
 }

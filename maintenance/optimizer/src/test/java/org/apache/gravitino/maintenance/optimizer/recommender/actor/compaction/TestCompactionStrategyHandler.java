@@ -22,7 +22,6 @@ package org.apache.gravitino.maintenance.optimizer.recommender.actor.compaction;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
 import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
@@ -128,11 +127,10 @@ class TestCompactionStrategyHandler {
                     List.of()));
     Assertions.assertTrue(config instanceof CompactionJobContext);
     CompactionJobContext compactionConfig = (CompactionJobContext) config;
-    Assertions.assertEquals(Optional.of(1024L), compactionConfig.targetFileSize());
     Assertions.assertEquals(tableId, compactionConfig.nameIdentifier());
     Assertions.assertEquals(
         ImmutableMap.of(CompactionJobContext.TARGET_FILE_SIZE_BYTES, "1024"),
         compactionConfig.jobConfig());
-    Assertions.assertTrue(compactionConfig.partitionNames().isEmpty());
+    Assertions.assertTrue(compactionConfig.getPartitions().isEmpty());
   }
 }
