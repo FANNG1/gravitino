@@ -19,10 +19,10 @@
 
 package org.apache.gravitino.maintenance.optimizer.recommender.actor.compaction;
 
+import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import org.apache.gravitino.maintenance.optimizer.api.common.Strategy;
 import org.apache.gravitino.maintenance.optimizer.recommender.util.StrategyUtils;
-import com.google.common.collect.ImmutableMap;
 
 public class CompactionStrategyForTest implements Strategy {
 

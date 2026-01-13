@@ -19,6 +19,7 @@
 
 package org.apache.gravitino.maintenance.optimizer.recommender.actor.compaction;
 
+import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -40,7 +41,6 @@ import org.apache.gravitino.stats.StatisticValues;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import com.google.common.collect.ImmutableMap;
 
 class TestCompactionStrategyHandler {
 
