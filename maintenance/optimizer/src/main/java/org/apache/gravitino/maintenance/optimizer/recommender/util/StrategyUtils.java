@@ -29,8 +29,13 @@ public class StrategyUtils {
   public static final String JOB_ROLE_PREFIX = "job.";
   public static final String TRIGGER_EXPR = "trigger-expr";
   public static final String SCORE_EXPR = "score-expr";
+  public static final String PARTITION_TABLE_SCORE_MODE = "partition_table_score_mode";
+  public static final String SCORE_MODE_SUM = "sum";
+  public static final String SCORE_MODE_AVG = "avg";
+  public static final String SCORE_MODE_MAX = "max";
   private static final String DEFAULT_TRIGGER_EXPR = "false";
   private static final String DEFAULT_SCORE_EXPR = "-1";
+  private static final String DEFAULT_PARTITION_TABLE_SCORE_MODE = SCORE_MODE_AVG;
 
   public static String getTriggerExpression(Strategy strategy) {
     Object value = strategy.rules().get(TRIGGER_EXPR);
@@ -56,5 +61,14 @@ public class StrategyUtils {
 
   public static Map<String, String> getJobOptionsFromStrategy(Strategy strategy) {
     return strategy.jobOptions();
+  }
+
+  public static String getPartitionTableScoreMode(Strategy strategy) {
+    Object value = strategy.rules().get(PARTITION_TABLE_SCORE_MODE);
+    if (value == null) {
+      return DEFAULT_PARTITION_TABLE_SCORE_MODE;
+    }
+    String mode = value.toString().trim().toLowerCase();
+    return mode.isEmpty() ? DEFAULT_PARTITION_TABLE_SCORE_MODE : mode;
   }
 }

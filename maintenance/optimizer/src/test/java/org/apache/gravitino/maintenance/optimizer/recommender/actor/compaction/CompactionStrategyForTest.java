@@ -26,7 +26,6 @@ import org.apache.gravitino.maintenance.optimizer.api.common.Strategy;
 import org.apache.gravitino.maintenance.optimizer.recommender.actor.BaseExpressionStrategyHandler;
 import org.apache.gravitino.maintenance.optimizer.recommender.util.ExpressionEvaluator;
 import org.apache.gravitino.maintenance.optimizer.recommender.util.StrategyUtils;
-import org.apache.gravitino.rel.Table;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
 public class CompactionStrategyForTest implements Strategy {

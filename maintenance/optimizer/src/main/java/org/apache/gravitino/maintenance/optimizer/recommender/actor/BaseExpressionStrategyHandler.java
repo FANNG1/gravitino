@@ -181,7 +181,26 @@ public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
   }
 
   private long getTableScoreFromPartitions(List<PartitionScore> partitionScores) {
-    return partitionScores.stream().mapToLong(PartitionScore::score).sum();
+    if (partitionScores.isEmpty()) {
+      return -1L;
+    }
+    String scoreMode = StrategyUtils.getPartitionTableScoreMode(strategy);
+    switch (scoreMode) {
+      case StrategyUtils.SCORE_MODE_SUM:
+        return partitionScores.stream().mapToLong(PartitionScore::score).sum();
+      case StrategyUtils.SCORE_MODE_MAX:
+        return partitionScores.stream().mapToLong(PartitionScore::score).max().orElse(-1L);
+      case StrategyUtils.SCORE_MODE_AVG:
+        return partitionScores.stream().mapToLong(PartitionScore::score).sum()
+            / partitionScores.size();
+      default:
+        LOG.warn(
+            "Unsupported partition table score mode '{}' for strategy {}, defaulting to avg",
+            scoreMode,
+            strategy.name());
+        return partitionScores.stream().mapToLong(PartitionScore::score).sum()
+            / partitionScores.size();
+    }
   }
 
   private StrategyEvaluation evaluateForPartitionTable() {

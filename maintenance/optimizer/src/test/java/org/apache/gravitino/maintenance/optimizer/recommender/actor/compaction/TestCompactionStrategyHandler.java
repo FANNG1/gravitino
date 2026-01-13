@@ -20,6 +20,7 @@
 package org.apache.gravitino.maintenance.optimizer.recommender.actor.compaction;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.gravitino.NameIdentifier;
@@ -27,12 +28,15 @@ import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
 import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.maintenance.optimizer.api.common.Strategy;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.JobExecutionContext;
+import org.apache.gravitino.maintenance.optimizer.api.recommender.StrategyEvaluation;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.StrategyHandlerContext;
 import org.apache.gravitino.maintenance.optimizer.common.PartitionEntryImpl;
 import org.apache.gravitino.maintenance.optimizer.common.StatisticEntryImpl;
 import org.apache.gravitino.maintenance.optimizer.recommender.actor.BaseExpressionStrategyHandler;
 import org.apache.gravitino.maintenance.optimizer.recommender.util.ExpressionEvaluator;
 import org.apache.gravitino.maintenance.optimizer.recommender.util.QLExpressionEvaluator;
+import org.apache.gravitino.maintenance.optimizer.recommender.util.StrategyUtils;
+import org.apache.gravitino.rel.Column;
 import org.apache.gravitino.rel.Table;
 import org.apache.gravitino.rel.expressions.transforms.Transforms;
 import org.apache.gravitino.stats.StatisticValues;
@@ -132,5 +136,94 @@ class TestCompactionStrategyHandler {
         ImmutableMap.of(CompactionStrategyForTest.TARGET_FILE_SIZE_BYTES, "1024"),
         compactionConfig.jobConfig());
     Assertions.assertTrue(compactionConfig.getPartitions().isEmpty());
+  }
+
+  @Test
+  void testPartitionTableScoreMode() {
+    NameIdentifier tableId = NameIdentifier.of("db", "table");
+    Table tableMetadata = Mockito.mock(Table.class);
+    Mockito.when(tableMetadata.partitioning())
+        .thenReturn(
+            new org.apache.gravitino.rel.expressions.transforms.Transform[] {
+              Transforms.identity("p")
+            });
+    Mockito.when(tableMetadata.columns()).thenReturn(new Column[0]);
+
+    Map<PartitionPath, List<StatisticEntry<?>>> partitionStats =
+        Map.of(
+            PartitionPath.of(Arrays.asList(new PartitionEntryImpl("p", "1"))),
+            List.of(new StatisticEntryImpl("datafile_mse", StatisticValues.longValue(10L))),
+            PartitionPath.of(Arrays.asList(new PartitionEntryImpl("p", "2"))),
+            List.of(new StatisticEntryImpl("datafile_mse", StatisticValues.longValue(30L))));
+
+    Assertions.assertEquals(
+        40L,
+        evaluatePartitionScore(
+            tableId, tableMetadata, partitionStats, StrategyUtils.SCORE_MODE_SUM));
+    Assertions.assertEquals(
+        30L,
+        evaluatePartitionScore(
+            tableId, tableMetadata, partitionStats, StrategyUtils.SCORE_MODE_MAX));
+    Assertions.assertEquals(
+        20L, evaluatePartitionScore(tableId, tableMetadata, partitionStats, null));
+  }
+
+  private long evaluatePartitionScore(
+      NameIdentifier tableId,
+      Table tableMetadata,
+      Map<PartitionPath, List<StatisticEntry<?>>> partitionStats,
+      String scoreMode) {
+    StrategyHandlerContext context =
+        StrategyHandlerContext.builder(tableId, buildStrategy(scoreMode))
+            .withTableMetadata(tableMetadata)
+            .withTableStatistics(List.of())
+            .withPartitionStatistics(partitionStats)
+            .build();
+
+    CompactionStrategyHandler handler = new CompactionStrategyHandler();
+    handler.initialize(context);
+    StrategyEvaluation evaluation = handler.evaluate();
+    Assertions.assertNotNull(evaluation.jobExecutionContext());
+    return evaluation.score();
+  }
+
+  private Strategy buildStrategy(String scoreMode) {
+    Map<String, Object> rules = new HashMap<>();
+    rules.put(StrategyUtils.TRIGGER_EXPR, "datafile_mse > 0");
+    rules.put(StrategyUtils.SCORE_EXPR, "datafile_mse");
+    if (scoreMode != null) {
+      rules.put(StrategyUtils.PARTITION_TABLE_SCORE_MODE, scoreMode);
+    }
+    return new Strategy() {
+      @Override
+      public String name() {
+        return "compaction-score-mode-test";
+      }
+
+      @Override
+      public String strategyType() {
+        return StrategyUtils.COMPACTION_STRATEGY_TYPE;
+      }
+
+      @Override
+      public Map<String, Object> rules() {
+        return rules;
+      }
+
+      @Override
+      public Map<String, String> properties() {
+        return Map.of();
+      }
+
+      @Override
+      public Map<String, String> jobOptions() {
+        return Map.of();
+      }
+
+      @Override
+      public String jobTemplateName() {
+        return "compaction-template";
+      }
+    };
   }
 }
