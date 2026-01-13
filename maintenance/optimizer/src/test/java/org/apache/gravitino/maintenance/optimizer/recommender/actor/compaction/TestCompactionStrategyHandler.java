@@ -117,18 +117,13 @@ class TestCompactionStrategyHandler {
     NameIdentifier tableId = NameIdentifier.of("db", "table");
     Table tableMetadata = Mockito.mock(Table.class);
     JobExecutionContext config =
-        BaseExpressionStrategyHandler.getJobConfigFromStrategy(
+        new CompactionJobContext(
             tableId,
-            strategy,
-            tableMetadata,
-            (nameIdentifier, handlerStrategy, metadata, jobConfig) ->
-                new CompactionJobContext(
-                    nameIdentifier,
-                    jobConfig,
-                    handlerStrategy.jobTemplateName(),
-                    metadata.columns(),
-                    metadata.partitioning(),
-                    List.of()));
+            strategy.jobOptions(),
+            strategy.jobTemplateName(),
+            tableMetadata.columns(),
+            tableMetadata.partitioning(),
+            List.of());
     Assertions.assertTrue(config instanceof CompactionJobContext);
     CompactionJobContext compactionConfig = (CompactionJobContext) config;
     Assertions.assertEquals(tableId, compactionConfig.nameIdentifier());

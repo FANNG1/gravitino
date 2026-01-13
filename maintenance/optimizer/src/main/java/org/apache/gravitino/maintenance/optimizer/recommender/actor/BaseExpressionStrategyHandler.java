@@ -120,25 +120,6 @@ public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
     }
   }
 
-  @VisibleForTesting
-  public static JobExecutionContext getJobConfigFromStrategy(
-      NameIdentifier nameIdentifier,
-      Strategy strategy,
-      Table tableMetadata,
-      JobContextFactory factory) {
-    Map<String, String> jobOptions = StrategyUtils.getJobOptionsFromStrategy(strategy);
-    return factory.create(nameIdentifier, strategy, tableMetadata, jobOptions);
-  }
-
-  @FunctionalInterface
-  public interface JobContextFactory {
-    JobExecutionContext create(
-        NameIdentifier nameIdentifier,
-        Strategy strategy,
-        Table tableMetadata,
-        Map<String, String> jobOptions);
-  }
-
   protected abstract JobExecutionContext buildJobExecutionContext(
       NameIdentifier nameIdentifier,
       Strategy strategy,
