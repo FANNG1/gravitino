@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.maintenance.optimizer.api.common.Strategy;
+import org.apache.gravitino.maintenance.optimizer.recommender.actor.BaseExpressionStrategyHandler;
 import org.apache.gravitino.maintenance.optimizer.recommender.util.ExpressionEvaluator;
 import org.apache.gravitino.maintenance.optimizer.recommender.util.StrategyUtils;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
@@ -56,7 +57,7 @@ public class CompactionStrategyForTest implements Strategy {
   boolean shouldTriggerForPartitions(
       ExpressionEvaluator evaluator, List<List<StatisticEntry<?>>> partitionStats) {
     for (List<StatisticEntry<?>> stats : partitionStats) {
-      if (CompactionStrategyHandler.shouldTriggerCompaction(this, stats, evaluator)) {
+      if (BaseExpressionStrategyHandler.shouldTriggerAction(this, stats, evaluator)) {
         return true;
       }
     }

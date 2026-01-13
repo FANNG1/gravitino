@@ -31,6 +31,7 @@ import org.apache.gravitino.maintenance.optimizer.api.recommender.JobExecutionCo
 import org.apache.gravitino.maintenance.optimizer.api.recommender.StrategyHandlerContext;
 import org.apache.gravitino.maintenance.optimizer.common.PartitionEntryImpl;
 import org.apache.gravitino.maintenance.optimizer.common.StatisticEntryImpl;
+import org.apache.gravitino.maintenance.optimizer.recommender.actor.BaseExpressionStrategyHandler;
 import org.apache.gravitino.maintenance.optimizer.recommender.util.ExpressionEvaluator;
 import org.apache.gravitino.maintenance.optimizer.recommender.util.QLExpressionEvaluator;
 import org.apache.gravitino.rel.Table;
@@ -48,22 +49,22 @@ class TestCompactionStrategyHandler {
   private final ExpressionEvaluator evaluator = new QLExpressionEvaluator();
 
   @Test
-  void testShouldTriggerCompaction() {
+  void testShouldTriggerAction() {
     List<StatisticEntry<?>> stats =
         Arrays.asList(new StatisticEntryImpl("datafile_mse", StatisticValues.longValue(2000L)));
     Assertions.assertEquals(
-        true, CompactionStrategyHandler.shouldTriggerCompaction(strategy, stats, evaluator));
+        true, BaseExpressionStrategyHandler.shouldTriggerAction(strategy, stats, evaluator));
 
     stats = Arrays.asList(new StatisticEntryImpl("datafile_mse", StatisticValues.longValue(10L)));
     Assertions.assertEquals(
-        false, CompactionStrategyHandler.shouldTriggerCompaction(strategy, stats, evaluator));
+        false, BaseExpressionStrategyHandler.shouldTriggerAction(strategy, stats, evaluator));
 
     // todo: handle not exists statistic
     // CompactionPolicyHandler.shouldTriggerCompaction(policy, Arrays.asList(), evaluator);
   }
 
   @Test
-  void testShouldTriggerCompactionWithPartitions() {
+  void testShouldTriggerActionWithPartitions() {
     NameIdentifier tableId = NameIdentifier.of("db", "table");
     Table tableMetadata = Mockito.mock(Table.class);
     Mockito.when(tableMetadata.partitioning())
@@ -113,7 +114,12 @@ class TestCompactionStrategyHandler {
     NameIdentifier tableId = NameIdentifier.of("db", "table");
     Table tableMetadata = Mockito.mock(Table.class);
     JobExecutionContext config =
-        CompactionStrategyHandler.getJobConfigFromStrategy(tableId, strategy, tableMetadata);
+        BaseExpressionStrategyHandler.getJobConfigFromStrategy(
+            tableId,
+            strategy,
+            tableMetadata,
+            (nameIdentifier, handlerStrategy, metadata, jobConfig) ->
+                new CompactionJobContext(nameIdentifier, jobConfig, handlerStrategy, metadata));
     Assertions.assertTrue(config instanceof CompactionJobContext);
     CompactionJobContext compactionConfig = (CompactionJobContext) config;
     Assertions.assertEquals(Optional.of(1024L), compactionConfig.targetFileSize());
