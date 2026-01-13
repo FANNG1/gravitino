@@ -119,7 +119,8 @@ class TestCompactionStrategyHandler {
             strategy,
             tableMetadata,
             (nameIdentifier, handlerStrategy, metadata, jobConfig) ->
-                new CompactionJobContext(nameIdentifier, jobConfig, handlerStrategy, metadata));
+                new CompactionJobContext(
+                    nameIdentifier, jobConfig, handlerStrategy, metadata, List.of()));
     Assertions.assertTrue(config instanceof CompactionJobContext);
     CompactionJobContext compactionConfig = (CompactionJobContext) config;
     Assertions.assertEquals(Optional.of(1024L), compactionConfig.targetFileSize());

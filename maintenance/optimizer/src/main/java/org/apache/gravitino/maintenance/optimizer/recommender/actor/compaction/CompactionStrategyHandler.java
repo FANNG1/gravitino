@@ -28,7 +28,6 @@ import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
 import org.apache.gravitino.maintenance.optimizer.api.common.Strategy;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.JobExecutionContext;
 import org.apache.gravitino.maintenance.optimizer.recommender.actor.BaseExpressionStrategyHandler;
-import org.apache.gravitino.maintenance.optimizer.recommender.util.QLExpressionEvaluator;
 import org.apache.gravitino.maintenance.optimizer.recommender.util.StrategyUtils;
 import org.apache.gravitino.rel.Table;
 
@@ -36,9 +35,7 @@ public class CompactionStrategyHandler extends BaseExpressionStrategyHandler {
 
   public static final String NAME = "compaction";
 
-  public CompactionStrategyHandler() {
-    super(new QLExpressionEvaluator());
-  }
+  public CompactionStrategyHandler() {}
 
   @Override
   public Set<DataRequirement> dataRequirements() {
@@ -61,9 +58,8 @@ public class CompactionStrategyHandler extends BaseExpressionStrategyHandler {
       List<PartitionPath> partitions,
       Map<String, Object> jobConfig) {
     Map<String, String> config = toStringMap(jobConfig);
-    if (partitions == null || partitions.isEmpty()) {
-      return new CompactionJobContext(nameIdentifier, config, strategy, tableMetadata);
-    }
-    return new CompactionJobContext(nameIdentifier, config, strategy, tableMetadata, partitions);
+    List<PartitionPath> resolvedPartitions = partitions == null ? List.of() : partitions;
+    return new CompactionJobContext(
+        nameIdentifier, config, strategy, tableMetadata, resolvedPartitions);
   }
 }

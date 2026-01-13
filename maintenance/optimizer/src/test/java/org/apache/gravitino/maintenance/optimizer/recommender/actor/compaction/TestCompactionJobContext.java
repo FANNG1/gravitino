@@ -20,6 +20,7 @@
 package org.apache.gravitino.maintenance.optimizer.recommender.actor.compaction;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.maintenance.optimizer.api.common.Strategy;
@@ -37,7 +38,7 @@ class TestCompactionJobContext {
   @Test
   void targetFileSizeReturnsEmptyWhenMissing() {
     CompactionJobContext context =
-        new CompactionJobContext(tableId, new HashMap<>(), strategy, tableMetadata);
+        new CompactionJobContext(tableId, new HashMap<>(), strategy, tableMetadata, List.of());
 
     Assertions.assertTrue(context.targetFileSize().isEmpty());
   }
@@ -47,7 +48,7 @@ class TestCompactionJobContext {
     Map<String, String> config = new HashMap<>();
     config.put(CompactionJobContext.TARGET_FILE_SIZE_BYTES, "1024");
     CompactionJobContext context =
-        new CompactionJobContext(tableId, config, strategy, tableMetadata);
+        new CompactionJobContext(tableId, config, strategy, tableMetadata, List.of());
 
     Assertions.assertEquals(1024L, context.targetFileSize().orElse(-1L));
   }

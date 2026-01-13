@@ -235,8 +235,7 @@ public class Recommender implements AutoCloseable {
     return strategyHandler;
   }
 
-  @VisibleForTesting
-  protected StrategyHandler createStrategyHandler(String strategyType) {
+  private StrategyHandler createStrategyHandler(String strategyType) {
     String strategyHandlerClassName = getStrategyHandlerClassName(strategyType);
     Preconditions.checkArgument(
         StringUtils.isNotBlank(strategyHandlerClassName),

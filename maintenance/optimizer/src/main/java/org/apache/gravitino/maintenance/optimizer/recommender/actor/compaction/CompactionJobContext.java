@@ -41,11 +41,6 @@ public class CompactionJobContext implements JobExecutionContext {
   @Getter private final List<PartitionPath> partitions;
 
   public CompactionJobContext(
-      NameIdentifier name, Map<String, String> config, Strategy strategy, Table tableMetadata) {
-    this(name, config, strategy, tableMetadata, List.of());
-  }
-
-  public CompactionJobContext(
       NameIdentifier name,
       Map<String, String> config,
       Strategy strategy,

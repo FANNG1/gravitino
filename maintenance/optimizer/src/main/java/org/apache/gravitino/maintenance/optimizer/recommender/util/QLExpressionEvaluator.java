@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
 public class QLExpressionEvaluator implements ExpressionEvaluator {
-
   @Override
   public long evaluateLong(String expression, Map<String, Object> context) {
     return toLong(evaluate(expression, context));

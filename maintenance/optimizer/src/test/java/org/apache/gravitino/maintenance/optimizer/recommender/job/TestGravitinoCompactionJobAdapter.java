@@ -19,6 +19,7 @@
 
 package org.apache.gravitino.maintenance.optimizer.recommender.job;
 
+import java.util.List;
 import java.util.Map;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.maintenance.optimizer.api.common.Strategy;
@@ -46,6 +47,7 @@ public class TestGravitinoCompactionJobAdapter {
     Mockito.when(strategy.jobTemplateName()).thenReturn("compaction-job-template");
     Table table = Mockito.mock(Table.class);
     Map<String, String> jobConfig = Map.of("target_file_size_bytes", "1073741824");
-    return new CompactionJobContext(NameIdentifier.of("db", "table"), jobConfig, strategy, table);
+    return new CompactionJobContext(
+        NameIdentifier.of("db", "table"), jobConfig, strategy, table, List.of());
   }
 }
