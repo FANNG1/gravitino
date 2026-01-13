@@ -22,6 +22,7 @@ package org.apache.gravitino.maintenance.optimizer.recommender.actor;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,9 +52,9 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
   private static final Logger LOG = LoggerFactory.getLogger(BaseExpressionStrategyHandler.class);
-
-  private static final java.util.Comparator<PartitionScore> PARTITION_SCORE_ORDER =
+  private static final Comparator<PartitionScore> PARTITION_SCORE_ORDER =
       (a, b) -> Long.compare(b.score(), a.score());
+
   private final ExpressionEvaluator expressionEvaluator;
   private Strategy strategy;
   private List<StatisticEntry<?>> tableStatistics;
