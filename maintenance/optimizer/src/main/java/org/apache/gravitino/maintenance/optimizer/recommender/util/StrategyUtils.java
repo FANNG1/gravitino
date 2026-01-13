@@ -19,7 +19,6 @@
 
 package org.apache.gravitino.maintenance.optimizer.recommender.util;
 
-import java.util.HashMap;
 import java.util.Map;
 import org.apache.gravitino.maintenance.optimizer.api.common.Strategy;
 
@@ -30,9 +29,16 @@ public class StrategyUtils {
   public static final String JOB_ROLE_PREFIX = "job.";
   public static final String TRIGGER_EXPR = "trigger-expr";
   public static final String SCORE_EXPR = "score-expr";
+  private static final String DEFAULT_TRIGGER_EXPR = "false";
+  private static final String DEFAULT_SCORE_EXPR = "-1";
 
   public static String getTriggerExpression(Strategy strategy) {
-    return strategy.rules().get(TRIGGER_EXPR).toString();
+    Object value = strategy.rules().get(TRIGGER_EXPR);
+    if (value == null) {
+      return DEFAULT_TRIGGER_EXPR;
+    }
+    String expression = value.toString();
+    return expression.trim().isEmpty() ? DEFAULT_TRIGGER_EXPR : expression;
   }
 
   public static String getJobTemplateName(Strategy strategy) {
@@ -40,20 +46,15 @@ public class StrategyUtils {
   }
 
   public static String getScoreExpression(Strategy strategy) {
-    return strategy.rules().get(SCORE_EXPR).toString();
+    Object value = strategy.rules().get(SCORE_EXPR);
+    if (value == null) {
+      return DEFAULT_SCORE_EXPR;
+    }
+    String expression = value.toString();
+    return expression.trim().isEmpty() ? DEFAULT_SCORE_EXPR : expression;
   }
 
-  public static Map<String, Object> getJobConfigFromStrategy(Strategy strategy) {
-    Map<String, Object> jobConfig = new HashMap<>();
-    strategy
-        .rules()
-        .forEach(
-            (k, v) -> {
-              if (k.startsWith(JOB_ROLE_PREFIX)) {
-                jobConfig.put(k.substring(JOB_ROLE_PREFIX.length()), v);
-              }
-            });
-    strategy.jobOptions().forEach(jobConfig::putIfAbsent);
-    return jobConfig;
+  public static Map<String, String> getJobOptionsFromStrategy(Strategy strategy) {
+    return strategy.jobOptions();
   }
 }

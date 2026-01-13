@@ -42,13 +42,13 @@ public class CompactionJobContext implements JobExecutionContext {
 
   public CompactionJobContext(
       NameIdentifier name,
-      Map<String, String> config,
+      Map<String, String> jobOptions,
       Strategy strategy,
       Table tableMetadata,
       List<PartitionPath> partitions) {
     this.strategy = strategy;
     this.name = name;
-    this.config = config;
+    this.config = jobOptions;
     this.tableMetadata = tableMetadata;
     this.partitions = partitions;
   }
