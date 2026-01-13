@@ -66,7 +66,7 @@ public class GravitinoCompactionJobAdapter implements GravitinoJobAdapter {
     return convertMapToString(map);
   }
 
-  public static String convertMapToString(Map<String, ?> map) {
+  private static String convertMapToString(Map<String, ?> map) {
     if (map == null || map.isEmpty()) {
       return "map()";
     }

@@ -38,8 +38,6 @@ public class CompactionStrategyHandler extends BaseExpressionStrategyHandler {
 
   public static final String NAME = "compaction";
 
-  public CompactionStrategyHandler() {}
-
   @Override
   public Set<DataRequirement> dataRequirements() {
     return EnumSet.of(

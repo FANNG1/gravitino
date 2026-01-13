@@ -19,12 +19,8 @@
 
 package org.apache.gravitino.maintenance.optimizer.recommender.actor.compaction;
 
-import java.util.List;
 import java.util.Map;
-import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.maintenance.optimizer.api.common.Strategy;
-import org.apache.gravitino.maintenance.optimizer.recommender.actor.BaseExpressionStrategyHandler;
-import org.apache.gravitino.maintenance.optimizer.recommender.util.ExpressionEvaluator;
 import org.apache.gravitino.maintenance.optimizer.recommender.util.StrategyUtils;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
@@ -53,17 +49,6 @@ public class CompactionStrategyForTest implements Strategy {
         "datafile_mse > min_datafile_mse",
         StrategyUtils.SCORE_EXPR,
         "datafile_mse * delete_file_num");
-  }
-
-  /** Iterate partitions and return true when any partition satisfies the trigger expression. */
-  boolean shouldTriggerForPartitions(
-      ExpressionEvaluator evaluator, List<List<StatisticEntry<?>>> partitionStats) {
-    for (List<StatisticEntry<?>> stats : partitionStats) {
-      if (BaseExpressionStrategyHandler.shouldTriggerAction(this, stats, evaluator)) {
-        return true;
-      }
-    }
-    return false;
   }
 
   @Override

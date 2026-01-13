@@ -19,15 +19,16 @@
 
 package org.apache.gravitino.maintenance.optimizer.recommender.actor;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.PriorityQueue;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
 import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
@@ -64,32 +65,22 @@ public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
 
   /** Create a handler that evaluates expressions with the default QL evaluator. */
   protected BaseExpressionStrategyHandler() {
-    this(new QLExpressionEvaluator());
-  }
-
-  /**
-   * Create a handler with a custom expression evaluator.
-   *
-   * @param expressionEvaluator evaluator used for trigger/score expressions
-   */
-  protected BaseExpressionStrategyHandler(ExpressionEvaluator expressionEvaluator) {
-    Preconditions.checkArgument(expressionEvaluator != null, "Expression evaluator is null");
-    this.expressionEvaluator = expressionEvaluator;
+    this.expressionEvaluator = new QLExpressionEvaluator();
   }
 
   @Override
   public void initialize(StrategyHandlerContext context) {
     Preconditions.checkArgument(context.tableMetadata().isPresent(), "Table metadata is null");
+    this.tableMetadata = context.tableMetadata().get();
     this.nameIdentifier = context.nameIdentifier();
     this.strategy = context.strategy();
-    this.tableMetadata = context.tableMetadata().get();
     this.tableStatistics = context.tableStatistics();
     this.partitionStatistics = context.partitionStatistics();
   }
 
   @Override
   public boolean shouldTrigger() {
-    if (isPartitioned()) {
+    if (isPartitionTable()) {
       return shouldTriggerForPartitionTable();
     }
     return shouldTriggerForNonPartitionTable();
@@ -97,47 +88,10 @@ public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
 
   @Override
   public StrategyEvaluation evaluate() {
-    if (isPartitioned()) {
+    if (isPartitionTable()) {
       return evaluateForPartitionTable();
     }
     return evaluateForNonPartitionTable();
-  }
-
-  private String triggerExpression(Strategy strategy) {
-    return StrategyUtils.getTriggerExpression(strategy);
-  }
-
-  private String scoreExpression(Strategy strategy) {
-    return StrategyUtils.getScoreExpression(strategy);
-  }
-
-  private Map<String, String> jobOptions(Strategy strategy) {
-    return StrategyUtils.getJobOptionsFromStrategy(strategy);
-  }
-
-  /**
-   * Evaluate the trigger expression for a statistics set without instantiating a handler.
-   *
-   * @param strategy strategy containing trigger rules
-   * @param statistics statistics inputs for the trigger expression
-   * @param evaluator evaluator to execute the expression
-   * @return {@code true} when the trigger expression evaluates to {@code true}
-   */
-  @VisibleForTesting
-  public static boolean shouldTriggerAction(
-      Strategy strategy, List<StatisticEntry<?>> statistics, ExpressionEvaluator evaluator) {
-    String triggerExpression = StrategyUtils.getTriggerExpression(strategy);
-    Map<String, Object> context = buildExpressionContext(strategy, statistics);
-    try {
-      return evaluator.evaluateBool(triggerExpression, context);
-    } catch (RuntimeException e) {
-      LOG.warn(
-          "Failed to evaluate trigger expression '{}' with context {}",
-          triggerExpression,
-          context,
-          e);
-      return false;
-    }
   }
 
   /**
@@ -161,8 +115,7 @@ public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
     return 100;
   }
 
-  private boolean isPartitioned() {
-    Preconditions.checkState(tableMetadata != null, "Table metadata must be provided");
+  private boolean isPartitionTable() {
     return tableMetadata.partitioning().length > 0;
   }
 
@@ -236,7 +189,7 @@ public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
     Map<String, Object> context = buildExpressionContext(strategy, statistics);
     try {
       return expressionEvaluator.evaluateLong(expression, context);
-    } catch (RuntimeException e) {
+    } catch (Exception e) {
       LOG.warn("Failed to evaluate expression '{}' with context {}", expression, context, e);
       return -1L;
     }
@@ -269,6 +222,18 @@ public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
     return context;
   }
 
+  private String triggerExpression(Strategy strategy) {
+    return StrategyUtils.getTriggerExpression(strategy);
+  }
+
+  private String scoreExpression(Strategy strategy) {
+    return StrategyUtils.getScoreExpression(strategy);
+  }
+
+  private Map<String, String> jobOptions(Strategy strategy) {
+    return StrategyUtils.getJobOptionsFromStrategy(strategy);
+  }
+
   /**
    * Return the highest-scoring partitions in descending order.
    *
@@ -285,11 +250,10 @@ public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
           }
         });
 
-    List<PartitionScore> results = new ArrayList<>();
-    while (results.size() < limit && !scoreQueue.isEmpty()) {
-      results.add(scoreQueue.poll());
-    }
-    return results;
+    return Stream.generate(scoreQueue::poll)
+        .takeWhile(Objects::nonNull)
+        .limit(limit)
+        .collect(Collectors.toList());
   }
 
   private static final class PartitionScore {

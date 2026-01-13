@@ -32,9 +32,6 @@ import org.apache.gravitino.maintenance.optimizer.api.recommender.StrategyEvalua
 import org.apache.gravitino.maintenance.optimizer.api.recommender.StrategyHandlerContext;
 import org.apache.gravitino.maintenance.optimizer.common.PartitionEntryImpl;
 import org.apache.gravitino.maintenance.optimizer.common.StatisticEntryImpl;
-import org.apache.gravitino.maintenance.optimizer.recommender.actor.BaseExpressionStrategyHandler;
-import org.apache.gravitino.maintenance.optimizer.recommender.util.ExpressionEvaluator;
-import org.apache.gravitino.maintenance.optimizer.recommender.util.QLExpressionEvaluator;
 import org.apache.gravitino.maintenance.optimizer.recommender.util.StrategyUtils;
 import org.apache.gravitino.rel.Column;
 import org.apache.gravitino.rel.Table;
@@ -49,21 +46,33 @@ class TestCompactionStrategyHandler {
 
   private final Strategy strategy = new CompactionStrategyForTest();
 
-  private final ExpressionEvaluator evaluator = new QLExpressionEvaluator();
-
   @Test
-  void testShouldTriggerAction() {
+  void testShouldTrigger() {
+    NameIdentifier tableId = NameIdentifier.of("db", "table");
+    Table tableMetadata = Mockito.mock(Table.class);
+    Mockito.when(tableMetadata.partitioning())
+        .thenReturn(new org.apache.gravitino.rel.expressions.transforms.Transform[0]);
+
     List<StatisticEntry<?>> stats =
         Arrays.asList(new StatisticEntryImpl("datafile_mse", StatisticValues.longValue(2000L)));
-    Assertions.assertEquals(
-        true, BaseExpressionStrategyHandler.shouldTriggerAction(strategy, stats, evaluator));
+    StrategyHandlerContext context =
+        StrategyHandlerContext.builder(tableId, strategy)
+            .withTableMetadata(tableMetadata)
+            .withTableStatistics(stats)
+            .build();
+    CompactionStrategyHandler handler = new CompactionStrategyHandler();
+    handler.initialize(context);
+    Assertions.assertTrue(handler.shouldTrigger());
 
     stats = Arrays.asList(new StatisticEntryImpl("datafile_mse", StatisticValues.longValue(10L)));
-    Assertions.assertEquals(
-        false, BaseExpressionStrategyHandler.shouldTriggerAction(strategy, stats, evaluator));
-
-    // todo: handle not exists statistic
-    // CompactionPolicyHandler.shouldTriggerCompaction(policy, Arrays.asList(), evaluator);
+    StrategyHandlerContext lowContext =
+        StrategyHandlerContext.builder(tableId, strategy)
+            .withTableMetadata(tableMetadata)
+            .withTableStatistics(stats)
+            .build();
+    CompactionStrategyHandler lowHandler = new CompactionStrategyHandler();
+    lowHandler.initialize(lowContext);
+    Assertions.assertFalse(lowHandler.shouldTrigger());
   }
 
   @Test
