@@ -56,7 +56,7 @@ public class QLExpressionEvaluator implements ExpressionEvaluator {
   }
 
   private String formatExpression(String expression) {
-    return expression.replaceAll("-", "_");
+    return expression.replace("-", "_");
   }
 
   private Long toLong(Object obj) {

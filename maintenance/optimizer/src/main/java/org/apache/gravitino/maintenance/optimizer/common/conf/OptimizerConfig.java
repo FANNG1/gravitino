@@ -132,4 +132,8 @@ public class OptimizerConfig extends Config {
     super(false);
     loadFromMap(properties, k -> true);
   }
+
+  public String getStrategyHandlerClassName(String strategyHandlerName) {
+
+  }
 }

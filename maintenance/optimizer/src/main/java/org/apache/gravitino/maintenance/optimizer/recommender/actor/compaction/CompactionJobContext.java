@@ -22,6 +22,7 @@ package org.apache.gravitino.maintenance.optimizer.recommender.actor.compaction;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import lombok.Getter;
 import lombok.ToString;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
@@ -33,10 +34,14 @@ import org.apache.iceberg.actions.RewriteDataFiles;
 
 @ToString
 public class CompactionJobContext implements JobExecutionContext {
+  private static final String TARGET_FILE_BYTES = "target-file-size-bytes";
   private final NameIdentifier name;
   private final Map<String, String> config;
+  @Getter
   private final Strategy strategy;
+  @Getter
   private final Table tableMetadata;
+  @Getter
   private final List<PartitionPath> partitions;
 
   public CompactionJobContext(
@@ -72,28 +77,15 @@ public class CompactionJobContext implements JobExecutionContext {
     return strategy.jobTemplateName();
   }
 
-  public Strategy strategy() {
-    return strategy;
-  }
-
   public Optional<Long> targetFileSize() {
-    if (!config.containsKey(RewriteDataFiles.TARGET_FILE_SIZE_BYTES)) {
+    if (!config.containsKey(TARGET_FILE_BYTES)) {
       return Optional.empty();
     }
     try {
-      return Optional.of(
-          Long.parseLong(config.get(RewriteDataFiles.TARGET_FILE_SIZE_BYTES).trim()));
+      return Optional.of(Long.parseLong(config.get(TARGET_FILE_BYTES).trim()));
     } catch (NumberFormatException e) {
       return Optional.empty();
     }
-  }
-
-  public List<PartitionPath> getPartitions() {
-    return partitions;
-  }
-
-  public Table tableMetadata() {
-    return tableMetadata;
   }
 
   public Optional<List<String>> partitionNames() {

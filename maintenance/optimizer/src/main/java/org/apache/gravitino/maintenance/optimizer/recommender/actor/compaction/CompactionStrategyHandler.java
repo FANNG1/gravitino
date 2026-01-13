@@ -23,7 +23,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
@@ -48,7 +47,6 @@ import org.apache.gravitino.rel.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings("UnusedVariable")
 public class CompactionStrategyHandler implements StrategyHandler {
 
   private static final Logger LOG = LoggerFactory.getLogger(CompactionStrategyHandler.class);
@@ -59,7 +57,8 @@ public class CompactionStrategyHandler implements StrategyHandler {
   private Map<PartitionPath, List<StatisticEntry<?>>> partitionStatistics;
   private Table tableMetadata;
   private NameIdentifier nameIdentifier;
-  private boolean sumPartitionScore = false;
+  private static final java.util.Comparator<PartitionScore> PARTITION_SCORE_ORDER =
+      (a, b) -> Long.compare(b.score(), a.score());
 
   @Override
   public Set<DataRequirement> dataRequirements() {
@@ -107,14 +106,9 @@ public class CompactionStrategyHandler implements StrategyHandler {
       return new BasicStrategyEvaluation(score, jobContext);
     }
 
-    List<PartitionScore> partitionScores = getScoreWithPartitions(1);
+    List<PartitionScore> partitionScores = getTopPartitionScores(1);
     Preconditions.checkState(!partitionScores.isEmpty(), "No partition scores available");
-    long score;
-    if (sumPartitionScore) {
-      score = partitionScores.stream().mapToLong(PartitionScore::score).sum();
-    } else {
-      score = partitionScores.stream().mapToLong(PartitionScore::score).max().orElse(0);
-    }
+    long score = partitionScores.get(0).score();
 
     Map<String, Object> jobConfig = StrategyUtils.getJobConfigFromStrategy(strategy);
     List<PartitionPath> partitions =
@@ -144,7 +138,6 @@ public class CompactionStrategyHandler implements StrategyHandler {
     return tableMetadata.partitioning().length > 0;
   }
 
-  @SuppressWarnings("EmptyCatch")
   private static Map<String, Object> buildExpressionContext(
       Strategy strategy, List<StatisticEntry<?>> statistics) {
     Map<String, Object> context = new HashMap<>();
@@ -155,7 +148,8 @@ public class CompactionStrategyHandler implements StrategyHandler {
             (k, v) -> {
               try {
                 context.put(k, Long.parseLong(v.toString()));
-              } catch (Exception e) {
+              } catch (NumberFormatException e) {
+                // Ignore non-numeric rule values when building numeric expression inputs.
               }
             });
     return context;
@@ -169,9 +163,8 @@ public class CompactionStrategyHandler implements StrategyHandler {
         nameIdentifier, toStringMap(jobConfig), strategy, tableMetadata);
   }
 
-  private List<PartitionScore> getScoreWithPartitions(int limit) {
-    PriorityQueue<PartitionScore> scoreQueue =
-        new PriorityQueue<>((a, b) -> Long.compare(b.score(), a.score()));
+  private List<PartitionScore> getTopPartitionScores(int limit) {
+    PriorityQueue<PartitionScore> scoreQueue = new PriorityQueue<>(PARTITION_SCORE_ORDER);
     partitionStatistics.forEach(
         (partitionPath, statistics) -> {
           long partitionScore = getScore(strategy, statistics);
@@ -183,21 +176,11 @@ public class CompactionStrategyHandler implements StrategyHandler {
         "Number of scored partitions is zero, which is unexpected",
         scoreQueue.size());
 
-    return scoreQueue.stream().limit(limit).collect(Collectors.toList());
-  }
-
-  private Map<PartitionPath, List<StatisticEntry<?>>> toPartitionStatisticsMap(
-      Map<PartitionPath, List<StatisticEntry<?>>> partitionStatistics) {
-    if (partitionStatistics == null || partitionStatistics.isEmpty()) {
-      return Map.of();
+    List<PartitionScore> results = new java.util.ArrayList<>();
+    while (results.size() < limit && !scoreQueue.isEmpty()) {
+      results.add(scoreQueue.poll());
     }
-    Map<PartitionPath, List<StatisticEntry<?>>> partitionStatisticsMap = new LinkedHashMap<>();
-    partitionStatistics.forEach(
-        (partitionEntries, statisticEntries) ->
-            partitionStatisticsMap
-                .computeIfAbsent(partitionEntries, key -> new java.util.ArrayList<>())
-                .addAll(statisticEntries));
-    return partitionStatisticsMap;
+    return results;
   }
 
   private static Map<String, String> toStringMap(Map<String, Object> jobConfig) {
