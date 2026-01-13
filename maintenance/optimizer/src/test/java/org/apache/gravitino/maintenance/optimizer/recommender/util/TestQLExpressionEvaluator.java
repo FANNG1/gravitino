@@ -69,7 +69,7 @@ public class TestQLExpressionEvaluator {
     context.put("y", 10);
 
     boolean result = evaluator.evaluateBool("x < y", context);
-    assertTrue(!result);
+    Assertions.assertFalse(result);
   }
 
   @Test
@@ -122,7 +122,7 @@ public class TestQLExpressionEvaluator {
 
     // Test numeric operations
     long numericResult = evaluator.evaluateLong("intVal + doubleVal", context);
-    assertEquals(16L, numericResult); // 10 + 5.5 = 15.5 → truncated to 15
+    assertEquals(16L, numericResult); // 10 + 5.5 = 15.5 → rounded to 15
 
     // Test boolean operations
     boolean boolResult = evaluator.evaluateBool("boolVal && (intVal > 5)", context);

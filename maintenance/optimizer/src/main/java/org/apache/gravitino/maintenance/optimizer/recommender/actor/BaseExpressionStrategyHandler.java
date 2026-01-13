@@ -188,7 +188,7 @@ public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
     Map<String, Object> context = buildExpressionContext(strategy, statistics);
     try {
       return expressionEvaluator.evaluateLong(expression, context);
-    } catch (Exception e) {
+    } catch (RuntimeException e) {
       LOG.warn("Failed to evaluate expression '{}' with context {}", expression, context, e);
       return -1L;
     }
@@ -198,7 +198,7 @@ public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
     Map<String, Object> context = buildExpressionContext(strategy, statistics);
     try {
       return expressionEvaluator.evaluateBool(expression, context);
-    } catch (Exception e) {
+    } catch (RuntimeException e) {
       LOG.warn("Failed to evaluate expression '{}' with context {}", expression, context, e);
       return false;
     }
