@@ -26,9 +26,12 @@ import org.apache.gravitino.maintenance.optimizer.api.common.Strategy;
 import org.apache.gravitino.maintenance.optimizer.recommender.actor.BaseExpressionStrategyHandler;
 import org.apache.gravitino.maintenance.optimizer.recommender.util.ExpressionEvaluator;
 import org.apache.gravitino.maintenance.optimizer.recommender.util.StrategyUtils;
+import org.apache.gravitino.rel.Table;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
 public class CompactionStrategyForTest implements Strategy {
+
+  static final String TARGET_FILE_SIZE_BYTES = "target-file-size-bytes";
 
   @Override
   public String name() {
@@ -45,7 +48,7 @@ public class CompactionStrategyForTest implements Strategy {
     return ImmutableMap.of(
         "min_datafile_mse",
         1000,
-        StrategyUtils.JOB_ROLE_PREFIX + CompactionJobContext.TARGET_FILE_SIZE_BYTES,
+        StrategyUtils.JOB_ROLE_PREFIX + TARGET_FILE_SIZE_BYTES,
         1024,
         StrategyUtils.TRIGGER_EXPR,
         "datafile_mse > min_datafile_mse",
@@ -71,7 +74,7 @@ public class CompactionStrategyForTest implements Strategy {
 
   @Override
   public Map<String, String> jobOptions() {
-    return Map.of(CompactionJobContext.TARGET_FILE_SIZE_BYTES, "1024");
+    return Map.of(TARGET_FILE_SIZE_BYTES, "1024");
   }
 
   @Override

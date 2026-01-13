@@ -31,7 +31,6 @@ import org.apache.gravitino.rel.expressions.transforms.Transform;
 
 @ToString
 public class CompactionJobContext implements JobExecutionContext {
-  static final String TARGET_FILE_SIZE_BYTES = "target-file-size-bytes";
   private final NameIdentifier name;
   private final Map<String, String> config;
   private final String jobTemplateName;
