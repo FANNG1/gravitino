@@ -21,8 +21,29 @@ package org.apache.gravitino.maintenance.optimizer.recommender.util;
 
 import java.util.Map;
 
+/**
+ * Evaluates rule expressions against a provided context map.
+ *
+ * <p>Implementations must treat {@code context} keys as variable names and resolve them when
+ * computing boolean or numeric results. Callers are expected to supply any required variables in
+ * the context map.
+ */
 public interface ExpressionEvaluator {
+  /**
+   * Evaluates an expression that returns a boolean value.
+   *
+   * @param expression expression to evaluate
+   * @param context variable bindings for the expression
+   * @return evaluation result
+   */
   boolean evaluateBool(String expression, Map<String, Object> context);
 
+  /**
+   * Evaluates an expression that returns a numeric value and coerces it to a {@code long}.
+   *
+   * @param expression expression to evaluate
+   * @param context variable bindings for the expression
+   * @return evaluation result as a {@code long}
+   */
   long evaluateLong(String expression, Map<String, Object> context);
 }

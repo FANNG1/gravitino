@@ -30,13 +30,12 @@ import org.apache.gravitino.maintenance.optimizer.api.common.Strategy;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.JobExecutionContext;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.StrategyHandlerContext;
 import org.apache.gravitino.maintenance.optimizer.common.PartitionEntryImpl;
+import org.apache.gravitino.maintenance.optimizer.common.StatisticEntryImpl;
 import org.apache.gravitino.maintenance.optimizer.recommender.util.ExpressionEvaluator;
 import org.apache.gravitino.maintenance.optimizer.recommender.util.QLExpressionEvaluator;
-import org.apache.gravitino.maintenance.optimizer.updater.StatisticEntryImpl;
 import org.apache.gravitino.rel.Table;
 import org.apache.gravitino.rel.expressions.transforms.Transforms;
 import org.apache.gravitino.stats.StatisticValues;
-import org.apache.iceberg.actions.RewriteDataFiles;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -120,7 +119,7 @@ class TestCompactionStrategyHandler {
     Assertions.assertEquals(Optional.of(1024L), compactionConfig.targetFileSize());
     Assertions.assertEquals(tableId, compactionConfig.nameIdentifier());
     Assertions.assertEquals(
-        ImmutableMap.of(RewriteDataFiles.TARGET_FILE_SIZE_BYTES, "1024"),
+        ImmutableMap.of(CompactionJobContext.TARGET_FILE_SIZE_BYTES, "1024"),
         compactionConfig.jobConfig());
     Assertions.assertTrue(compactionConfig.partitionNames().isEmpty());
   }

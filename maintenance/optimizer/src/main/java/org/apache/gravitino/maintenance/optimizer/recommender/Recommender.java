@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
@@ -49,7 +48,6 @@ import org.apache.gravitino.maintenance.optimizer.common.CloseableGroup;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
 import org.apache.gravitino.maintenance.optimizer.common.util.ProviderUtils;
-import org.apache.gravitino.maintenance.optimizer.recommender.util.StrategyUtils;
 import org.apache.gravitino.rel.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,13 +73,12 @@ import org.slf4j.LoggerFactory;
  */
 public class Recommender implements AutoCloseable {
   private static final Logger LOG = LoggerFactory.getLogger(Recommender.class);
-  private static final String COMPACTION_HANDLER_CLASS =
-      "org.apache.gravitino.maintenance.optimizer.recommender.actor.compaction.CompactionStrategyHandler";
   private final StrategyProvider strategyProvider;
   private final StatisticsProvider statisticsProvider;
   private final TableMetadataProvider tableMetadataProvider;
   private final JobSubmitter jobSubmitter;
   private final CloseableGroup closeableGroup = new CloseableGroup();
+  private final OptimizerEnv optimizerEnv;
 
   /**
    * Create a recommender whose providers and submitter are resolved from the optimizer
@@ -96,6 +93,7 @@ public class Recommender implements AutoCloseable {
     TableMetadataProvider tableMetadataProvider = loadTableMetadataProvider(config);
     JobSubmitter jobSubmitter = loadJobSubmitter(config);
 
+    this.optimizerEnv = optimizerEnv;
     this.strategyProvider = strategyProvider;
     this.statisticsProvider = statisticsProvider;
     this.tableMetadataProvider = tableMetadataProvider;
@@ -114,7 +112,10 @@ public class Recommender implements AutoCloseable {
       StrategyProvider strategyProvider,
       StatisticsProvider statisticsProvider,
       TableMetadataProvider tableMetadataProvider,
-      JobSubmitter jobSubmitter) {
+      JobSubmitter jobSubmitter,
+      OptimizerEnv optimizerEnv) {
+
+    this.optimizerEnv = optimizerEnv;
     this.strategyProvider = strategyProvider;
     this.statisticsProvider = statisticsProvider;
     this.tableMetadataProvider = tableMetadataProvider;
@@ -260,12 +261,8 @@ public class Recommender implements AutoCloseable {
    * by configuration or an explicit registry that maps stable strategy type strings (for example,
    * {@code COMPACTION}) to {@link StrategyHandler} implementations.
    */
-  @SuppressWarnings("UnusedVariable")
   private String getStrategyHandlerClassName(String strategyType) {
-    if (StrategyUtils.COMPACTION_STRATEGY_TYPE.equalsIgnoreCase(strategyType)) {
-      return COMPACTION_HANDLER_CLASS;
-    }
-    return null;
+    return optimizerEnv.config().getStrategyHandlerClassName(strategyType);
   }
 
   private Map<String, List<NameIdentifier>> getIdentifiersByStrategyName(

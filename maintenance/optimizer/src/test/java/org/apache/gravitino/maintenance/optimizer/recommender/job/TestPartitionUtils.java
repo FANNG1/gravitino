@@ -92,4 +92,77 @@ public class TestPartitionUtils {
 
     Assertions.assertEquals("truncate(colC, 5) = 'prefix' AND year(colD) = 2024", where);
   }
+
+  @Test
+  void testWhereClauseCombinesMultiplePartitionsWithParenthesesForStringColumns() {
+    Column[] columns =
+        new Column[] {column("a", Types.StringType.get()), column("b", Types.StringType.get())};
+
+    List<PartitionEntry> p1 =
+        Arrays.asList(new PartitionEntryImpl("p1", "x1"), new PartitionEntryImpl("p1", "y1"));
+    List<PartitionEntry> p2 =
+        Arrays.asList(new PartitionEntryImpl("p2", "x2"), new PartitionEntryImpl("p2", "y2"));
+    List<List<PartitionEntry>> partitions = Arrays.asList(p1, p2);
+
+    Transform[] partitioning = new Transform[] {Transforms.identity("a"), Transforms.identity("b")};
+
+    String where = PartitionUtils.getWhereClauseForPartitions(partitions, columns, partitioning);
+
+    Assertions.assertEquals("(a = 'x1' AND b = 'y1') AND (a = 'x2' AND b = 'y2')", where);
+  }
+
+  @Test
+  void testWhereClauseEmitsNumericLiteralsWithoutQuotes() {
+    Column[] columns =
+        new Column[] {column("id", Types.LongType.get()), column("score", Types.DoubleType.get())};
+
+    List<PartitionEntry> p1 =
+        Arrays.asList(new PartitionEntryImpl("p1", "123"), new PartitionEntryImpl("p1", "45.6"));
+    List<PartitionEntry> p2 =
+        Arrays.asList(new PartitionEntryImpl("p2", "456"), new PartitionEntryImpl("p2", "78.9"));
+    List<List<PartitionEntry>> partitions = Arrays.asList(p1, p2);
+
+    Transform[] partitioning =
+        new Transform[] {Transforms.identity("id"), Transforms.identity("score")};
+
+    String where = PartitionUtils.getWhereClauseForPartitions(partitions, columns, partitioning);
+
+    Assertions.assertEquals("(id = 123 AND score = 45.6) AND (id = 456 AND score = 78.9)", where);
+  }
+
+  @Test
+  void testIdentityOnDateColumnIsFormattedAsDateLiteral() {
+    Column[] columns = new Column[] {column("dt", Types.DateType.get())};
+
+    List<PartitionEntry> p1 = Arrays.asList(new PartitionEntryImpl("p", "2024-01-01"));
+    List<List<PartitionEntry>> partitions = Arrays.asList(p1);
+
+    Transform[] partitioning = new Transform[] {Transforms.identity("dt")};
+
+    String where = PartitionUtils.getWhereClauseForPartitions(partitions, columns, partitioning);
+
+    Assertions.assertEquals("(dt = DATE '2024-01-01')", where);
+  }
+
+  @Test
+  void testNullPartitionsThrowsIllegalArgumentException() {
+    Column[] columns = new Column[] {column("a", Types.StringType.get())};
+    Transform[] partitioning = new Transform[] {Transforms.identity("a")};
+
+    Assertions.assertThrows(
+        IllegalArgumentException.class,
+        () -> PartitionUtils.getWhereClauseForPartitions(null, columns, partitioning));
+  }
+
+  @Test
+  void testEmptyColumnsThrowsIllegalArgumentException() {
+    List<PartitionEntry> p1 = Arrays.asList(new PartitionEntryImpl("p", "v"));
+    List<List<PartitionEntry>> partitions = Arrays.asList(p1);
+    Column[] columns = new Column[0];
+    Transform[] partitioning = new Transform[] {Transforms.identity("p")};
+
+    Assertions.assertThrows(
+        IllegalArgumentException.class,
+        () -> PartitionUtils.getWhereClauseForPartitions(partitions, columns, partitioning));
+  }
 }

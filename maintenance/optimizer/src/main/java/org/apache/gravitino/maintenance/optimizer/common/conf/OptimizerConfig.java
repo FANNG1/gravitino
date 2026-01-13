@@ -134,6 +134,8 @@ public class OptimizerConfig extends Config {
   }
 
   public String getStrategyHandlerClassName(String strategyHandlerName) {
-
+    String configKey =
+        String.format(OPTIMIZER_PREFIX + "strategy.%s.className", strategyHandlerName);
+    return configMap.get(configKey);
   }
 }

@@ -50,6 +50,7 @@ import org.slf4j.LoggerFactory;
 public class CompactionStrategyHandler implements StrategyHandler {
 
   private static final Logger LOG = LoggerFactory.getLogger(CompactionStrategyHandler.class);
+  public static final String NAME = "compaction";
 
   private ExpressionEvaluator expressionEvaluator;
   private Strategy strategy;

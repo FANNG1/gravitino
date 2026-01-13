@@ -39,7 +39,6 @@ dependencies {
   implementation(libs.jackson.databind)
   implementation(libs.jackson.annotations)
   implementation(libs.guava)
-  implementation(libs.bundles.iceberg)
   implementation(libs.ql.expression)
 
   annotationProcessor(libs.lombok)
