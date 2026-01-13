@@ -28,6 +28,23 @@ package org.apache.gravitino.maintenance.optimizer.api.recommender;
 public interface StrategyEvaluation {
 
   /**
+   * Evaluation placeholder indicating that no execution should happen. It uses score {@code -1}
+   * and a {@code null} job execution context.
+   */
+  StrategyEvaluation NO_EXECUTION =
+      new StrategyEvaluation() {
+        @Override
+        public long score() {
+          return -1L;
+        }
+
+        @Override
+        public JobExecutionContext jobExecutionContext() {
+          return null;
+        }
+      };
+
+  /**
    * Score used to rank multiple recommendations of the same strategy. Higher wins; equal scores
    * preserve the evaluation order returned by the {@code StrategyHandler}.
    */

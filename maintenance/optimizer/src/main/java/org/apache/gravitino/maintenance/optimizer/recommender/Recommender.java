@@ -168,8 +168,7 @@ public class Recommender implements AutoCloseable {
     closeableGroup.register(jobSubmitter, "job submitter");
   }
 
-  @VisibleForTesting
-  List<StrategyEvaluation> recommendForOneStrategyWithResults(
+  private List<StrategyEvaluation> recommendForOneStrategyWithResults(
       List<NameIdentifier> identifiers, String strategyName) {
     LOG.info("Recommend strategy {} for identifiers {}", strategyName, identifiers);
     Strategy strategy = strategyProvider.strategy(strategyName);
@@ -182,6 +181,13 @@ public class Recommender implements AutoCloseable {
         continue;
       }
       StrategyEvaluation evaluation = strategyHandler.evaluate();
+      if (evaluation == StrategyEvaluation.NO_EXECUTION) {
+        LOG.info(
+            "Skip strategy {} for identifier {} because no execution is required",
+            strategyName,
+            identifier);
+        continue;
+      }
       LOG.info(
           "Recommend strategy {} for identifier {} score: {}",
           strategyName,
@@ -312,14 +318,14 @@ public class Recommender implements AutoCloseable {
   }
 
   private void logRecommendation(String strategyName, StrategyEvaluation evaluation) {
-    JobExecutionContext jobConfig = evaluation.jobExecutionContext();
+    JobExecutionContext jobExecutionContext = evaluation.jobExecutionContext();
     System.out.println(
         String.format(
             "RECOMMEND: strategy=%s identifier=%s score=%d jobTemplate=%s jobConfig=%s",
             strategyName,
-            jobConfig.nameIdentifier(),
+            jobExecutionContext.nameIdentifier(),
             evaluation.score(),
-            jobConfig.jobTemplateName(),
-            jobConfig.jobConfig()));
+            jobExecutionContext.jobTemplateName(),
+            jobExecutionContext.jobConfig()));
   }
 }

@@ -21,6 +21,7 @@ package org.apache.gravitino.maintenance.optimizer.recommender.actor;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -77,35 +78,17 @@ public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
   @Override
   public boolean shouldTrigger() {
     if (isPartitioned()) {
-      if (partitionStatistics.isEmpty()) {
-        LOG.info("No partition statistics available for table {}", nameIdentifier);
-        return false;
-      }
-      return partitionStatistics.values().stream()
-          .anyMatch(stats -> evaluateBool(triggerExpression(strategy), stats));
+      return shouldTriggerForPartitionTable();
     }
-    return evaluateBool(triggerExpression(strategy), tableStatistics);
+    return shouldTriggerForNonPartitionTable();
   }
 
   @Override
   public StrategyEvaluation evaluate() {
-    if (!isPartitioned()) {
-      long score = evaluateLong(scoreExpression(strategy), tableStatistics);
-      JobExecutionContext jobContext =
-          buildJobExecutionContext(
-              nameIdentifier, strategy, tableMetadata, List.of(), jobOptions(strategy));
-      return new BasicStrategyEvaluation(score, jobContext);
+    if (isPartitioned()) {
+      return evaluateForPartitionTable();
     }
-
-    List<PartitionScore> partitionScores = getTopPartitionScores(partitionScoreLimit());
-    Preconditions.checkState(!partitionScores.isEmpty(), "No partition scores available");
-    long score = partitionScores.get(0).score();
-    List<PartitionPath> partitions =
-        partitionScores.stream().map(PartitionScore::partition).collect(Collectors.toList());
-    JobExecutionContext jobContext =
-        buildJobExecutionContext(
-            nameIdentifier, strategy, tableMetadata, partitions, jobOptions(strategy));
-    return new BasicStrategyEvaluation(score, jobContext);
+    return evaluateForNonPartitionTable();
   }
 
   private String triggerExpression(Strategy strategy) {
@@ -163,13 +146,56 @@ public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
       List<PartitionPath> partitions,
       Map<String, String> jobOptions);
 
-  private int partitionScoreLimit() {
-    return 1;
+  private int maxPartitionNum() {
+    return 100;
   }
 
   private boolean isPartitioned() {
     Preconditions.checkState(tableMetadata != null, "Table metadata must be provided");
     return tableMetadata.partitioning().length > 0;
+  }
+
+  private boolean shouldTriggerForPartitionTable() {
+    if (partitionStatistics.isEmpty()) {
+      LOG.info("No partition statistics available for table {}", nameIdentifier);
+      return false;
+    }
+    String triggerExpression = triggerExpression(strategy);
+    return partitionStatistics.values().stream()
+        .anyMatch(partitionStats -> evaluateBool(triggerExpression, partitionStats));
+  }
+
+  private boolean shouldTriggerForNonPartitionTable() {
+    return evaluateBool(triggerExpression(strategy), tableStatistics);
+  }
+
+  private StrategyEvaluation evaluateForNonPartitionTable() {
+    long score = evaluateLong(scoreExpression(strategy), tableStatistics);
+    if (score <= 0) {
+      return StrategyEvaluation.NO_EXECUTION;
+    }
+    JobExecutionContext jobContext =
+        buildJobExecutionContext(
+            nameIdentifier, strategy, tableMetadata, List.of(), jobOptions(strategy));
+    return new BasicStrategyEvaluation(score, jobContext);
+  }
+
+  private long getTableScoreFromPartitions(List<PartitionScore> partitionScores) {
+    return partitionScores.stream().mapToLong(PartitionScore::score).sum();
+  }
+
+  private StrategyEvaluation evaluateForPartitionTable() {
+    List<PartitionScore> partitionScores = getTopPartitionScores(maxPartitionNum());
+    if (partitionScores.isEmpty()) {
+      return StrategyEvaluation.NO_EXECUTION;
+    }
+    List<PartitionPath> partitions =
+        partitionScores.stream().map(PartitionScore::partition).collect(Collectors.toList());
+    JobExecutionContext jobContext =
+        buildJobExecutionContext(
+            nameIdentifier, strategy, tableMetadata, partitions, jobOptions(strategy));
+    long tableScore = getTableScoreFromPartitions(partitionScores);
+    return new BasicStrategyEvaluation(tableScore, jobContext);
   }
 
   private long evaluateLong(String expression, List<StatisticEntry<?>> statistics) {
@@ -186,7 +212,7 @@ public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
     Map<String, Object> context = buildExpressionContext(strategy, statistics);
     try {
       return expressionEvaluator.evaluateBool(expression, context);
-    } catch (RuntimeException e) {
+    } catch (Exception e) {
       LOG.warn("Failed to evaluate expression '{}' with context {}", expression, context, e);
       return false;
     }
@@ -214,15 +240,12 @@ public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
     partitionStatistics.forEach(
         (partitionPath, statistics) -> {
           long partitionScore = evaluateLong(scoreExpression(strategy), statistics);
-          scoreQueue.add(new PartitionScore(partitionPath, partitionScore));
+          if (partitionScore > 0) {
+            scoreQueue.add(new PartitionScore(partitionPath, partitionScore));
+          }
         });
 
-    Preconditions.checkState(
-        scoreQueue.size() > 0,
-        "Number of scored partitions is zero, which is unexpected",
-        scoreQueue.size());
-
-    List<PartitionScore> results = new java.util.ArrayList<>();
+    List<PartitionScore> results = new ArrayList<>();
     while (results.size() < limit && !scoreQueue.isEmpty()) {
       results.add(scoreQueue.poll());
     }
