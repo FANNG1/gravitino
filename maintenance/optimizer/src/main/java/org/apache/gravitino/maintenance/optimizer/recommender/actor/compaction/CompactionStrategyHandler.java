@@ -31,6 +31,9 @@ import org.apache.gravitino.maintenance.optimizer.recommender.actor.BaseExpressi
 import org.apache.gravitino.maintenance.optimizer.recommender.util.StrategyUtils;
 import org.apache.gravitino.rel.Table;
 
+/**
+ * Strategy handler that builds compaction job contexts from table metadata and strategy settings.
+ */
 public class CompactionStrategyHandler extends BaseExpressionStrategyHandler {
 
   public static final String NAME = "compaction";

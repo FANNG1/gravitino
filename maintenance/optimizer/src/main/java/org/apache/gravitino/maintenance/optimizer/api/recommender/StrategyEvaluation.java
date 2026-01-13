@@ -50,6 +50,9 @@ public interface StrategyEvaluation {
    */
   long score();
 
-  /** Job execution context for this evaluation. */
+  /**
+   * Job execution context for this evaluation. Implementations may return {@code null} when {@link
+   * #NO_EXECUTION} is used to signal that no job should be submitted.
+   */
   JobExecutionContext jobExecutionContext();
 }

@@ -61,8 +61,19 @@ public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
   private Table tableMetadata;
   private NameIdentifier nameIdentifier;
 
+  /** Create a handler that evaluates expressions with the default QL evaluator. */
   protected BaseExpressionStrategyHandler() {
-    this.expressionEvaluator = new QLExpressionEvaluator();
+    this(new QLExpressionEvaluator());
+  }
+
+  /**
+   * Create a handler with a custom expression evaluator.
+   *
+   * @param expressionEvaluator evaluator used for trigger/score expressions
+   */
+  protected BaseExpressionStrategyHandler(ExpressionEvaluator expressionEvaluator) {
+    Preconditions.checkArgument(expressionEvaluator != null, "Expression evaluator is null");
+    this.expressionEvaluator = expressionEvaluator;
   }
 
   @Override
@@ -103,6 +114,14 @@ public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
     return StrategyUtils.getJobOptionsFromStrategy(strategy);
   }
 
+  /**
+   * Evaluate the trigger expression for a statistics set without instantiating a handler.
+   *
+   * @param strategy strategy containing trigger rules
+   * @param statistics statistics inputs for the trigger expression
+   * @param evaluator evaluator to execute the expression
+   * @return {@code true} when the trigger expression evaluates to {@code true}
+   */
   @VisibleForTesting
   public static boolean shouldTriggerAction(
       Strategy strategy, List<StatisticEntry<?>> statistics, ExpressionEvaluator evaluator) {
@@ -120,6 +139,16 @@ public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
     }
   }
 
+  /**
+   * Build the execution context for the selected partitions.
+   *
+   * @param nameIdentifier target table identifier
+   * @param strategy strategy being evaluated
+   * @param tableMetadata table metadata requested by the handler
+   * @param partitions selected partitions, empty for non-partitioned tables
+   * @param jobOptions job options derived from the strategy
+   * @return job execution context
+   */
   protected abstract JobExecutionContext buildJobExecutionContext(
       NameIdentifier nameIdentifier,
       Strategy strategy,
@@ -161,6 +190,10 @@ public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
     return new BasicStrategyEvaluation(score, jobContext);
   }
 
+  /**
+   * Aggregate partition scores into a table score. The score mode is controlled by {@link
+   * StrategyUtils#PARTITION_TABLE_SCORE_MODE} and defaults to {@code avg}.
+   */
   private long getTableScoreFromPartitions(List<PartitionScore> partitionScores) {
     if (partitionScores.isEmpty()) {
       return -1L;
@@ -235,6 +268,12 @@ public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
     return context;
   }
 
+  /**
+   * Return the highest-scoring partitions in descending order.
+   *
+   * @param limit max partitions to return
+   * @return top partition scores, empty when none score above zero
+   */
   private List<PartitionScore> getTopPartitionScores(int limit) {
     PriorityQueue<PartitionScore> scoreQueue = new PriorityQueue<>(PARTITION_SCORE_ORDER);
     partitionStatistics.forEach(
