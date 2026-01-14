@@ -37,6 +37,7 @@ public class GravitinoJobSubmitter implements JobSubmitter {
   public static final String NAME = "gravitino-job-submitter";
 
   private GravitinoClient gravitinoClient;
+  private OptimizerEnv optimizerEnv;
   private OptimizerConfig optimizerConfig;
 
   /**
@@ -59,7 +60,7 @@ public class GravitinoJobSubmitter implements JobSubmitter {
    */
   @Override
   public void initialize(OptimizerEnv optimizerEnv) {
-    this.gravitinoClient = GravitinoClientUtils.createClient(optimizerEnv);
+    this.optimizerEnv = optimizerEnv;
     this.optimizerConfig = optimizerEnv.config();
   }
 
@@ -72,6 +73,7 @@ public class GravitinoJobSubmitter implements JobSubmitter {
    */
   @Override
   public String submitJob(String jobTemplateName, JobExecutionContext jobExecutionContext) {
+    ensureClientInitialized();
     GravitinoJobAdapter jobAdapter = loadJobAdapter(jobTemplateName);
     return gravitinoClient
         .runJob(jobTemplateName, jobAdapter.jobConfig(jobExecutionContext))
@@ -83,6 +85,15 @@ public class GravitinoJobSubmitter implements JobSubmitter {
   public void close() throws Exception {
     if (gravitinoClient != null) {
       gravitinoClient.close();
+    }
+  }
+
+  private void ensureClientInitialized() {
+    if (gravitinoClient == null) {
+      if (optimizerEnv == null) {
+        throw new IllegalStateException("Job submitter is not initialized");
+      }
+      this.gravitinoClient = GravitinoClientUtils.createClient(optimizerEnv);
     }
   }
 
