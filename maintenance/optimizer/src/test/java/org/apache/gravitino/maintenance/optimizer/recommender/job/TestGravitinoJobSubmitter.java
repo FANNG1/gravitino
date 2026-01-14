@@ -19,6 +19,9 @@
 
 package org.apache.gravitino.maintenance.optimizer.recommender.job;
 
+import java.util.Map;
+import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
+import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
 import org.apache.gravitino.maintenance.optimizer.recommender.util.StrategyUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -28,6 +31,25 @@ public class TestGravitinoJobSubmitter {
   void loadJobAdapterReturnsCompactionAdapter() {
     GravitinoJobSubmitter submitter = new GravitinoJobSubmitter();
     GravitinoJobAdapter adapter = submitter.loadJobAdapter(StrategyUtils.COMPACTION_STRATEGY_TYPE);
+    Assertions.assertTrue(adapter instanceof GravitinoCompactionJobAdapter);
+  }
+
+  @Test
+  void loadJobAdapterFallsBackToConfiguredClassName() {
+    String jobTemplateName = "custom";
+    OptimizerConfig config =
+        new OptimizerConfig(
+            Map.of(
+                OptimizerConfig.GRAVITINO_URI,
+                "http://localhost:8090",
+                OptimizerConfig.GRAVITINO_METALAKE,
+                "test-metalake",
+                OptimizerConfig.JOB_ADAPTER_PREFIX + jobTemplateName + ".className",
+                GravitinoCompactionJobAdapter.class.getName()));
+    GravitinoJobSubmitter submitter = new GravitinoJobSubmitter();
+    submitter.initialize(new OptimizerEnv(config));
+
+    GravitinoJobAdapter adapter = submitter.loadJobAdapter(jobTemplateName);
     Assertions.assertTrue(adapter instanceof GravitinoCompactionJobAdapter);
   }
 }

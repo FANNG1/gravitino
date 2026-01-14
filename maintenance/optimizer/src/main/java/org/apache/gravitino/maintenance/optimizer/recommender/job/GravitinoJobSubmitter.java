@@ -22,10 +22,12 @@ package org.apache.gravitino.maintenance.optimizer.recommender.job;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.gravitino.client.GravitinoClient;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.JobExecutionContext;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.JobSubmitter;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
+import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
 import org.apache.gravitino.maintenance.optimizer.common.util.GravitinoClientUtils;
 import org.apache.gravitino.maintenance.optimizer.recommender.util.StrategyUtils;
 
@@ -35,6 +37,7 @@ public class GravitinoJobSubmitter implements JobSubmitter {
   public static final String NAME = "gravitino-job-submitter";
 
   private GravitinoClient gravitinoClient;
+  private OptimizerConfig optimizerConfig;
 
   /**
    * Returns the provider name for configuration lookup.
@@ -57,6 +60,7 @@ public class GravitinoJobSubmitter implements JobSubmitter {
   @Override
   public void initialize(OptimizerEnv optimizerEnv) {
     this.gravitinoClient = GravitinoClientUtils.createClient(optimizerEnv);
+    this.optimizerConfig = optimizerEnv.config();
   }
 
   /**
@@ -86,7 +90,27 @@ public class GravitinoJobSubmitter implements JobSubmitter {
   GravitinoJobAdapter loadJobAdapter(String jobTemplateName) {
     Class<? extends GravitinoJobAdapter> jobAdapterClz = jobAdapters.get(jobTemplateName);
     if (jobAdapterClz == null) {
-      throw new IllegalArgumentException("No job adapter found for template: " + jobTemplateName);
+      String jobAdapterClassName =
+          optimizerConfig == null ? null : optimizerConfig.getJobAdapterClassName(jobTemplateName);
+      if (StringUtils.isBlank(jobAdapterClassName)) {
+        throw new IllegalArgumentException("No job adapter found for template: " + jobTemplateName);
+      }
+      try {
+        Class<?> rawClass = Class.forName(jobAdapterClassName);
+        if (!GravitinoJobAdapter.class.isAssignableFrom(rawClass)) {
+          throw new IllegalArgumentException(
+              "Configured job adapter class does not implement GravitinoJobAdapter: "
+                  + jobAdapterClassName);
+        }
+        jobAdapterClz = rawClass.asSubclass(GravitinoJobAdapter.class);
+      } catch (Exception e) {
+        throw new RuntimeException(
+            "Failed to load job adapter class '"
+                + jobAdapterClassName
+                + "' for template: "
+                + jobTemplateName,
+            e);
+      }
     }
     try {
       return jobAdapterClz.getDeclaredConstructor().newInstance();
