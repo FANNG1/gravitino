@@ -314,8 +314,8 @@ public class CatalogDorisIT extends BaseIT {
         () -> schemas.createSchema(sqlInjection2, comment, properties));
     assertThrows(IllegalArgumentException.class, () -> schemas.dropSchema(sqlInjection2, false));
 
-    // should throw an exception with input that has more than 64 characters
-    String invalidInput = StringUtils.repeat("a", 65);
+    // should throw an exception with input that has more than 256 characters
+    String invalidInput = StringUtils.repeat("a", 257);
     assertThrows(
         IllegalArgumentException.class,
         () -> schemas.createSchema(invalidInput, comment, properties));

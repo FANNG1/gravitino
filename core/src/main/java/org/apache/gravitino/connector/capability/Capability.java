@@ -107,12 +107,13 @@ public interface Capability {
      *
      * <p>^\w - Starts with a letter, digit, or underscore
      *
-     * <p>[\w/=-]{0,63} - Followed by 0 to 63 characters (making the total length at most 64) of
-     * letters (both cases), digits, underscores, slashes, hyphens, or equals signs
+     * <p>[\w/=-]{0,255} - Followed by 0 to 255 characters (making the total length at most 256) of
+     * letters (both cases), digits, underscores, slashes, hyphens, or equals signs Note: this has
+     * been relaxed to work for Pinterest naming pattern.
      *
      * <p>$ - End of the string
      */
-    private static final String DEFAULT_NAME_PATTERN = "^\\w[\\w/=-]{0,63}$";
+    private static final String DEFAULT_NAME_PATTERN = "^\\w[\\w/=-]{0,255}$";
 
     @Override
     public CapabilityResult columnNotNull() {
