@@ -79,16 +79,16 @@ public class TestCapability {
 
       // test for long name
       StringBuilder longName = new StringBuilder();
-      for (int i = 0; i < 64; i++) {
+      for (int i = 0; i < 256; i++) {
         longName.append("a");
       }
 
-      Assertions.assertEquals(64, longName.length());
+      Assertions.assertEquals(256, longName.length());
       result = Capability.DEFAULT.specificationOnName(scope, longName.toString());
       Assertions.assertTrue(result.supported());
 
       longName.append("a");
-      Assertions.assertEquals(65, longName.length());
+      Assertions.assertEquals(257, longName.length());
       result = Capability.DEFAULT.specificationOnName(scope, longName.toString());
       Assertions.assertFalse(result.supported());
       Assertions.assertTrue(result.unsupportedMessage().contains("is illegal"));

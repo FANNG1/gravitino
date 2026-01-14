@@ -56,8 +56,10 @@ public class TestSQLScripts extends TestJDBCBackend {
     // A map to store connections for different schema versions
     Pattern schemaPattern =
         Pattern.compile("schema-([\\d.]+)-" + backendType.toLowerCase() + "\\.sql");
+    // Relaxed to Pinterest case for files like upgrade-1.1.0-to-1.1.0-pinterest-1-h2.sql
     Pattern upgradePattern =
-        Pattern.compile("upgrade-([\\d.]+)-to-([\\d.]+)-" + backendType.toLowerCase() + "\\.sql");
+        Pattern.compile(
+            "upgrade-([\\d.]+)-to-([\\d.]+)(?:-[\\w-]+)?-" + backendType.toLowerCase() + "\\.sql");
     Pattern metricsPattern =
         Pattern.compile("iceberg-metrics-schema-([\\d.]+)-" + backendType.toLowerCase() + "\\.sql");
 
