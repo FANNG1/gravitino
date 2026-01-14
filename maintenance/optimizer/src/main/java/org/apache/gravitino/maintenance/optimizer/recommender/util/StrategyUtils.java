@@ -35,6 +35,8 @@ public class StrategyUtils {
   public static final String SCORE_EXPR = "score-expr";
   /** Rule key for the partition table score aggregation mode. */
   public static final String PARTITION_TABLE_SCORE_MODE = "partition_table_score_mode";
+  /** Rule key for the maximum number of partitions selected for execution. */
+  public static final String MAX_PARTITION_NUM = "max_partition_num";
 
   public static final String SCORE_MODE_SUM = "sum";
   public static final String SCORE_MODE_AVG = "avg";
@@ -42,6 +44,7 @@ public class StrategyUtils {
   private static final String DEFAULT_TRIGGER_EXPR = "false";
   private static final String DEFAULT_SCORE_EXPR = "-1";
   private static final String DEFAULT_PARTITION_TABLE_SCORE_MODE = SCORE_MODE_AVG;
+  private static final int DEFAULT_MAX_PARTITION_NUM = 100;
 
   /**
    * Resolve the trigger expression for a strategy.
@@ -108,5 +111,30 @@ public class StrategyUtils {
     }
     String mode = value.toString().trim().toLowerCase();
     return mode.isEmpty() ? DEFAULT_PARTITION_TABLE_SCORE_MODE : mode;
+  }
+
+  /**
+   * Resolve the maximum number of partitions selected for execution.
+   *
+   * <p>Defaults to {@code 100} when the rule is missing or invalid.
+   *
+   * @param strategy strategy definition
+   * @return maximum number of partitions to include
+   */
+  public static int getMaxPartitionNum(Strategy strategy) {
+    Object value = strategy.rules().get(MAX_PARTITION_NUM);
+    if (value == null) {
+      return DEFAULT_MAX_PARTITION_NUM;
+    }
+    String limit = value.toString().trim();
+    if (limit.isEmpty()) {
+      return DEFAULT_MAX_PARTITION_NUM;
+    }
+    try {
+      int parsed = Integer.parseInt(limit);
+      return parsed > 0 ? parsed : DEFAULT_MAX_PARTITION_NUM;
+    } catch (NumberFormatException e) {
+      return DEFAULT_MAX_PARTITION_NUM;
+    }
   }
 }

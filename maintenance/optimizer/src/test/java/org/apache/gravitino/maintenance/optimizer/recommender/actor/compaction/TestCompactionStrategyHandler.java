@@ -163,22 +163,49 @@ class TestCompactionStrategyHandler {
     Assertions.assertEquals(
         40L,
         evaluatePartitionScore(
-            tableId, tableMetadata, partitionStats, StrategyUtils.SCORE_MODE_SUM));
+            tableId, tableMetadata, partitionStats, StrategyUtils.SCORE_MODE_SUM, null));
     Assertions.assertEquals(
         30L,
         evaluatePartitionScore(
-            tableId, tableMetadata, partitionStats, StrategyUtils.SCORE_MODE_MAX));
+            tableId, tableMetadata, partitionStats, StrategyUtils.SCORE_MODE_MAX, null));
     Assertions.assertEquals(
-        20L, evaluatePartitionScore(tableId, tableMetadata, partitionStats, null));
+        20L, evaluatePartitionScore(tableId, tableMetadata, partitionStats, null, null));
+  }
+
+  @Test
+  void testMaxPartitionNumFromStrategy() {
+    NameIdentifier tableId = NameIdentifier.of("db", "table");
+    Table tableMetadata = Mockito.mock(Table.class);
+    Mockito.when(tableMetadata.partitioning())
+        .thenReturn(
+            new org.apache.gravitino.rel.expressions.transforms.Transform[] {
+              Transforms.identity("p")
+            });
+    Mockito.when(tableMetadata.columns()).thenReturn(new Column[0]);
+
+    Map<PartitionPath, List<StatisticEntry<?>>> partitionStats =
+        Map.of(
+            PartitionPath.of(Arrays.asList(new PartitionEntryImpl("p", "1"))),
+            List.of(new StatisticEntryImpl("datafile_mse", StatisticValues.longValue(10L))),
+            PartitionPath.of(Arrays.asList(new PartitionEntryImpl("p", "2"))),
+            List.of(new StatisticEntryImpl("datafile_mse", StatisticValues.longValue(20L))),
+            PartitionPath.of(Arrays.asList(new PartitionEntryImpl("p", "3"))),
+            List.of(new StatisticEntryImpl("datafile_mse", StatisticValues.longValue(30L))));
+
+    Assertions.assertEquals(
+        30L, evaluatePartitionScore(tableId, tableMetadata, partitionStats, null, 1));
+    Assertions.assertEquals(
+        25L, evaluatePartitionScore(tableId, tableMetadata, partitionStats, null, 2));
   }
 
   private long evaluatePartitionScore(
       NameIdentifier tableId,
       Table tableMetadata,
       Map<PartitionPath, List<StatisticEntry<?>>> partitionStats,
-      String scoreMode) {
+      String scoreMode,
+      Integer maxPartitionNum) {
     StrategyHandlerContext context =
-        StrategyHandlerContext.builder(tableId, buildStrategy(scoreMode))
+        StrategyHandlerContext.builder(tableId, buildStrategy(scoreMode, maxPartitionNum))
             .withTableMetadata(tableMetadata)
             .withTableStatistics(List.of())
             .withPartitionStatistics(partitionStats)
@@ -191,12 +218,15 @@ class TestCompactionStrategyHandler {
     return evaluation.score();
   }
 
-  private Strategy buildStrategy(String scoreMode) {
+  private Strategy buildStrategy(String scoreMode, Integer maxPartitionNum) {
     Map<String, Object> rules = new HashMap<>();
     rules.put(StrategyUtils.TRIGGER_EXPR, "datafile_mse > 0");
     rules.put(StrategyUtils.SCORE_EXPR, "datafile_mse");
     if (scoreMode != null) {
       rules.put(StrategyUtils.PARTITION_TABLE_SCORE_MODE, scoreMode);
+    }
+    if (maxPartitionNum != null) {
+      rules.put(StrategyUtils.MAX_PARTITION_NUM, maxPartitionNum);
     }
     return new Strategy() {
       @Override

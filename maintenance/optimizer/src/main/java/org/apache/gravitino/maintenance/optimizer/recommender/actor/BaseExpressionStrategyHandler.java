@@ -111,7 +111,7 @@ public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
       Map<String, String> jobOptions);
 
   private int maxPartitionNum() {
-    return 100;
+    return StrategyUtils.getMaxPartitionNum(strategy);
   }
 
   private boolean isPartitionTable() {
