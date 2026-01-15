@@ -51,6 +51,7 @@ import org.slf4j.LoggerFactory;
  * normalization, and expression evaluation utilities.
  */
 public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
+
   private static final Logger LOG = LoggerFactory.getLogger(BaseExpressionStrategyHandler.class);
   private static final Comparator<PartitionScore> PARTITION_SCORE_ORDER =
       (a, b) -> Long.compare(b.score(), a.score());
@@ -151,13 +152,13 @@ public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
     if (partitionScores.isEmpty()) {
       return -1L;
     }
-    String scoreMode = StrategyUtils.getPartitionTableScoreMode(strategy);
+    ScoreMode scoreMode = StrategyUtils.getPartitionTableScoreMode(strategy);
     switch (scoreMode) {
-      case StrategyUtils.SCORE_MODE_SUM:
+      case SUM:
         return partitionScores.stream().mapToLong(PartitionScore::score).sum();
-      case StrategyUtils.SCORE_MODE_MAX:
+      case MAX:
         return partitionScores.stream().mapToLong(PartitionScore::score).max().orElse(-1L);
-      case StrategyUtils.SCORE_MODE_AVG:
+      case AVG:
         return partitionScores.stream().mapToLong(PartitionScore::score).sum()
             / partitionScores.size();
       default:
@@ -243,9 +244,12 @@ public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
     PriorityQueue<PartitionScore> scoreQueue = new PriorityQueue<>(PARTITION_SCORE_ORDER);
     partitionStatistics.forEach(
         (partitionPath, statistics) -> {
-          long partitionScore = evaluateLong(scoreExpression(strategy), statistics);
-          if (partitionScore > 0) {
-            scoreQueue.add(new PartitionScore(partitionPath, partitionScore));
+          boolean trigger = evaluateBool(triggerExpression(strategy), statistics);
+          if (trigger) {
+            long partitionScore = evaluateLong(scoreExpression(strategy), statistics);
+            if (partitionScore > 0) {
+              scoreQueue.add(new PartitionScore(partitionPath, partitionScore));
+            }
           }
         });
 
@@ -256,6 +260,7 @@ public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
   }
 
   private static final class PartitionScore {
+
     private final PartitionPath partition;
     private final long score;
 
@@ -274,6 +279,7 @@ public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
   }
 
   private static final class BasicStrategyEvaluation implements StrategyEvaluation {
+
     private final long score;
     private final JobExecutionContext jobConfig;
 

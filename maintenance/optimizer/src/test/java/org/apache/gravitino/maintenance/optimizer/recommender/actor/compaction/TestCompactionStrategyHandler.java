@@ -33,6 +33,7 @@ import org.apache.gravitino.maintenance.optimizer.api.recommender.StrategyEvalua
 import org.apache.gravitino.maintenance.optimizer.api.recommender.StrategyHandlerContext;
 import org.apache.gravitino.maintenance.optimizer.common.PartitionEntryImpl;
 import org.apache.gravitino.maintenance.optimizer.common.StatisticEntryImpl;
+import org.apache.gravitino.maintenance.optimizer.recommender.actor.ScoreMode;
 import org.apache.gravitino.maintenance.optimizer.recommender.util.StrategyUtils;
 import org.apache.gravitino.rel.Column;
 import org.apache.gravitino.rel.Table;
@@ -47,7 +48,7 @@ class TestCompactionStrategyHandler {
   private final Strategy strategy = new CompactionStrategyForTest();
 
   @Test
-  void testShouldTrigger() {
+  void testShouldTriggerWithoutPartition() {
     NameIdentifier tableId = NameIdentifier.of("db", "table");
     Table tableMetadata = Mockito.mock(Table.class);
     Mockito.when(tableMetadata.partitioning())
@@ -143,7 +144,7 @@ class TestCompactionStrategyHandler {
   }
 
   @Test
-  void testPartitionTableScoreMode() {
+  void testEvaluatePartitionTableScoreMode() {
     NameIdentifier tableId = NameIdentifier.of("db", "table");
     Table tableMetadata = Mockito.mock(Table.class);
     Mockito.when(tableMetadata.partitioning())
@@ -161,19 +162,15 @@ class TestCompactionStrategyHandler {
             List.of(new StatisticEntryImpl("datafile_mse", StatisticValues.longValue(30L))));
 
     Assertions.assertEquals(
-        40L,
-        evaluatePartitionScore(
-            tableId, tableMetadata, partitionStats, StrategyUtils.SCORE_MODE_SUM, null));
+        40L, evaluatePartitionScore(tableId, tableMetadata, partitionStats, ScoreMode.SUM, null));
     Assertions.assertEquals(
-        30L,
-        evaluatePartitionScore(
-            tableId, tableMetadata, partitionStats, StrategyUtils.SCORE_MODE_MAX, null));
+        30L, evaluatePartitionScore(tableId, tableMetadata, partitionStats, ScoreMode.MAX, null));
     Assertions.assertEquals(
         20L, evaluatePartitionScore(tableId, tableMetadata, partitionStats, null, null));
   }
 
   @Test
-  void testMaxPartitionNumFromStrategy() {
+  void testEvaluateMaxPartitionNumFromStrategy() {
     NameIdentifier tableId = NameIdentifier.of("db", "table");
     Table tableMetadata = Mockito.mock(Table.class);
     Mockito.when(tableMetadata.partitioning())
@@ -202,7 +199,7 @@ class TestCompactionStrategyHandler {
       NameIdentifier tableId,
       Table tableMetadata,
       Map<PartitionPath, List<StatisticEntry<?>>> partitionStats,
-      String scoreMode,
+      ScoreMode scoreMode,
       Integer maxPartitionNum) {
     StrategyHandlerContext context =
         StrategyHandlerContext.builder(tableId, buildStrategy(scoreMode, maxPartitionNum))
@@ -218,7 +215,7 @@ class TestCompactionStrategyHandler {
     return evaluation.score();
   }
 
-  private Strategy buildStrategy(String scoreMode, Integer maxPartitionNum) {
+  private Strategy buildStrategy(ScoreMode scoreMode, Integer maxPartitionNum) {
     Map<String, Object> rules = new HashMap<>();
     rules.put(StrategyUtils.TRIGGER_EXPR, "datafile_mse > 0");
     rules.put(StrategyUtils.SCORE_EXPR, "datafile_mse");

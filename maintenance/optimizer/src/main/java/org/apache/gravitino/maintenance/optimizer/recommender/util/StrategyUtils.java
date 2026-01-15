@@ -21,9 +21,14 @@ package org.apache.gravitino.maintenance.optimizer.recommender.util;
 
 import java.util.Map;
 import org.apache.gravitino.maintenance.optimizer.api.common.Strategy;
+import org.apache.gravitino.maintenance.optimizer.recommender.actor.ScoreMode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Utility methods and rule keys for interpreting optimizer strategies. */
 public class StrategyUtils {
+
+  private static final Logger LOG = LoggerFactory.getLogger(StrategyUtils.class);
 
   public static final String COMPACTION_STRATEGY_TYPE = "compaction";
 
@@ -38,12 +43,9 @@ public class StrategyUtils {
   /** Rule key for the maximum number of partitions selected for execution. */
   public static final String MAX_PARTITION_NUM = "max_partition_num";
 
-  public static final String SCORE_MODE_SUM = "sum";
-  public static final String SCORE_MODE_AVG = "avg";
-  public static final String SCORE_MODE_MAX = "max";
   private static final String DEFAULT_TRIGGER_EXPR = "false";
   private static final String DEFAULT_SCORE_EXPR = "-1";
-  private static final String DEFAULT_PARTITION_TABLE_SCORE_MODE = SCORE_MODE_AVG;
+  private static final ScoreMode DEFAULT_PARTITION_TABLE_SCORE_MODE = ScoreMode.AVG;
   private static final int DEFAULT_MAX_PARTITION_NUM = 100;
 
   /**
@@ -99,18 +101,37 @@ public class StrategyUtils {
   /**
    * Resolve the partition table score mode for a strategy.
    *
-   * <p>Supported values are {@code sum}, {@code avg}, and {@code max}. Defaults to {@code avg}.
+   * <p>Supported values are {@code sum}, {@code avg}, and {@code max}. Defaults to {@code AVG}.
    *
    * @param strategy strategy definition
-   * @return normalized score mode string
+   * @return score mode enum
    */
-  public static String getPartitionTableScoreMode(Strategy strategy) {
+  public static ScoreMode getPartitionTableScoreMode(Strategy strategy) {
     Object value = strategy.rules().get(PARTITION_TABLE_SCORE_MODE);
     if (value == null) {
       return DEFAULT_PARTITION_TABLE_SCORE_MODE;
     }
+    if (value instanceof ScoreMode) {
+      return (ScoreMode) value;
+    }
     String mode = value.toString().trim().toLowerCase();
-    return mode.isEmpty() ? DEFAULT_PARTITION_TABLE_SCORE_MODE : mode;
+    if (mode.isEmpty()) {
+      return DEFAULT_PARTITION_TABLE_SCORE_MODE;
+    }
+    switch (mode) {
+      case "sum":
+        return ScoreMode.SUM;
+      case "max":
+        return ScoreMode.MAX;
+      case "avg":
+        return ScoreMode.AVG;
+      default:
+        LOG.warn(
+            "Unsupported partition table score mode '{}' for strategy {}, defaulting to avg",
+            mode,
+            strategy.name());
+        return DEFAULT_PARTITION_TABLE_SCORE_MODE;
+    }
   }
 
   /**
