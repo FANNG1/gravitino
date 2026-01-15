@@ -32,6 +32,7 @@ import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
 import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.maintenance.optimizer.api.common.Strategy;
+import org.apache.gravitino.maintenance.optimizer.api.common.Strategy.ScoreMode;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.JobExecutionContext;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.StrategyEvaluation;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.StrategyHandler;
@@ -112,7 +113,7 @@ public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
       Map<String, String> jobOptions);
 
   private int maxPartitionNum() {
-    return StrategyUtils.getMaxPartitionNum(strategy);
+    return strategy.maxPartitionNum();
   }
 
   private boolean isPartitionTable() {
@@ -140,7 +141,7 @@ public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
     }
     JobExecutionContext jobContext =
         buildJobExecutionContext(
-            nameIdentifier, strategy, tableMetadata, List.of(), jobOptions(strategy));
+            nameIdentifier, strategy, tableMetadata, List.of(), strategy.jobOptions());
     return new BasicStrategyEvaluation(score, jobContext);
   }
 
@@ -152,7 +153,7 @@ public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
     if (partitionScores.isEmpty()) {
       return -1L;
     }
-    ScoreMode scoreMode = StrategyUtils.getPartitionTableScoreMode(strategy);
+    ScoreMode scoreMode = strategy.partitionTableScoreMode();
     switch (scoreMode) {
       case SUM:
         return partitionScores.stream().mapToLong(PartitionScore::score).sum();
@@ -180,7 +181,7 @@ public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
         partitionScores.stream().map(PartitionScore::partition).collect(Collectors.toList());
     JobExecutionContext jobContext =
         buildJobExecutionContext(
-            nameIdentifier, strategy, tableMetadata, partitions, jobOptions(strategy));
+            nameIdentifier, strategy, tableMetadata, partitions, strategy.jobOptions());
     long tableScore = getTableScoreFromPartitions(partitionScores);
     return new BasicStrategyEvaluation(tableScore, jobContext);
   }
@@ -228,10 +229,6 @@ public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
 
   private String scoreExpression(Strategy strategy) {
     return StrategyUtils.getScoreExpression(strategy);
-  }
-
-  private Map<String, String> jobOptions(Strategy strategy) {
-    return StrategyUtils.getJobOptionsFromStrategy(strategy);
   }
 
   /**

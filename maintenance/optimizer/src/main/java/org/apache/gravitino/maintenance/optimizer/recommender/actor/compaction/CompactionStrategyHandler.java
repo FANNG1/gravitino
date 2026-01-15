@@ -28,7 +28,6 @@ import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
 import org.apache.gravitino.maintenance.optimizer.api.common.Strategy;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.JobExecutionContext;
 import org.apache.gravitino.maintenance.optimizer.recommender.actor.BaseExpressionStrategyHandler;
-import org.apache.gravitino.maintenance.optimizer.recommender.util.StrategyUtils;
 import org.apache.gravitino.rel.Table;
 
 /**
@@ -48,7 +47,7 @@ public class CompactionStrategyHandler extends BaseExpressionStrategyHandler {
 
   @Override
   public String strategyType() {
-    return StrategyUtils.COMPACTION_STRATEGY_TYPE;
+    return NAME;
   }
 
   @Override

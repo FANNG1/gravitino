@@ -22,7 +22,7 @@ package org.apache.gravitino.maintenance.optimizer.recommender.job;
 import java.util.Map;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
-import org.apache.gravitino.maintenance.optimizer.recommender.util.StrategyUtils;
+import org.apache.gravitino.maintenance.optimizer.recommender.actor.compaction.CompactionStrategyHandler;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -30,7 +30,7 @@ public class TestGravitinoJobSubmitter {
   @Test
   void loadJobAdapterReturnsCompactionAdapter() {
     GravitinoJobSubmitter submitter = new GravitinoJobSubmitter();
-    GravitinoJobAdapter adapter = submitter.loadJobAdapter(StrategyUtils.COMPACTION_STRATEGY_TYPE);
+    GravitinoJobAdapter adapter = submitter.loadJobAdapter(CompactionStrategyHandler.NAME);
     Assertions.assertTrue(adapter instanceof GravitinoCompactionJobAdapter);
   }
 

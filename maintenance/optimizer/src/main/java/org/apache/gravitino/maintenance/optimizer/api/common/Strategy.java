@@ -81,4 +81,36 @@ public interface Strategy {
    * @return job template name
    */
   String jobTemplateName();
+
+  /**
+   * Partition table score aggregation mode.
+   *
+   * <p>Defaults to {@link ScoreMode#AVG}.
+   *
+   * @return score mode enum
+   */
+  default ScoreMode partitionTableScoreMode() {
+    return ScoreMode.AVG;
+  }
+
+  /**
+   * Maximum number of partitions to include in a table evaluation.
+   *
+   * <p>Defaults to {@code 100}.
+   *
+   * @return max partition number
+   */
+  default int maxPartitionNum() {
+    return 100;
+  }
+
+  /** Partition table score aggregation mode. */
+  enum ScoreMode {
+    /** Average score of all partitions. */
+    AVG,
+    /** Maximum score of all partitions. */
+    MAX,
+    /** Sum score of all partitions. */
+    SUM,
+  }
 }

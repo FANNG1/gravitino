@@ -28,12 +28,12 @@ import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
 import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.maintenance.optimizer.api.common.Strategy;
+import org.apache.gravitino.maintenance.optimizer.api.common.Strategy.ScoreMode;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.JobExecutionContext;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.StrategyEvaluation;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.StrategyHandlerContext;
 import org.apache.gravitino.maintenance.optimizer.common.PartitionEntryImpl;
 import org.apache.gravitino.maintenance.optimizer.common.StatisticEntryImpl;
-import org.apache.gravitino.maintenance.optimizer.recommender.actor.ScoreMode;
 import org.apache.gravitino.maintenance.optimizer.recommender.util.StrategyUtils;
 import org.apache.gravitino.rel.Column;
 import org.apache.gravitino.rel.Table;
@@ -233,7 +233,7 @@ class TestCompactionStrategyHandler {
 
       @Override
       public String strategyType() {
-        return StrategyUtils.COMPACTION_STRATEGY_TYPE;
+        return "compaction";
       }
 
       @Override
@@ -254,6 +254,30 @@ class TestCompactionStrategyHandler {
       @Override
       public String jobTemplateName() {
         return "compaction-template";
+      }
+
+      @Override
+      public ScoreMode partitionTableScoreMode() {
+        Object value = rules.get(StrategyUtils.PARTITION_TABLE_SCORE_MODE);
+        return value instanceof ScoreMode ? (ScoreMode) value : ScoreMode.AVG;
+      }
+
+      @Override
+      public int maxPartitionNum() {
+        Object value = rules.get(StrategyUtils.MAX_PARTITION_NUM);
+        if (value == null) {
+          return 100;
+        }
+        if (value instanceof Number) {
+          int parsed = ((Number) value).intValue();
+          return parsed > 0 ? parsed : 100;
+        }
+        try {
+          int parsed = Integer.parseInt(value.toString());
+          return parsed > 0 ? parsed : 100;
+        } catch (NumberFormatException e) {
+          return 100;
+        }
       }
     };
   }
