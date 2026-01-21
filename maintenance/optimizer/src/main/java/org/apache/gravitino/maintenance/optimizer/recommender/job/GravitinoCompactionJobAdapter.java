@@ -24,7 +24,7 @@ import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.JobExecutionContext;
-import org.apache.gravitino.maintenance.optimizer.recommender.actor.compaction.CompactionJobContext;
+import org.apache.gravitino.maintenance.optimizer.recommender.handler.compaction.CompactionJobContext;
 
 public class GravitinoCompactionJobAdapter implements GravitinoJobAdapter {
 

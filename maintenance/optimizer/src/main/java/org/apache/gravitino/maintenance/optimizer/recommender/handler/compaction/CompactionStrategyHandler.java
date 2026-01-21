@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.gravitino.maintenance.optimizer.recommender.actor.compaction;
+package org.apache.gravitino.maintenance.optimizer.recommender.handler.compaction;
 
 import java.util.EnumSet;
 import java.util.List;
@@ -27,7 +27,7 @@ import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
 import org.apache.gravitino.maintenance.optimizer.api.common.Strategy;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.JobExecutionContext;
-import org.apache.gravitino.maintenance.optimizer.recommender.actor.BaseExpressionStrategyHandler;
+import org.apache.gravitino.maintenance.optimizer.recommender.handler.BaseExpressionStrategyHandler;
 import org.apache.gravitino.rel.Table;
 
 /**

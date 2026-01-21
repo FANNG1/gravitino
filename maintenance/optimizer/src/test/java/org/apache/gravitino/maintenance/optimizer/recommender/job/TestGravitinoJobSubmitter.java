@@ -22,7 +22,7 @@ package org.apache.gravitino.maintenance.optimizer.recommender.job;
 import java.util.Map;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
-import org.apache.gravitino.maintenance.optimizer.recommender.actor.compaction.CompactionStrategyHandler;
+import org.apache.gravitino.maintenance.optimizer.recommender.handler.compaction.CompactionStrategyHandler;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

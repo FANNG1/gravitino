@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.gravitino.maintenance.optimizer.recommender.actor;
+package org.apache.gravitino.maintenance.optimizer.recommender.handler;
 
 import com.google.common.base.Preconditions;
 import java.util.Comparator;
@@ -142,7 +142,7 @@ public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
     JobExecutionContext jobContext =
         buildJobExecutionContext(
             nameIdentifier, strategy, tableMetadata, List.of(), strategy.jobOptions());
-    return new BasicStrategyEvaluation(score, jobContext);
+    return new StrategyEvaluationImpl(score, jobContext);
   }
 
   /**
@@ -183,7 +183,7 @@ public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
         buildJobExecutionContext(
             nameIdentifier, strategy, tableMetadata, partitions, strategy.jobOptions());
     long tableScore = getTableScoreFromPartitions(partitionScores);
-    return new BasicStrategyEvaluation(tableScore, jobContext);
+    return new StrategyEvaluationImpl(tableScore, jobContext);
   }
 
   private long evaluateLong(String expression, List<StatisticEntry<?>> statistics) {
@@ -275,24 +275,4 @@ public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
     }
   }
 
-  private static final class BasicStrategyEvaluation implements StrategyEvaluation {
-
-    private final long score;
-    private final JobExecutionContext jobConfig;
-
-    private BasicStrategyEvaluation(long score, JobExecutionContext jobConfig) {
-      this.score = score;
-      this.jobConfig = jobConfig;
-    }
-
-    @Override
-    public long score() {
-      return score;
-    }
-
-    @Override
-    public JobExecutionContext jobExecutionContext() {
-      return jobConfig;
-    }
-  }
 }

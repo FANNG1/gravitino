@@ -22,7 +22,7 @@ package org.apache.gravitino.maintenance.optimizer.recommender.job;
 import java.util.List;
 import java.util.Map;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.maintenance.optimizer.recommender.actor.compaction.CompactionJobContext;
+import org.apache.gravitino.maintenance.optimizer.recommender.handler.compaction.CompactionJobContext;
 import org.apache.gravitino.rel.Column;
 import org.apache.gravitino.rel.expressions.transforms.Transform;
 import org.junit.jupiter.api.Assertions;

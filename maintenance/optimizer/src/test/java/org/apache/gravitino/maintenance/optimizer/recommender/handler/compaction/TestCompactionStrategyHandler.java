@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.gravitino.maintenance.optimizer.recommender.actor.compaction;
+package org.apache.gravitino.maintenance.optimizer.recommender.handler.compaction;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
