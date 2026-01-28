@@ -99,6 +99,18 @@ public class GravitinoJobSubmitter implements JobSubmitter {
   }
 
   @VisibleForTesting
+  /**
+   * Merge job configs with precedence: optimizer config < job context < adapter config.
+   *
+   * <p>Typical use cases:
+   *
+   * <ul>
+   *   <li>Optimizer config: shared engine/runtime defaults (for example, Spark settings).
+   *   <li>Job context: strategy/handler-provided options derived from rules and evaluation.
+   *   <li>Adapter config: adapter-specific parameters (for example, WHERE filters) required by the
+   *       job template.
+   * </ul>
+   */
   Map<String, String> buildJobConfig(
       JobExecutionContext jobExecutionContext, GravitinoJobAdapter jobAdapter) {
     Map<String, String> submitterConfigs =
