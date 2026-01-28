@@ -21,6 +21,7 @@ package org.apache.gravitino.maintenance.optimizer.recommender.job;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.gravitino.client.GravitinoClient;
@@ -76,7 +77,7 @@ public class GravitinoJobSubmitter implements JobSubmitter {
     ensureClientInitialized();
     GravitinoJobAdapter jobAdapter = loadJobAdapter(jobTemplateName);
     return gravitinoClient
-        .runJob(jobTemplateName, jobAdapter.jobConfig(jobExecutionContext))
+        .runJob(jobTemplateName, buildJobConfig(jobExecutionContext, jobAdapter))
         .jobId();
   }
 
@@ -95,6 +96,25 @@ public class GravitinoJobSubmitter implements JobSubmitter {
       }
       this.gravitinoClient = GravitinoClientUtils.createClient(optimizerEnv);
     }
+  }
+
+  @VisibleForTesting
+  Map<String, String> buildJobConfig(
+      JobExecutionContext jobExecutionContext, GravitinoJobAdapter jobAdapter) {
+    Map<String, String> submitterConfigs =
+        optimizerConfig == null ? Map.of() : optimizerConfig.jobSubmitterConfigs();
+    Map<String, String> contextConfigs =
+        jobExecutionContext == null || jobExecutionContext.jobConfig() == null
+            ? Map.of()
+            : jobExecutionContext.jobConfig();
+    Map<String, String> adapterConfigs =
+        jobAdapter == null ? Map.of() : jobAdapter.jobConfig(jobExecutionContext);
+
+    Map<String, String> mergedConfigs = new LinkedHashMap<>();
+    mergedConfigs.putAll(submitterConfigs);
+    mergedConfigs.putAll(contextConfigs);
+    mergedConfigs.putAll(adapterConfigs);
+    return mergedConfigs;
   }
 
   @VisibleForTesting

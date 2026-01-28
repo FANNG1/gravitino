@@ -20,6 +20,8 @@
 package org.apache.gravitino.maintenance.optimizer.recommender.job;
 
 import java.util.Map;
+import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.maintenance.optimizer.api.recommender.JobExecutionContext;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
 import org.apache.gravitino.maintenance.optimizer.recommender.handler.compaction.CompactionStrategyHandler;
@@ -51,5 +53,46 @@ public class TestGravitinoJobSubmitter {
 
     GravitinoJobAdapter adapter = submitter.loadJobAdapter(jobTemplateName);
     Assertions.assertTrue(adapter instanceof GravitinoCompactionJobAdapter);
+  }
+
+  @Test
+  void buildJobConfigMergesWithExpectedPrecedence() {
+    OptimizerConfig config =
+        new OptimizerConfig(
+            Map.of(
+                OptimizerConfig.JOB_SUBMITTER_CONFIG_PREFIX + "custom", "optimizer",
+                OptimizerConfig.JOB_SUBMITTER_CONFIG_PREFIX + "override", "optimizer"));
+    GravitinoJobSubmitter submitter = new GravitinoJobSubmitter();
+    submitter.initialize(new OptimizerEnv(config));
+
+    JobExecutionContext context =
+        new JobExecutionContext() {
+          @Override
+          public NameIdentifier nameIdentifier() {
+            return NameIdentifier.of("db", "table");
+          }
+
+          @Override
+          public Map<String, String> jobConfig() {
+            return Map.of("context", "context", "override", "context");
+          }
+
+          @Override
+          public String jobTemplateName() {
+            return "compaction";
+          }
+        };
+
+    GravitinoJobAdapter adapter =
+        jobExecutionContext ->
+            Map.of("table", "db.table", "options", "map('k','v')", "override", "adapter");
+
+    Map<String, String> merged = submitter.buildJobConfig(context, adapter);
+
+    Assertions.assertEquals("optimizer", merged.get("custom"));
+    Assertions.assertEquals("context", merged.get("context"));
+    Assertions.assertEquals("adapter", merged.get("override"));
+    Assertions.assertEquals("db.table", merged.get("table"));
+    Assertions.assertEquals("map('k','v')", merged.get("options"));
   }
 }

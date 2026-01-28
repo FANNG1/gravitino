@@ -274,5 +274,4 @@ public abstract class BaseExpressionStrategyHandler implements StrategyHandler {
       return score;
     }
   }
-
 }
