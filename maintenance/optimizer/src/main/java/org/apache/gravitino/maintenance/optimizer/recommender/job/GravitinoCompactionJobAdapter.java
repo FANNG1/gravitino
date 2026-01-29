@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.JobExecutionContext;
+import org.apache.gravitino.maintenance.optimizer.common.util.IdentifierUtils;
 import org.apache.gravitino.maintenance.optimizer.recommender.handler.compaction.CompactionJobContext;
 
 public class GravitinoCompactionJobAdapter implements GravitinoJobAdapter {
@@ -35,13 +36,15 @@ public class GravitinoCompactionJobAdapter implements GravitinoJobAdapter {
         "jobExecutionContext must be CompactionJobExecutionContext");
     CompactionJobContext jobContext = (CompactionJobContext) jobExecutionContext;
     return ImmutableMap.of(
-        "table", getTableName(jobContext),
-        "where", getWhereClause(jobContext),
+        "table_identifier", getTableName(jobContext),
+        "where_clause", getWhereClause(jobContext),
+        "sort_order", "",
+        "strategy", "binpack",
         "options", getOptions(jobContext));
   }
 
   private String getTableName(CompactionJobContext jobContext) {
-    return jobContext.nameIdentifier().toString();
+    return IdentifierUtils.removeCatalogFromIdentifier(jobContext.nameIdentifier()).toString();
   }
 
   private String getWhereClause(CompactionJobContext jobContext) {
@@ -57,7 +60,7 @@ public class GravitinoCompactionJobAdapter implements GravitinoJobAdapter {
   }
 
   private String getOptions(JobExecutionContext jobExecutionContext) {
-    Map<String, String> map = jobExecutionContext.jobConfig();
+    Map<String, String> map = jobExecutionContext.jobOptions();
     return convertMapToString(map);
   }
 

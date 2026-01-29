@@ -146,10 +146,14 @@ public class Recommender implements AutoCloseable {
       List<StrategyEvaluation> evaluations =
           recommendForOneStrategy(entry.getValue(), strategyName);
       for (StrategyEvaluation evaluation : evaluations) {
-        JobExecutionContext jobConfig = evaluation.jobExecutionContext();
-        String templateName = jobConfig.jobTemplateName();
-        String jobId = jobSubmitter.submitJob(templateName, jobConfig);
-        LOG.info("Submit job {} for strategy {} with context {}", jobId, strategyName, jobConfig);
+        JobExecutionContext jobExecutionContext = evaluation.jobExecutionContext();
+        String templateName = jobExecutionContext.jobTemplateName();
+        String jobId = jobSubmitter.submitJob(templateName, jobExecutionContext);
+        LOG.info(
+            "Submit job {} for strategy {} with context {}",
+            jobId,
+            strategyName,
+            jobExecutionContext);
         logRecommendation(strategyName, evaluation);
       }
     }
@@ -321,11 +325,11 @@ public class Recommender implements AutoCloseable {
     JobExecutionContext jobExecutionContext = evaluation.jobExecutionContext();
     System.out.println(
         String.format(
-            "RECOMMEND: strategy=%s identifier=%s score=%d jobTemplate=%s jobConfig=%s",
+            "RECOMMEND: strategy=%s identifier=%s score=%d jobTemplate=%s jobOptions=%s",
             strategyName,
             jobExecutionContext.nameIdentifier(),
             evaluation.score(),
             jobExecutionContext.jobTemplateName(),
-            jobExecutionContext.jobConfig()));
+            jobExecutionContext.jobOptions()));
   }
 }

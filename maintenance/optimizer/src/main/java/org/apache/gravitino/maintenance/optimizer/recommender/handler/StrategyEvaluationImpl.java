@@ -25,11 +25,11 @@ import org.apache.gravitino.maintenance.optimizer.api.recommender.StrategyEvalua
 final class StrategyEvaluationImpl implements StrategyEvaluation {
 
   private final long score;
-  private final JobExecutionContext jobConfig;
+  private final JobExecutionContext jobExecutionContext;
 
-  StrategyEvaluationImpl(long score, JobExecutionContext jobConfig) {
+  StrategyEvaluationImpl(long score, JobExecutionContext jobExecutionContext) {
     this.score = score;
-    this.jobConfig = jobConfig;
+    this.jobExecutionContext = jobExecutionContext;
   }
 
   @Override
@@ -39,6 +39,6 @@ final class StrategyEvaluationImpl implements StrategyEvaluation {
 
   @Override
   public JobExecutionContext jobExecutionContext() {
-    return jobConfig;
+    return jobExecutionContext;
   }
 }

@@ -35,8 +35,10 @@ public class TestGravitinoCompactionJobAdapter {
     GravitinoCompactionJobAdapter jobAdapter = new GravitinoCompactionJobAdapter();
     Assertions.assertEquals(
         Map.of(
-            "table", "db.table",
-            "where", "",
+            "table_identifier", "db.table",
+            "where_clause", "",
+            "sort_order", "",
+            "strategy", "binpack",
             "options", "map('target_file_size_bytes', '1073741824')"),
         jobAdapter.jobConfig(mockCompactionJobContext()));
   }
@@ -45,10 +47,10 @@ public class TestGravitinoCompactionJobAdapter {
     String jobTemplateName = "compaction-job-template";
     Column[] columns = new Column[0];
     Transform[] partitioning = new Transform[0];
-    Map<String, String> jobConfig = Map.of("target_file_size_bytes", "1073741824");
+    Map<String, String> jobOptions = Map.of("target_file_size_bytes", "1073741824");
     return new CompactionJobContext(
-        NameIdentifier.of("db", "table"),
-        jobConfig,
+        NameIdentifier.of("catalog", "db", "table"),
+        jobOptions,
         jobTemplateName,
         columns,
         partitioning,

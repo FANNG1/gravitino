@@ -59,7 +59,7 @@ public class CompactionJobContext implements JobExecutionContext {
   }
 
   @Override
-  public Map<String, String> jobConfig() {
+  public Map<String, String> jobOptions() {
     return config;
   }
 

@@ -139,7 +139,7 @@ class TestCompactionStrategyHandler {
     Assertions.assertEquals(tableId, compactionConfig.nameIdentifier());
     Assertions.assertEquals(
         ImmutableMap.of(CompactionStrategyForTest.TARGET_FILE_SIZE_BYTES, "1024"),
-        compactionConfig.jobConfig());
+        compactionConfig.jobOptions());
     Assertions.assertTrue(compactionConfig.getPartitions().isEmpty());
   }
 

@@ -73,7 +73,7 @@ public class TestGravitinoJobSubmitter {
           }
 
           @Override
-          public Map<String, String> jobConfig() {
+          public Map<String, String> jobOptions() {
             return Map.of("context", "context", "override", "context");
           }
 
