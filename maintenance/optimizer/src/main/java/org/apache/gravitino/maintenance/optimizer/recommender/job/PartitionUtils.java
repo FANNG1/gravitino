@@ -50,8 +50,8 @@ public class PartitionUtils {
       predicates.add(getWhereClauseForPartition(partition.entries(), columns, partitioning));
     }
     // Wrap each partition-level predicate in parentheses to preserve logical grouping
-    // e.g. "(col1 = v1 AND col2 = v2) AND (col1 = v3 AND col2 = v4)"
-    return predicates.stream().map(p -> "(" + p + ")").collect(Collectors.joining(" AND "));
+    // e.g. "(col1 = v1 AND col2 = v2) OR (col1 = v3 AND col2 = v4)"
+    return predicates.stream().map(p -> "(" + p + ")").collect(Collectors.joining(" OR "));
   }
 
   // For Identity transform, the where clause is like "columnName = value"
@@ -59,7 +59,7 @@ public class PartitionUtils {
   // For truncate transform, the where clause is like "truncate(columnName, width) = value"
   // For year/month/day/hour transform, the where clause is like "year(columnName) = value"
   // We could get value from partition.get(i).partitionValue(), if the value type is string, we need
-  // to add quotes like 'value',  if the value type is number, we don't need to add quotes. if the
+  // to add quotes like "value",  if the value type is number, we don't need to add quotes. if the
   // value type is date/datetime, we need to add quotes like TIMESTAMP '2024-01-01'
   public static String getWhereClauseForPartition(
       List<PartitionEntry> partition, Column[] columns, Transform[] partitioning) {
@@ -156,21 +156,17 @@ public class PartitionUtils {
       case DECIMAL:
         return rawValue;
       case DATE:
-        return "DATE '" + escapeSingleQuote(rawValue) + "'";
+        return "DATE '" + rawValue + "'";
       case TIMESTAMP:
-        return "TIMESTAMP '" + escapeSingleQuote(rawValue) + "'";
+        return "TIMESTAMP '" + rawValue + "'";
       case TIME:
-        return "TIME '" + escapeSingleQuote(rawValue) + "'";
+        return "TIME '" + rawValue + "'";
       default:
-        return "'" + escapeSingleQuote(rawValue) + "'";
+        return "\"" + rawValue + "\"";
     }
   }
 
   private static String joinFieldName(String[] fieldNameParts) {
     return String.join(".", fieldNameParts);
-  }
-
-  private static String escapeSingleQuote(String value) {
-    return value.replace("'", "''");
   }
 }

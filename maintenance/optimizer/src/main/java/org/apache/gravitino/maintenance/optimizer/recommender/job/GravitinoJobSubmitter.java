@@ -77,7 +77,7 @@ public class GravitinoJobSubmitter implements JobSubmitter {
     ensureClientInitialized();
     GravitinoJobAdapter jobAdapter = loadJobAdapter(jobTemplateName);
     return gravitinoClient
-        .runJob(jobTemplateName, buildJobConfig(jobExecutionContext, jobAdapter))
+        .runJob(jobTemplateName, buildJobConfig(optimizerConfig, jobExecutionContext, jobAdapter))
         .jobId();
   }
 
@@ -100,31 +100,27 @@ public class GravitinoJobSubmitter implements JobSubmitter {
 
   @VisibleForTesting
   /**
-   * Merge job configs with precedence: optimizer config < job context < adapter config.
+   * Merge job configs with precedence: optimizer config < adapter config.
    *
    * <p>Typical use cases:
    *
    * <ul>
    *   <li>Optimizer config: shared engine/runtime defaults (for example, Spark settings).
-   *   <li>Job context: strategy/handler-provided options derived from rules and evaluation.
    *   <li>Adapter config: adapter-specific parameters (for example, WHERE filters) required by the
    *       job template.
    * </ul>
    */
-  Map<String, String> buildJobConfig(
-      JobExecutionContext jobExecutionContext, GravitinoJobAdapter jobAdapter) {
+  static Map<String, String> buildJobConfig(
+      OptimizerConfig optimizerConfig,
+      JobExecutionContext jobExecutionContext,
+      GravitinoJobAdapter jobAdapter) {
     Map<String, String> submitterConfigs =
         optimizerConfig == null ? Map.of() : optimizerConfig.jobSubmitterConfigs();
-    Map<String, String> contextConfigs =
-        jobExecutionContext == null || jobExecutionContext.jobOptions() == null
-            ? Map.of()
-            : jobExecutionContext.jobOptions();
     Map<String, String> adapterConfigs =
         jobAdapter == null ? Map.of() : jobAdapter.jobConfig(jobExecutionContext);
 
     Map<String, String> mergedConfigs = new LinkedHashMap<>();
     mergedConfigs.putAll(submitterConfigs);
-    mergedConfigs.putAll(contextConfigs);
     mergedConfigs.putAll(adapterConfigs);
     return mergedConfigs;
   }

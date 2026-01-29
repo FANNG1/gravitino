@@ -39,7 +39,7 @@ public class TestGravitinoCompactionJobAdapter {
             "where_clause", "",
             "sort_order", "",
             "strategy", "binpack",
-            "options", "map('target_file_size_bytes', '1073741824')"),
+            "options", "{\"target_file_size_bytes\":\"1073741824\"}"),
         jobAdapter.jobConfig(mockCompactionJobContext()));
   }
 

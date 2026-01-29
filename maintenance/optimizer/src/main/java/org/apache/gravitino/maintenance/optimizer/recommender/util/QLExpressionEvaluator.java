@@ -25,6 +25,7 @@ import com.alibaba.qlexpress4.QLOptions;
 import com.google.common.base.Preconditions;
 import java.math.BigDecimal;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
@@ -43,19 +44,35 @@ public class QLExpressionEvaluator implements ExpressionEvaluator {
     Preconditions.checkArgument(StringUtils.isNotBlank(expression), "expression is blank");
     Preconditions.checkArgument(context != null, "context is null");
     Express4Runner runner = new Express4Runner(InitOptions.DEFAULT_OPTIONS);
+    String formattedExpression = formatExpression(expression, context);
     return runner
-        .execute(formatExpression(expression), formatContextKey(context), QLOptions.DEFAULT_OPTIONS)
+        .execute(formattedExpression, formatContextKey(context), QLOptions.DEFAULT_OPTIONS)
         .getResult();
   }
 
   private Map<String, Object> formatContextKey(Map<String, Object> context) {
     return context.entrySet().stream()
         .collect(
-            Collectors.toMap(entry -> formatExpression(entry.getKey()), entry -> entry.getValue()));
+            Collectors.toMap(
+                entry -> normalizeIdentifier(entry.getKey()), entry -> entry.getValue()));
   }
 
-  private String formatExpression(String expression) {
-    return expression.replace("-", "_");
+  private String formatExpression(String expression, Map<String, Object> context) {
+    String formatted = expression;
+    for (String key : context.keySet()) {
+      String normalized = normalizeIdentifier(key);
+      if (!key.equals(normalized)) {
+        // Replace only whole identifiers, so operators like "-" and negative literals stay intact.
+        // Example: "metric-1 - metric2" -> "metric_1 - metric2".
+        String pattern = "(?<![A-Za-z0-9_])" + Pattern.quote(key) + "(?![A-Za-z0-9_])";
+        formatted = formatted.replaceAll(pattern, normalized);
+      }
+    }
+    return formatted;
+  }
+
+  private String normalizeIdentifier(String name) {
+    return name.replace("-", "_");
   }
 
   private Long toLong(Object obj) {

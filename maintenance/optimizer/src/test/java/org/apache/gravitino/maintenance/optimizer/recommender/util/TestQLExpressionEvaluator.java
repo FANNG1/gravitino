@@ -128,4 +128,43 @@ public class TestQLExpressionEvaluator {
     boolean boolResult = evaluator.evaluateBool("boolVal && (intVal > 5)", context);
     assertTrue(boolResult);
   }
+
+  @Test
+  void testHyphenatedIdentifiersDoNotBreakSubtraction() {
+    Map<String, Object> context = new HashMap<>();
+    context.put("metric-1", 10);
+    context.put("metric2", 4);
+
+    long result = evaluator.evaluateLong("metric-1 - metric2", context);
+    assertEquals(6L, result);
+  }
+
+  @Test
+  void testNegativeLiteralPreserved() {
+    Map<String, Object> context = new HashMap<>();
+    context.put("x", 2);
+
+    long result = evaluator.evaluateLong("x + -1", context);
+    assertEquals(1L, result);
+  }
+
+  @Test
+  void testHyphenatedIdentifierNotMatchedInsideLargerToken() {
+    Map<String, Object> context = new HashMap<>();
+    context.put("metric-1", 5);
+    context.put("metric-1-extra", 7);
+
+    long result = evaluator.evaluateLong("metric-1 + metric-1-extra", context);
+    assertEquals(12L, result);
+  }
+
+  @Test
+  void testHyphenatedIdentifierNextToDotIsNotRewritten() {
+    Map<String, Object> context = new HashMap<>();
+    context.put("metric-1", 3);
+    context.put("a", 2);
+
+    long result = evaluator.evaluateLong("a + metric-1", context);
+    assertEquals(5L, result);
+  }
 }

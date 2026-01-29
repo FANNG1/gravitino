@@ -19,15 +19,21 @@
 
 package org.apache.gravitino.maintenance.optimizer.recommender.job;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
-import java.util.Map.Entry;
+import java.util.TreeMap;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.JobExecutionContext;
 import org.apache.gravitino.maintenance.optimizer.common.util.IdentifierUtils;
 import org.apache.gravitino.maintenance.optimizer.recommender.handler.compaction.CompactionJobContext;
 
 public class GravitinoCompactionJobAdapter implements GravitinoJobAdapter {
+
+  private static final ObjectMapper MAPPER =
+      new ObjectMapper().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
 
   @Override
   public Map<String, String> jobConfig(JobExecutionContext jobExecutionContext) {
@@ -61,27 +67,17 @@ public class GravitinoCompactionJobAdapter implements GravitinoJobAdapter {
 
   private String getOptions(JobExecutionContext jobExecutionContext) {
     Map<String, String> map = jobExecutionContext.jobOptions();
-    return convertMapToString(map);
+    return convertMapToJson(map);
   }
 
-  private static String convertMapToString(Map<String, ?> map) {
+  private static String convertMapToJson(Map<String, ?> map) {
     if (map == null || map.isEmpty()) {
-      return "map()";
+      return "{}";
     }
-
-    StringBuilder sb = new StringBuilder();
-    sb.append("map(");
-
-    boolean isFirstEntry = true;
-    for (Entry<String, ?> entry : map.entrySet()) {
-      if (!isFirstEntry) {
-        sb.append(", ");
-      }
-      sb.append("'").append(entry.getKey()).append("', '").append(entry.getValue()).append("'");
-      isFirstEntry = false;
+    try {
+      return MAPPER.writeValueAsString(new TreeMap<>(map));
+    } catch (JsonProcessingException e) {
+      throw new IllegalStateException("Failed to serialize options to JSON", e);
     }
-
-    sb.append(")");
-    return sb.toString();
   }
 }

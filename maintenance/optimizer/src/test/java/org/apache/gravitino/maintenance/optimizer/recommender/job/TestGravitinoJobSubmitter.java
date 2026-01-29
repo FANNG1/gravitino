@@ -87,10 +87,9 @@ public class TestGravitinoJobSubmitter {
         jobExecutionContext ->
             Map.of("table", "db.table", "options", "map('k','v')", "override", "adapter");
 
-    Map<String, String> merged = submitter.buildJobConfig(context, adapter);
+    Map<String, String> merged = GravitinoJobSubmitter.buildJobConfig(config, context, adapter);
 
     Assertions.assertEquals("optimizer", merged.get("custom"));
-    Assertions.assertEquals("context", merged.get("context"));
     Assertions.assertEquals("adapter", merged.get("override"));
     Assertions.assertEquals("db.table", merged.get("table"));
     Assertions.assertEquals("map('k','v')", merged.get("options"));

@@ -45,7 +45,7 @@ public class TestPartitionUtils {
 
     String where = PartitionUtils.getWhereClauseForPartition(partitions, columns, transforms);
 
-    Assertions.assertEquals("colA = 'O''Hara'", where);
+    Assertions.assertEquals("colA = \"O'Hara\"", where);
   }
 
   @Test
@@ -73,7 +73,7 @@ public class TestPartitionUtils {
 
     String where = PartitionUtils.getWhereClauseForPartition(partitions, columns, transforms);
 
-    Assertions.assertEquals("colA = 'abc' AND bucket(colB, 2) = 1", where);
+    Assertions.assertEquals("colA = \"abc\" AND bucket(colB, 2) = 1", where);
   }
 
   @Test
@@ -91,7 +91,7 @@ public class TestPartitionUtils {
 
     String where = PartitionUtils.getWhereClauseForPartition(partitions, columns, transforms);
 
-    Assertions.assertEquals("truncate(colC, 5) = 'prefix' AND year(colD) = 2024", where);
+    Assertions.assertEquals("truncate(colC, 5) = \"prefix\" AND year(colD) = 2024", where);
   }
 
   @Test
@@ -109,7 +109,7 @@ public class TestPartitionUtils {
 
     String where = PartitionUtils.getWhereClauseForPartitions(partitions, columns, partitioning);
 
-    Assertions.assertEquals("(a = 'x1' AND b = 'y1') AND (a = 'x2' AND b = 'y2')", where);
+    Assertions.assertEquals("(a = \"x1\" AND b = \"y1\") OR (a = \"x2\" AND b = \"y2\")", where);
   }
 
   @Test
@@ -128,7 +128,7 @@ public class TestPartitionUtils {
 
     String where = PartitionUtils.getWhereClauseForPartitions(partitions, columns, partitioning);
 
-    Assertions.assertEquals("(id = 123 AND score = 45.6) AND (id = 456 AND score = 78.9)", where);
+    Assertions.assertEquals("(id = 123 AND score = 45.6) OR (id = 456 AND score = 78.9)", where);
   }
 
   @Test
