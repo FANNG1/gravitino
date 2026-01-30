@@ -27,6 +27,7 @@ jobs:
             source_changes:
               - '.github/**'
               - 'catalogs/**'
+              - 'catalogs-contrib/**'
               - 'clients/**'
               - 'conf/**'
               - 'dev/**'
