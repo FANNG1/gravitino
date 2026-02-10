@@ -15,4 +15,4 @@
 # specific language governing permissions and limitations
 # under the License.
 
-org.apache.gravitino.maintenance.optimizer.updater.TestStatisticsUpdater
+org.apache.gravitino.maintenance.optimizer.updater.StatisticsUpdaterForTest

@@ -38,6 +38,7 @@ import org.apache.gravitino.maintenance.optimizer.api.updater.SupportsCalculateT
 import org.apache.gravitino.maintenance.optimizer.common.CloseableGroup;
 import org.apache.gravitino.maintenance.optimizer.common.MetricSampleImpl;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
+import org.apache.gravitino.maintenance.optimizer.common.PartitionMetricSampleImpl;
 import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
 import org.apache.gravitino.maintenance.optimizer.common.util.InstanceLoaderUtils;
 import org.apache.gravitino.maintenance.optimizer.common.util.ProviderUtils;
@@ -86,13 +87,15 @@ public class Updater implements AutoCloseable {
    * implements {@link SupportsCalculateJobStatistics} and {@code updateType} is {@link
    * UpdateType#METRICS}, job metrics are also emitted.
    *
-   * @param statisticsComputerName The provider name of the statistics calculator.
+   * @param statisticsCalculatorName The provider name of the statistics calculator.
    * @param nameIdentifiers The identifiers to update (table and/or job).
    * @param updateType The target update type: statistics or metrics.
    */
   public void update(
-      String statisticsComputerName, List<NameIdentifier> nameIdentifiers, UpdateType updateType) {
-    StatisticsCalculator calculator = getStatisticsCalculator(statisticsComputerName);
+      String statisticsCalculatorName,
+      List<NameIdentifier> nameIdentifiers,
+      UpdateType updateType) {
+    StatisticsCalculator calculator = getStatisticsCalculator(statisticsCalculatorName);
     long tableRecords = 0;
     long partitionRecords = 0;
     long jobRecords = 0;
@@ -108,14 +111,14 @@ public class Updater implements AutoCloseable {
         partitionRecords += countPartitionStatistics(partitionStatistics);
         LOG.info(
             "Updating table statistics/metrics: calculator={}, updateType={}, identifier={}",
-            statisticsComputerName,
+            statisticsCalculatorName,
             updateType,
             nameIdentifier);
         updateTable(statistics, nameIdentifier, updateType);
         updatePartition(partitionStatistics, nameIdentifier, updateType);
       }
       if (calculator instanceof SupportsCalculateJobStatistics
-          && updateType.equals(UpdateType.METRICS)) {
+          && UpdateType.METRICS.equals(updateType)) {
         SupportsCalculateJobStatistics supportJobStatistics =
             ((SupportsCalculateJobStatistics) calculator);
         List<StatisticEntry<?>> statistics =
@@ -123,7 +126,7 @@ public class Updater implements AutoCloseable {
         jobRecords += countStatistics(statistics);
         LOG.info(
             "Updating job metrics: calculator={}, identifier={}",
-            statisticsComputerName,
+            statisticsCalculatorName,
             nameIdentifier);
         updateJob(statistics, nameIdentifier);
       }
@@ -145,11 +148,11 @@ public class Updater implements AutoCloseable {
    * StatisticsCalculator} for all table statistics (and optionally job statistics) and persists
    * them according to {@code updateType}.
    *
-   * @param statisticsComputerName The provider name of the statistics calculator.
+   * @param statisticsCalculatorName The provider name of the statistics calculator.
    * @param updateType The target update type: statistics or metrics.
    */
-  public void updateAll(String statisticsComputerName, UpdateType updateType) {
-    StatisticsCalculator calculator = getStatisticsCalculator(statisticsComputerName);
+  public void updateAll(String statisticsCalculatorName, UpdateType updateType) {
+    StatisticsCalculator calculator = getStatisticsCalculator(statisticsCalculatorName);
     long tableRecords = 0;
     long partitionRecords = 0;
     long jobRecords = 0;
@@ -330,9 +333,7 @@ public class Updater implements AutoCloseable {
           (partitionPath, statisticEntries) ->
               statisticEntries.forEach(
                   stat ->
-                      metrics.add(
-                          new org.apache.gravitino.maintenance.optimizer.common
-                              .PartitionMetricSampleImpl(timestamp, stat, partitionPath))));
+                      metrics.add(new PartitionMetricSampleImpl(timestamp, stat, partitionPath))));
     }
     return metrics;
   }

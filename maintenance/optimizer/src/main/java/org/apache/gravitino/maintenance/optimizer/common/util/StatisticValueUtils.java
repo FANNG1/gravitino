@@ -76,7 +76,7 @@ public class StatisticValueUtils {
     Name doubleName = Types.DoubleType.get().name();
     if (type.name().equals(longName)) {
       long longValue = ((Long) value.value()).longValue();
-      return StatisticValues.doubleValue(longValue / divisor);
+      return StatisticValues.doubleValue(((double) longValue) / divisor);
     } else if (type.name().equals(doubleName)) {
       double doubleValue = ((Number) value.value()).doubleValue();
       return StatisticValues.doubleValue(doubleValue / divisor);
