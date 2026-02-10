@@ -32,8 +32,8 @@ import org.junit.jupiter.api.Test;
 class TestStatisticValueUtils {
 
   @Test
-  void avgReturnsNullForEmptyList() {
-    Assertions.assertNull(StatisticValueUtils.avg(List.of()));
+  void avgReturnsEmptyForEmptyList() {
+    Assertions.assertTrue(StatisticValueUtils.avg(List.of()).isEmpty());
   }
 
   @Test
@@ -43,7 +43,7 @@ class TestStatisticValueUtils {
             StatisticValues.longValue(10L),
             StatisticValues.longValue(20L),
             StatisticValues.longValue(30L));
-    StatisticValue result = StatisticValueUtils.avg(values);
+    StatisticValue result = StatisticValueUtils.avg(values).orElseThrow();
     Assertions.assertEquals(20.0, result.value());
   }
 
@@ -54,13 +54,13 @@ class TestStatisticValueUtils {
             StatisticValues.doubleValue(10.5),
             StatisticValues.doubleValue(20.5),
             StatisticValues.doubleValue(30.5));
-    StatisticValue result = StatisticValueUtils.avg(values);
+    StatisticValue result = StatisticValueUtils.avg(values).orElseThrow();
     Assertions.assertEquals(20.5, result.value());
   }
 
   @Test
-  void sumReturnsNullForEmptyList() {
-    Assertions.assertNull(StatisticValueUtils.sum(List.of()));
+  void sumReturnsEmptyForEmptyList() {
+    Assertions.assertTrue(StatisticValueUtils.sum(List.of()).isEmpty());
   }
 
   @Test
@@ -70,7 +70,7 @@ class TestStatisticValueUtils {
             StatisticValues.longValue(10L),
             StatisticValues.longValue(20L),
             StatisticValues.longValue(30L));
-    StatisticValue result = StatisticValueUtils.sum(values);
+    StatisticValue result = StatisticValueUtils.sum(values).orElseThrow();
     Assertions.assertEquals(60L, result.value());
   }
 
@@ -81,7 +81,7 @@ class TestStatisticValueUtils {
             StatisticValues.doubleValue(10.5),
             StatisticValues.doubleValue(20.5),
             StatisticValues.doubleValue(30.5));
-    StatisticValue result = StatisticValueUtils.sum(values);
+    StatisticValue result = StatisticValueUtils.sum(values).orElseThrow();
     Assertions.assertEquals(61.5, result.value());
   }
 

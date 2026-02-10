@@ -29,7 +29,7 @@ import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
 @DeveloperApi
 public interface SupportsCalculateJobStatistics extends StatisticsCalculator {
   /**
-   * Compute job-level statistics to be persisted.
+   * Calculate job-level statistics to be persisted.
    *
    * @param jobIdentifier job identifier
    * @return list of statistics; empty when none are produced

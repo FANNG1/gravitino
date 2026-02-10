@@ -22,6 +22,7 @@ package org.apache.gravitino.maintenance.optimizer.common.util;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Preconditions;
 import java.util.List;
+import java.util.Optional;
 import org.apache.gravitino.json.JsonUtils;
 import org.apache.gravitino.rel.types.Type;
 import org.apache.gravitino.rel.types.Type.Name;
@@ -31,22 +32,22 @@ import org.apache.gravitino.stats.StatisticValues;
 
 public class StatisticValueUtils {
 
-  public static StatisticValue avg(List<StatisticValue> values) {
+  public static Optional<StatisticValue> avg(List<StatisticValue> values) {
     if (values.isEmpty()) {
-      return null;
+      return Optional.empty();
     }
     Preconditions.checkArgument(values.stream().allMatch(StatisticValueUtils::isNumber));
 
-    StatisticValue sum = sum(values);
-    if (sum == null) {
-      return null;
+    Optional<StatisticValue> sum = sum(values);
+    if (sum.isEmpty()) {
+      return Optional.empty();
     }
-    return StatisticValueUtils.div(sum, values.size());
+    return Optional.of(StatisticValueUtils.div(sum.get(), values.size()));
   }
 
-  public static StatisticValue sum(List<StatisticValue> values) {
+  public static Optional<StatisticValue> sum(List<StatisticValue> values) {
     if (values.isEmpty()) {
-      return null;
+      return Optional.empty();
     }
     Type type = getValueType(values);
     Name longName = Types.LongType.get().name();
@@ -56,13 +57,13 @@ public class StatisticValueUtils {
       for (StatisticValue value : values) {
         longSum += ((Long) value.value()).longValue();
       }
-      return StatisticValues.longValue(longSum);
+      return Optional.of(StatisticValues.longValue(longSum));
     } else if (type.name().equals(doubleName)) {
       double doubleSum = 0.0;
       for (StatisticValue value : values) {
         doubleSum += ((Number) value.value()).doubleValue();
       }
-      return StatisticValues.doubleValue(doubleSum);
+      return Optional.of(StatisticValues.doubleValue(doubleSum));
     } else {
       throw new IllegalArgumentException("Unsupported number type: " + type.name());
     }

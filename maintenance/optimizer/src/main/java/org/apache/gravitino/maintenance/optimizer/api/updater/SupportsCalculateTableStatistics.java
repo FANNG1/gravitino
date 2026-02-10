@@ -30,7 +30,7 @@ import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
 @DeveloperApi
 public interface SupportsCalculateTableStatistics extends StatisticsCalculator {
   /**
-   * Compute table-level statistics to be persisted.
+   * Calculate table-level statistics to be persisted.
    *
    * @param tableIdentifier catalog/schema/table identifier
    * @return list of statistics; empty when none are produced
@@ -38,7 +38,7 @@ public interface SupportsCalculateTableStatistics extends StatisticsCalculator {
   List<StatisticEntry<?>> calculateTableStatistics(NameIdentifier tableIdentifier);
 
   /**
-   * Compute partition-level statistics to be persisted.
+   * Calculate partition-level statistics to be persisted.
    *
    * @param tableIdentifier catalog/schema/table identifier
    * @return map keyed by partition identifiers (outer to inner) to statistic entries; empty when

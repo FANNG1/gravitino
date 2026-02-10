@@ -338,9 +338,9 @@ public class Updater implements AutoCloseable {
     return metrics;
   }
 
-  private StatisticsCalculator getStatisticsCalculator(String statisticsComputerName) {
+  private StatisticsCalculator getStatisticsCalculator(String statisticsCalculatorName) {
     StatisticsCalculator calculator =
-        InstanceLoaderUtils.createStatisticsCalculatorInstance(statisticsComputerName);
+        InstanceLoaderUtils.createStatisticsCalculatorInstance(statisticsCalculatorName);
     calculator.initialize(optimizerEnv);
     return calculator;
   }

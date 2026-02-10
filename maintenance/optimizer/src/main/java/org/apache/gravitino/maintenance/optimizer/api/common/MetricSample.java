@@ -21,7 +21,7 @@ package org.apache.gravitino.maintenance.optimizer.api.common;
 
 import org.apache.gravitino.annotation.DeveloperApi;
 
-/** Represents a single metric data point with a timestamp and associated statistic. */
+/** Represents a single metric sample with a timestamp and associated statistic. */
 @DeveloperApi
 public interface MetricSample {
 
@@ -35,7 +35,7 @@ public interface MetricSample {
   /**
    * The statistic value sampled at this timestamp.
    *
-   * @return the statistic entry for this data point
+   * @return the statistic entry for this sample
    */
   StatisticEntry<?> statistic();
 }
