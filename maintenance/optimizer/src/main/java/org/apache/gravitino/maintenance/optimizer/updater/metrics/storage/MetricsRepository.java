@@ -31,7 +31,7 @@ public interface MetricsRepository extends AutoCloseable {
   void initialize(Map<String, String> properties);
 
   /** Persist a table metric (optionally scoped to a partition). */
-  void storeTableMetrics(
+  void storeTableMetric(
       NameIdentifier nameIdentifier,
       String metricName,
       Optional<String> partition,
@@ -49,7 +49,7 @@ public interface MetricsRepository extends AutoCloseable {
   int cleanupTableMetricsBefore(long timestamp);
 
   /** Persist a job metric. */
-  void storeJobMetrics(NameIdentifier nameIdentifier, String metricName, MetricRecord metric);
+  void storeJobMetric(NameIdentifier nameIdentifier, String metricName, MetricRecord metric);
 
   /** Load job metrics within a time window [fromTimestamp, toTimestamp). */
   Map<String, List<MetricRecord>> getJobMetrics(
