@@ -29,6 +29,8 @@ import org.apache.gravitino.maintenance.optimizer.recommender.job.NoopJobSubmitt
 import org.apache.gravitino.maintenance.optimizer.recommender.statistics.GravitinoStatisticsProvider;
 import org.apache.gravitino.maintenance.optimizer.recommender.strategy.GravitinoStrategyProvider;
 import org.apache.gravitino.maintenance.optimizer.recommender.table.GravitinoTableMetadataProvider;
+import org.apache.gravitino.maintenance.optimizer.updater.GravitinoStatisticsUpdater;
+import org.apache.gravitino.maintenance.optimizer.updater.metrics.GravitinoMetricsUpdater;
 
 /**
  * Central configuration holder for the optimizer/recommender runtime. Keys are grouped under the
@@ -106,14 +108,14 @@ public class OptimizerConfig extends Config {
           .doc("The statistics updater implementation name (matches Provider.name()).")
           .version(ConfigConstants.VERSION_1_2_0)
           .stringConf()
-          .create();
+          .createWithDefault(GravitinoStatisticsUpdater.NAME);
 
   public static final ConfigEntry<String> METRICS_UPDATER_CONFIG =
       new ConfigBuilder(METRICS_UPDATER)
           .doc("The metrics updater implementation name (matches Provider.name()).")
           .version(ConfigConstants.VERSION_1_2_0)
           .stringConf()
-          .create();
+          .createWithDefault(GravitinoMetricsUpdater.NAME);
 
   public static final ConfigEntry<String> GRAVITINO_URI_CONFIG =
       new ConfigBuilder(GRAVITINO_URI)
