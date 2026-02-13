@@ -349,34 +349,6 @@ class TestH2MetricsRepository {
   }
 
   @Test
-  void testConcurrentDuplicateTableMetricWritesKeepSingleRecord() throws InterruptedException {
-    NameIdentifier tableId = NameIdentifier.of("catalog", "db", "dup_table_concurrent");
-    long ts = currentEpochSeconds();
-    String partition = "p=1";
-    Thread t1 =
-        new Thread(
-            () ->
-                storage.storeTableMetric(
-                    tableId, "metric", Optional.of(partition), new MetricRecordImpl(ts, "v1")));
-    Thread t2 =
-        new Thread(
-            () ->
-                storage.storeTableMetric(
-                    tableId, "metric", Optional.of(partition), new MetricRecordImpl(ts, "v2")));
-    t1.start();
-    t2.start();
-    t1.join();
-    t2.join();
-
-    Map<String, List<MetricRecord>> tableMetrics =
-        storage.getPartitionMetrics(tableId, partition, 0, Long.MAX_VALUE);
-    Assertions.assertTrue(tableMetrics.containsKey("metric"));
-    List<String> values = getMetricValues(tableMetrics.get("metric"));
-    Assertions.assertEquals(1, values.size());
-    Assertions.assertTrue(values.get(0).equals("v1") || values.get(0).equals("v2"));
-  }
-
-  @Test
   void testConfigurablePartitionColumnLength() {
     H2MetricsRepository repository = new H2MetricsRepository();
     Map<String, String> configs =

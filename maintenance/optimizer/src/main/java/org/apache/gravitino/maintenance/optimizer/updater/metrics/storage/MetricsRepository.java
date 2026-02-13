@@ -39,14 +39,14 @@ public interface MetricsRepository extends AutoCloseable {
 
   /** Load table-level metrics within a time window [fromTimestamp, toTimestamp) in epoch seconds. */
   Map<String, List<MetricRecord>> getTableMetrics(
-      NameIdentifier nameIdentifier, long fromTimestamp, long toTimestamp);
+      NameIdentifier nameIdentifier, long fromSecs, long toSecs);
 
   /**
    * Load partition-level metrics within a time window [fromTimestamp, toTimestamp) in epoch
    * seconds.
    */
   Map<String, List<MetricRecord>> getPartitionMetrics(
-      NameIdentifier nameIdentifier, String partition, long fromTimestamp, long toTimestamp);
+      NameIdentifier nameIdentifier, String partition, long fromSecs, long toSecs);
 
   /** Delete table metrics older than the supplied timestamp (epoch seconds), exclusive. */
   int cleanupTableMetricsBefore(long timestamp);
@@ -56,7 +56,7 @@ public interface MetricsRepository extends AutoCloseable {
 
   /** Load job metrics within a time window [fromTimestamp, toTimestamp) in epoch seconds. */
   Map<String, List<MetricRecord>> getJobMetrics(
-      NameIdentifier nameIdentifier, long fromTimestamp, long toTimestamp);
+      NameIdentifier nameIdentifier, long fromSecs, long toSecs);
 
   /** Delete job metrics older than the supplied timestamp (epoch seconds), exclusive. */
   int cleanupJobMetricsBefore(long timestamp);
