@@ -63,9 +63,6 @@ public interface MetricsRepository extends AutoCloseable {
 
   /**
    * Close repository resources.
-   *
-   * <p>Implementations may choose no-op close when they use per-operation connections and do not
-   * own global database lifecycle.
    */
   @Override
   void close();
