@@ -49,12 +49,14 @@ import org.slf4j.LoggerFactory;
 public class H2MetricsRepository implements MetricsRepository {
 
   private static final Logger LOG = LoggerFactory.getLogger(H2MetricsRepository.class);
+  private static final int DEFAULT_PARTITION_COLUMN_LENGTH = 1024;
 
   private static final String DEFAULT_USER = "sa";
   private static final String DEFAULT_PASSWORD = "";
   private String jdbcUrl = "jdbc:h2:file:./metrics_db;DB_CLOSE_DELAY=-1;MODE=MYSQL;AUTO_SERVER=TRUE";
   private String username = DEFAULT_USER;
   private String password = DEFAULT_PASSWORD;
+  private int partitionColumnLength = DEFAULT_PARTITION_COLUMN_LENGTH;
   private volatile boolean initialized = false;
 
   public H2MetricsRepository() {}
@@ -69,6 +71,12 @@ public class H2MetricsRepository implements MetricsRepository {
     H2MetricsRepositoryConfig config = new H2MetricsRepositoryConfig(h2Properties);
     username = config.get(H2MetricsRepositoryConfig.H2_METRICS_USERNAME_CONFIG);
     password = config.get(H2MetricsRepositoryConfig.H2_METRICS_PASSWORD_CONFIG);
+    partitionColumnLength =
+        config.get(H2MetricsRepositoryConfig.H2_METRICS_PARTITION_COLUMN_LENGTH_CONFIG);
+    Preconditions.checkArgument(
+        partitionColumnLength > 0,
+        "Partition column length must be positive, but got %s",
+        partitionColumnLength);
     String configuredJdbcUrl = config.get(H2MetricsRepositoryConfig.H2_METRICS_JDBC_URL_CONFIG);
     if (StringUtils.isNotBlank(configuredJdbcUrl)) {
       jdbcUrl = constructH2JdbcUrl(configuredJdbcUrl);
@@ -84,20 +92,22 @@ public class H2MetricsRepository implements MetricsRepository {
     String createTableMetricsSql =
         "CREATE TABLE IF NOT EXISTS table_metrics ("
             + "id BIGINT AUTO_INCREMENT PRIMARY KEY, "
-            + "table_identifier VARCHAR(1000) NOT NULL, "
-            + "metric_name VARCHAR(255) NOT NULL, "
-            + "partition VARCHAR(255), "
+            + "table_identifier VARCHAR(1024) NOT NULL, "
+            + "metric_name VARCHAR(1024) NOT NULL, "
+            + "partition VARCHAR("
+            + partitionColumnLength
+            + "), "
             + "timestamp BIGINT NOT NULL, "
-            + "value VARCHAR(1000) NOT NULL"
+            + "value VARCHAR(1024) NOT NULL"
             + ")";
 
     String createJobMetricsSql =
         "CREATE TABLE IF NOT EXISTS job_metrics ("
             + "id BIGINT AUTO_INCREMENT PRIMARY KEY, "
-            + "job_identifier VARCHAR(1000) NOT NULL, "
-            + "metric_name VARCHAR(255) NOT NULL, "
+            + "job_identifier VARCHAR(1024) NOT NULL, "
+            + "metric_name VARCHAR(1024) NOT NULL, "
             + "timestamp BIGINT NOT NULL, "
-            + "value VARCHAR(1000) NOT NULL"
+            + "value VARCHAR(1024) NOT NULL"
             + ")";
 
     String createIndexSql1 =
@@ -106,6 +116,8 @@ public class H2MetricsRepository implements MetricsRepository {
         "CREATE INDEX IF NOT EXISTS idx_job_metrics_timestamp ON job_metrics(timestamp)";
     String createIndexSql3 =
         "CREATE INDEX IF NOT EXISTS idx_table_metrics_composite ON table_metrics(table_identifier, partition, timestamp)";
+    String alterTablePartitionSql =
+        "ALTER TABLE table_metrics ALTER COLUMN partition VARCHAR(" + partitionColumnLength + ")";
 
     try (Connection conn = DriverManager.getConnection(jdbcUrl, username, password);
         Statement stmt = conn.createStatement()) {
@@ -114,6 +126,7 @@ public class H2MetricsRepository implements MetricsRepository {
       stmt.execute(createIndexSql1);
       stmt.execute(createIndexSql2);
       stmt.execute(createIndexSql3);
+      stmt.execute(alterTablePartitionSql);
     } catch (SQLException e) {
       throw new MetricsStorageException(
           "Failed to initialize H2 metrics storage with URL: " + jdbcUrl, e);
@@ -126,6 +139,7 @@ public class H2MetricsRepository implements MetricsRepository {
       String metricName,
       Optional<String> partition,
       MetricRecord metric) {
+    validateWriteArguments(nameIdentifier, metricName, metric);
     String sql =
         "INSERT INTO table_metrics (table_identifier, metric_name, partition, timestamp, value) VALUES (?, ?, ?, ?, ?)";
 
@@ -233,6 +247,7 @@ public class H2MetricsRepository implements MetricsRepository {
   @Override
   public void storeJobMetric(
       NameIdentifier nameIdentifier, String metricName, MetricRecord metric) {
+    validateWriteArguments(nameIdentifier, metricName, metric);
     String sql =
         "INSERT INTO job_metrics (job_identifier, metric_name, timestamp, value) VALUES (?, ?, ?, ?)";
 
@@ -380,6 +395,13 @@ public class H2MetricsRepository implements MetricsRepository {
         toTimestamp);
   }
 
+  private void validateWriteArguments(
+      NameIdentifier nameIdentifier, String metricName, MetricRecord metric) {
+    Preconditions.checkArgument(nameIdentifier != null, "nameIdentifier must not be null");
+    Preconditions.checkArgument(StringUtils.isNotBlank(metricName), "metricName must not be blank");
+    Preconditions.checkArgument(metric != null, "metric record must not be null");
+  }
+
   private String constructH2JdbcUrl(String originUrl) {
     String resolvedUrl = originUrl;
     if (!containsJdbcParam(resolvedUrl, "DB_CLOSE_DELAY")) {
@@ -408,6 +430,7 @@ public class H2MetricsRepository implements MetricsRepository {
     public static final String H2_METRICS_JDBC_URL = "h2MetricsJdbcUrl";
     public static final String H2_METRICS_USERNAME = "h2MetricsUsername";
     public static final String H2_METRICS_PASSWORD = "h2MetricsPassword";
+    public static final String H2_METRICS_PARTITION_COLUMN_LENGTH = "h2MetricsPartitionColumnLength";
 
     public static final ConfigEntry<String> H2_METRICS_STORAGE_PATH_CONFIG =
         new ConfigBuilder(H2_METRICS_STORAGE_PATH)
@@ -438,6 +461,13 @@ public class H2MetricsRepository implements MetricsRepository {
             .version(ConfigConstants.VERSION_1_2_0)
             .stringConf()
             .createWithDefault(DEFAULT_PASSWORD);
+
+    public static final ConfigEntry<Integer> H2_METRICS_PARTITION_COLUMN_LENGTH_CONFIG =
+        new ConfigBuilder(H2_METRICS_PARTITION_COLUMN_LENGTH)
+            .doc("Length of table_metrics.partition column.")
+            .version(ConfigConstants.VERSION_1_2_0)
+            .intConf()
+            .createWithDefault(DEFAULT_PARTITION_COLUMN_LENGTH);
 
     /**
      * Creates H2 metrics storage config from raw properties.

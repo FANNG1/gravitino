@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.time.Instant;
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -211,6 +212,77 @@ class TestH2MetricsRepository {
         Assertions.assertThrows(
             IllegalArgumentException.class, () -> storage.getJobMetrics(id, 30, 30));
     Assertions.assertTrue(jobException.getMessage().contains("Invalid time window"));
+  }
+
+  @Test
+  void testWriteValidationFailsFast() {
+    MetricRecord metric = new MetricRecordImpl(currentEpochSeconds(), "v1");
+    NameIdentifier id = NameIdentifier.of("catalog", "db", "table");
+
+    Assertions.assertThrows(
+        IllegalArgumentException.class,
+        () -> storage.storeTableMetric(null, "metric", Optional.empty(), metric));
+    Assertions.assertThrows(
+        IllegalArgumentException.class,
+        () -> storage.storeTableMetric(id, " ", Optional.empty(), metric));
+    Assertions.assertThrows(
+        IllegalArgumentException.class,
+        () -> storage.storeTableMetric(id, "metric", Optional.empty(), null));
+
+    Assertions.assertThrows(
+        IllegalArgumentException.class, () -> storage.storeJobMetric(null, "metric", metric));
+    Assertions.assertThrows(
+        IllegalArgumentException.class, () -> storage.storeJobMetric(id, "", metric));
+    Assertions.assertThrows(
+        IllegalArgumentException.class, () -> storage.storeJobMetric(id, "metric", null));
+  }
+
+  @Test
+  void testLongPartitionAndValueAreSupported() {
+    NameIdentifier tableId = NameIdentifier.of("catalog", "db", "long_payload_table");
+    NameIdentifier jobId = NameIdentifier.of("catalog", "db", "long_payload_job");
+    String partition = "p=" + "x".repeat(300);
+    String longValue = "v".repeat(1000);
+    long now = currentEpochSeconds();
+
+    storage.storeTableMetric(
+        tableId, "metric_long", Optional.of(partition), new MetricRecordImpl(now, longValue));
+    storage.storeJobMetric(jobId, "metric_long", new MetricRecordImpl(now, longValue));
+
+    Map<String, List<MetricRecord>> tableMetrics =
+        storage.getPartitionMetrics(tableId, partition, 0, Long.MAX_VALUE);
+    Assertions.assertTrue(tableMetrics.containsKey("metric_long"));
+    Assertions.assertEquals(longValue, tableMetrics.get("metric_long").get(0).getValue());
+
+    Map<String, List<MetricRecord>> jobMetrics = storage.getJobMetrics(jobId, 0, Long.MAX_VALUE);
+    Assertions.assertTrue(jobMetrics.containsKey("metric_long"));
+    Assertions.assertEquals(longValue, jobMetrics.get("metric_long").get(0).getValue());
+  }
+
+  @Test
+  void testConfigurablePartitionColumnLength() {
+    H2MetricsRepository repository = new H2MetricsRepository();
+    Map<String, String> configs =
+        Map.of(
+            OptimizerConfig.OPTIMIZER_PREFIX
+                + H2MetricsRepository.H2MetricsRepositoryConfig.H2_METRICS_PREFIX
+                + H2MetricsRepository.H2MetricsRepositoryConfig.H2_METRICS_PARTITION_COLUMN_LENGTH,
+            "2048");
+    repository.initialize(configs);
+    repository.cleanupAllMetricsBefore(Long.MAX_VALUE);
+
+    NameIdentifier tableId = NameIdentifier.of("catalog", "db", "long_partition_table");
+    String longPartition = "p=" + "y".repeat(1500);
+    long now = currentEpochSeconds();
+
+    repository.storeTableMetric(
+        tableId, "metric_long_partition", Optional.of(longPartition), new MetricRecordImpl(now, "v1"));
+    Map<String, List<MetricRecord>> partitionMetrics =
+        repository.getPartitionMetrics(tableId, longPartition, 0, Long.MAX_VALUE);
+    Assertions.assertTrue(partitionMetrics.containsKey("metric_long_partition"));
+    Assertions.assertEquals(List.of("v1"), getMetricValues(partitionMetrics.get("metric_long_partition")));
+    repository.cleanupAllMetricsBefore(Long.MAX_VALUE);
+    repository.close();
   }
 
   private List<String> getMetricValues(List<MetricRecord> metrics) {
