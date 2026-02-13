@@ -19,6 +19,8 @@
 
 package org.apache.gravitino.maintenance.optimizer.updater;
 
+import com.google.common.base.Preconditions;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -53,6 +55,8 @@ public class GravitinoStatisticsUpdater implements StatisticsUpdater {
   @Override
   public void updateTableStatistics(
       NameIdentifier tableIdentifier, List<StatisticEntry<?>> tableStatistics) {
+    Preconditions.checkArgument(tableIdentifier != null, "tableIdentifier must not be null");
+    ensureInitialized();
     doUpdateTableStatistics(tableIdentifier, getTableStatisticsMap(tableStatistics));
   }
 
@@ -60,6 +64,8 @@ public class GravitinoStatisticsUpdater implements StatisticsUpdater {
   public void updatePartitionStatistics(
       NameIdentifier tableIdentifier,
       Map<PartitionPath, List<StatisticEntry<?>>> partitionStatistics) {
+    Preconditions.checkArgument(tableIdentifier != null, "tableIdentifier must not be null");
+    ensureInitialized();
     doUpdatePartitionStatistics(
         tableIdentifier, getPartitionStatisticsUpdates(partitionStatistics));
   }
@@ -81,10 +87,7 @@ public class GravitinoStatisticsUpdater implements StatisticsUpdater {
     if (statistics == null || statistics.isEmpty()) {
       return Map.of();
     }
-    return statistics.stream()
-        .collect(
-            Collectors.toMap(
-                StatisticEntry::name, StatisticEntry::value, (first, second) -> second));
+    return toStatisticValueMap(statistics, "table statistics");
   }
 
   private List<PartitionStatisticsUpdate> getPartitionStatisticsUpdates(
@@ -94,24 +97,43 @@ public class GravitinoStatisticsUpdater implements StatisticsUpdater {
     }
     return partitionStatistics.entrySet().stream()
         .map(
-            entry ->
-                new PartitionStatisticsUpdate() {
-                  @Override
-                  public String partitionName() {
-                    return PartitionUtils.encodePartitionPath(entry.getKey());
-                  }
+            entry -> {
+              Preconditions.checkArgument(
+                  entry.getKey() != null, "partition path must not be null");
+              return new PartitionStatisticsUpdate() {
+                @Override
+                public String partitionName() {
+                  return PartitionUtils.encodePartitionPath(entry.getKey());
+                }
 
-                  @Override
-                  public Map<String, StatisticValue<?>> statistics() {
-                    return entry.getValue().stream()
-                        .collect(
-                            Collectors.toMap(
-                                StatisticEntry::name,
-                                StatisticEntry::value,
-                                (first, second) -> second));
-                  }
-                })
+                @Override
+                public Map<String, StatisticValue<?>> statistics() {
+                  return toStatisticValueMap(entry.getValue(), "partition statistics");
+                }
+              };
+            })
         .collect(Collectors.toList());
+  }
+
+  private Map<String, StatisticValue<?>> toStatisticValueMap(
+      List<StatisticEntry<?>> statistics, String context) {
+    Preconditions.checkArgument(statistics != null, "%s list must not be null", context);
+    Map<String, StatisticValue<?>> result = new LinkedHashMap<>();
+    for (StatisticEntry<?> statistic : statistics) {
+      Preconditions.checkArgument(statistic != null, "%s entry must not be null", context);
+      Preconditions.checkArgument(
+          statistic.name() != null, "%s name must not be null", context);
+      Preconditions.checkArgument(
+          statistic.value() != null, "%s value must not be null", context);
+      result.put(statistic.name(), statistic.value());
+    }
+    return result;
+  }
+
+  private void ensureInitialized() {
+    Preconditions.checkState(
+        gravitinoClient != null,
+        "GravitinoStatisticsUpdater has not been initialized. Call initialize(optimizerEnv) first.");
   }
 
   private void doUpdatePartitionStatistics(
