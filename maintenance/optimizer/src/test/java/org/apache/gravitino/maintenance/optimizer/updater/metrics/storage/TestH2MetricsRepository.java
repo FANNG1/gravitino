@@ -86,9 +86,8 @@ class TestH2MetricsRepository {
     Assertions.assertEquals(Arrays.asList("value1"), getMetricValues(metrics.get("metric1")));
 
     Assertions.assertTrue(metrics.containsKey("metric2"));
-    Assertions.assertEquals(2, getMetricValues(metrics.get("metric2")).size());
-    Assertions.assertEquals(
-        Arrays.asList("value1", "value2"), getMetricValues(metrics.get("metric2")));
+    Assertions.assertEquals(1, getMetricValues(metrics.get("metric2")).size());
+    Assertions.assertEquals(Arrays.asList("value2"), getMetricValues(metrics.get("metric2")));
   }
 
   @Test
@@ -120,8 +119,7 @@ class TestH2MetricsRepository {
     Assertions.assertTrue(metrics.containsKey("metric"));
     Assertions.assertEquals(Arrays.asList("value1"), getMetricValues(metrics.get("metric")));
     Assertions.assertTrue(metrics.containsKey("metric2"));
-    Assertions.assertEquals(
-        Arrays.asList("value2", "value3"), getMetricValues(metrics.get("metric2")));
+    Assertions.assertEquals(Arrays.asList("value3"), getMetricValues(metrics.get("metric2")));
   }
 
   @Test
@@ -282,6 +280,22 @@ class TestH2MetricsRepository {
         IllegalArgumentException.class,
         () ->
             storage.storeTableMetric(
+                NameIdentifier.of("catalog", "db", "t".repeat(1021)),
+                "metric",
+                Optional.empty(),
+                new MetricRecordImpl(currentEpochSeconds(), "v1")));
+    Assertions.assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            storage.storeTableMetric(
+                id,
+                "m".repeat(1025),
+                Optional.empty(),
+                new MetricRecordImpl(currentEpochSeconds(), "v1")));
+    Assertions.assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            storage.storeTableMetric(
                 id,
                 "metric",
                 Optional.empty(),
@@ -319,6 +333,47 @@ class TestH2MetricsRepository {
     Map<String, List<MetricRecord>> jobMetrics = storage.getJobMetrics(jobId, 0, Long.MAX_VALUE);
     Assertions.assertTrue(jobMetrics.containsKey("metric_long"));
     Assertions.assertEquals(longValue, jobMetrics.get("metric_long").get(0).getValue());
+  }
+
+  @Test
+  void testStoreAndRetrieveJobMetricsOverwriteOnDuplicateKey() {
+    NameIdentifier jobId = NameIdentifier.of("catalog", "db", "dup_job");
+    long ts = currentEpochSeconds();
+
+    storage.storeJobMetric(jobId, "duration", new MetricRecordImpl(ts, "10"));
+    storage.storeJobMetric(jobId, "duration", new MetricRecordImpl(ts, "20"));
+
+    Map<String, List<MetricRecord>> jobMetrics = storage.getJobMetrics(jobId, 0, Long.MAX_VALUE);
+    Assertions.assertTrue(jobMetrics.containsKey("duration"));
+    Assertions.assertEquals(List.of("20"), getMetricValues(jobMetrics.get("duration")));
+  }
+
+  @Test
+  void testConcurrentDuplicateTableMetricWritesKeepSingleRecord() throws InterruptedException {
+    NameIdentifier tableId = NameIdentifier.of("catalog", "db", "dup_table_concurrent");
+    long ts = currentEpochSeconds();
+    String partition = "p=1";
+    Thread t1 =
+        new Thread(
+            () ->
+                storage.storeTableMetric(
+                    tableId, "metric", Optional.of(partition), new MetricRecordImpl(ts, "v1")));
+    Thread t2 =
+        new Thread(
+            () ->
+                storage.storeTableMetric(
+                    tableId, "metric", Optional.of(partition), new MetricRecordImpl(ts, "v2")));
+    t1.start();
+    t2.start();
+    t1.join();
+    t2.join();
+
+    Map<String, List<MetricRecord>> tableMetrics =
+        storage.getPartitionMetrics(tableId, partition, 0, Long.MAX_VALUE);
+    Assertions.assertTrue(tableMetrics.containsKey("metric"));
+    List<String> values = getMetricValues(tableMetrics.get("metric"));
+    Assertions.assertEquals(1, values.size());
+    Assertions.assertTrue(values.get(0).equals("v1") || values.get(0).equals("v2"));
   }
 
   @Test

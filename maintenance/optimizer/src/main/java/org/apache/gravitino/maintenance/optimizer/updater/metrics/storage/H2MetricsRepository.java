@@ -57,6 +57,8 @@ public class H2MetricsRepository implements MetricsRepository {
   private static final Logger LOG = LoggerFactory.getLogger(H2MetricsRepository.class);
   private static final int DEFAULT_PARTITION_COLUMN_LENGTH = 1024;
   private static final int MAX_METRIC_VALUE_LENGTH = 1024;
+  private static final int MAX_IDENTIFIER_LENGTH = 1024;
+  private static final int MAX_METRIC_NAME_LENGTH = 1024;
   private static final long MAX_REASONABLE_EPOCH_SECONDS = 9_999_999_999L;
 
   private static final String DEFAULT_USER = "sa";
@@ -124,6 +126,29 @@ public class H2MetricsRepository implements MetricsRepository {
         "CREATE INDEX IF NOT EXISTS idx_job_metrics_timestamp ON job_metrics(timestamp)";
     String createIndexSql3 =
         "CREATE INDEX IF NOT EXISTS idx_table_metrics_composite ON table_metrics(table_identifier, partition, timestamp)";
+    String deduplicateTableSql =
+        "DELETE FROM table_metrics t1 WHERE EXISTS ("
+            + "SELECT 1 FROM table_metrics t2 "
+            + "WHERE t1.id < t2.id "
+            + "AND t1.table_identifier = t2.table_identifier "
+            + "AND t1.metric_name = t2.metric_name "
+            + "AND t1.timestamp = t2.timestamp "
+            + "AND ((t1.partition IS NULL AND t2.partition IS NULL) OR t1.partition = t2.partition))";
+    String deduplicateJobSql =
+        "DELETE FROM job_metrics j1 WHERE EXISTS ("
+            + "SELECT 1 FROM job_metrics j2 "
+            + "WHERE j1.id < j2.id "
+            + "AND j1.job_identifier = j2.job_identifier "
+            + "AND j1.metric_name = j2.metric_name "
+            + "AND j1.timestamp = j2.timestamp)";
+    String dropUniqueIndexSql1 = "DROP INDEX IF EXISTS uk_table_metrics_record";
+    String dropUniqueIndexSql2 = "DROP INDEX IF EXISTS uk_job_metrics_record";
+    String createUniqueIndexSql1 =
+        "CREATE UNIQUE INDEX IF NOT EXISTS uk_table_metrics_record ON "
+            + "table_metrics(table_identifier, metric_name, partition, timestamp)";
+    String createUniqueIndexSql2 =
+        "CREATE UNIQUE INDEX IF NOT EXISTS uk_job_metrics_record ON "
+            + "job_metrics(job_identifier, metric_name, timestamp)";
     try (Connection conn = DriverManager.getConnection(jdbcUrl, username, password);
         Statement stmt = conn.createStatement()) {
       stmt.execute(createTableMetricsSql);
@@ -131,6 +156,12 @@ public class H2MetricsRepository implements MetricsRepository {
       stmt.execute(createIndexSql1);
       stmt.execute(createIndexSql2);
       stmt.execute(createIndexSql3);
+      stmt.execute(deduplicateTableSql);
+      stmt.execute(deduplicateJobSql);
+      stmt.execute(dropUniqueIndexSql1);
+      stmt.execute(dropUniqueIndexSql2);
+      stmt.execute(createUniqueIndexSql1);
+      stmt.execute(createUniqueIndexSql2);
       int currentPartitionColumnLength = getCurrentPartitionColumnLength(conn);
       if (currentPartitionColumnLength <= 0) {
         String alterTablePartitionSql =
@@ -175,17 +206,68 @@ public class H2MetricsRepository implements MetricsRepository {
       Optional<String> partition,
       MetricRecord metric) {
     validateWriteArguments(nameIdentifier, metricName, partition, metric);
-    String sql =
+    String insertSql =
         "INSERT INTO table_metrics (table_identifier, metric_name, partition, timestamp, value) VALUES (?, ?, ?, ?, ?)";
+    String updateSqlWithPartition =
+        "UPDATE table_metrics SET value = ? WHERE table_identifier = ? AND metric_name = ? "
+            + "AND partition = ? AND timestamp = ?";
+    String updateSqlWithoutPartition =
+        "UPDATE table_metrics SET value = ? WHERE table_identifier = ? AND metric_name = ? "
+            + "AND partition IS NULL AND timestamp = ?";
+
+    String normalizedIdentifier = normalizeIdentifier(nameIdentifier);
+    String normalizedMetricName = normalizeMetricName(metricName);
+    Optional<String> normalizedPartition = normalizePartition(partition);
+    String metricValue = metric.getValue();
+    long metricTimestamp = metric.getTimestamp();
 
     try (Connection conn = getConnection();
-        PreparedStatement pstmt = conn.prepareStatement(sql)) {
-      pstmt.setString(1, normalizeIdentifier(nameIdentifier));
-      pstmt.setString(2, normalizeMetricName(metricName));
-      pstmt.setString(3, normalizePartition(partition).orElse(null));
-      pstmt.setLong(4, metric.getTimestamp());
-      pstmt.setString(5, metric.getValue());
-      pstmt.executeUpdate();
+        PreparedStatement updateStmt =
+            conn.prepareStatement(
+                normalizedPartition.isPresent() ? updateSqlWithPartition : updateSqlWithoutPartition)) {
+      updateStmt.setString(1, metricValue);
+      updateStmt.setString(2, normalizedIdentifier);
+      updateStmt.setString(3, normalizedMetricName);
+      if (normalizedPartition.isPresent()) {
+        updateStmt.setString(4, normalizedPartition.get());
+        updateStmt.setLong(5, metricTimestamp);
+      } else {
+        updateStmt.setLong(4, metricTimestamp);
+      }
+
+      int updatedRows = updateStmt.executeUpdate();
+      if (updatedRows > 0) {
+        return;
+      }
+
+      try (PreparedStatement insertStmt = conn.prepareStatement(insertSql)) {
+        insertStmt.setString(1, normalizedIdentifier);
+        insertStmt.setString(2, normalizedMetricName);
+        insertStmt.setString(3, normalizedPartition.orElse(null));
+        insertStmt.setLong(4, metricTimestamp);
+        insertStmt.setString(5, metricValue);
+        insertStmt.executeUpdate();
+      } catch (SQLException insertException) {
+        if (isDuplicateKeyException(insertException)) {
+          // Race between concurrent inserts, fallback to overwrite.
+          try (PreparedStatement retryUpdateStmt =
+              conn.prepareStatement(
+                  normalizedPartition.isPresent() ? updateSqlWithPartition : updateSqlWithoutPartition)) {
+            retryUpdateStmt.setString(1, metricValue);
+            retryUpdateStmt.setString(2, normalizedIdentifier);
+            retryUpdateStmt.setString(3, normalizedMetricName);
+            if (normalizedPartition.isPresent()) {
+              retryUpdateStmt.setString(4, normalizedPartition.get());
+              retryUpdateStmt.setLong(5, metricTimestamp);
+            } else {
+              retryUpdateStmt.setLong(4, metricTimestamp);
+            }
+            retryUpdateStmt.executeUpdate();
+          }
+        } else {
+          throw insertException;
+        }
+      }
     } catch (SQLException e) {
       throw new MetricsStorageException(
           "Failed to store table metric: identifier="
@@ -286,16 +368,48 @@ public class H2MetricsRepository implements MetricsRepository {
   public void storeJobMetric(
       NameIdentifier nameIdentifier, String metricName, MetricRecord metric) {
     validateWriteArguments(nameIdentifier, metricName, Optional.empty(), metric);
-    String sql =
+    String insertSql =
         "INSERT INTO job_metrics (job_identifier, metric_name, timestamp, value) VALUES (?, ?, ?, ?)";
+    String updateSql =
+        "UPDATE job_metrics SET value = ? WHERE job_identifier = ? AND metric_name = ? "
+            + "AND timestamp = ?";
+
+    String normalizedIdentifier = normalizeIdentifier(nameIdentifier);
+    String normalizedMetricName = normalizeMetricName(metricName);
+    String metricValue = metric.getValue();
+    long metricTimestamp = metric.getTimestamp();
 
     try (Connection conn = getConnection();
-        PreparedStatement pstmt = conn.prepareStatement(sql)) {
-      pstmt.setString(1, normalizeIdentifier(nameIdentifier));
-      pstmt.setString(2, normalizeMetricName(metricName));
-      pstmt.setLong(3, metric.getTimestamp());
-      pstmt.setString(4, metric.getValue());
-      pstmt.executeUpdate();
+        PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
+      updateStmt.setString(1, metricValue);
+      updateStmt.setString(2, normalizedIdentifier);
+      updateStmt.setString(3, normalizedMetricName);
+      updateStmt.setLong(4, metricTimestamp);
+      int updatedRows = updateStmt.executeUpdate();
+      if (updatedRows > 0) {
+        return;
+      }
+
+      try (PreparedStatement insertStmt = conn.prepareStatement(insertSql)) {
+        insertStmt.setString(1, normalizedIdentifier);
+        insertStmt.setString(2, normalizedMetricName);
+        insertStmt.setLong(3, metricTimestamp);
+        insertStmt.setString(4, metricValue);
+        insertStmt.executeUpdate();
+      } catch (SQLException insertException) {
+        if (isDuplicateKeyException(insertException)) {
+          // Race between concurrent inserts, fallback to overwrite.
+          try (PreparedStatement retryUpdateStmt = conn.prepareStatement(updateSql)) {
+            retryUpdateStmt.setString(1, metricValue);
+            retryUpdateStmt.setString(2, normalizedIdentifier);
+            retryUpdateStmt.setString(3, normalizedMetricName);
+            retryUpdateStmt.setLong(4, metricTimestamp);
+            retryUpdateStmt.executeUpdate();
+          }
+        } else {
+          throw insertException;
+        }
+      }
     } catch (SQLException e) {
       throw new MetricsStorageException(
           "Failed to store job metric: identifier=" + nameIdentifier + ", metric=" + metricName, e);
@@ -449,6 +563,16 @@ public class H2MetricsRepository implements MetricsRepository {
       MetricRecord metric) {
     Preconditions.checkArgument(nameIdentifier != null, "nameIdentifier must not be null");
     Preconditions.checkArgument(StringUtils.isNotBlank(metricName), "metricName must not be blank");
+    Preconditions.checkArgument(
+        nameIdentifier.toString().length() <= MAX_IDENTIFIER_LENGTH,
+        "nameIdentifier length exceeds max %s: actual=%s",
+        MAX_IDENTIFIER_LENGTH,
+        nameIdentifier.toString().length());
+    Preconditions.checkArgument(
+        metricName.length() <= MAX_METRIC_NAME_LENGTH,
+        "metricName length exceeds max %s: actual=%s",
+        MAX_METRIC_NAME_LENGTH,
+        metricName.length());
     Preconditions.checkArgument(metric != null, "metric record must not be null");
     Preconditions.checkArgument(
         metric.getTimestamp() >= 0,
@@ -493,6 +617,10 @@ public class H2MetricsRepository implements MetricsRepository {
     String upperUrl = jdbcUrl.toUpperCase(Locale.ROOT);
     String target = (paramName + "=").toUpperCase(Locale.ROOT);
     return upperUrl.contains(target);
+  }
+
+  private boolean isDuplicateKeyException(SQLException exception) {
+    return "23505".equals(exception.getSQLState());
   }
 
   /** Configuration wrapper for H2 metrics storage options. */
