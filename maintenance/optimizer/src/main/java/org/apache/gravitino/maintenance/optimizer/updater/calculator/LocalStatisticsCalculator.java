@@ -45,15 +45,9 @@ public class LocalStatisticsCalculator
 
   public static final String LOCAL_STATISTICS_CALCULATOR_NAME = "local-stats-calculator";
   public static final String STATISTICS_FILE_PATH_CONFIG =
-      OptimizerConfig.OPTIMIZER_PREFIX
-          + "updater."
-          + LOCAL_STATISTICS_CALCULATOR_NAME
-          + ".statisticsFilePath";
+      OptimizerConfig.UPDATER_PREFIX + LOCAL_STATISTICS_CALCULATOR_NAME + ".statisticsFilePath";
   public static final String STATISTICS_PAYLOAD_CONFIG =
-      OptimizerConfig.OPTIMIZER_PREFIX
-          + "updater."
-          + LOCAL_STATISTICS_CALCULATOR_NAME
-          + ".statisticsPayload";
+      OptimizerConfig.UPDATER_PREFIX + LOCAL_STATISTICS_CALCULATOR_NAME + ".statisticsPayload";
 
   private StatisticsReader statisticsReader;
 
