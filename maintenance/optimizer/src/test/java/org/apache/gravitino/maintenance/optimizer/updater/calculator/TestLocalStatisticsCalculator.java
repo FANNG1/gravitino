@@ -182,6 +182,33 @@ class TestLocalStatisticsCalculator {
         calculator.calculateJobStatistics(NameIdentifier.parse("catalog.job-1")).isEmpty());
   }
 
+  @Test
+  void testCalculateWithoutInitializeFails() {
+    LocalStatisticsCalculator calculator = new LocalStatisticsCalculator();
+    Assertions.assertThrows(
+        IllegalStateException.class,
+        () -> calculator.calculateTableStatistics(NameIdentifier.parse("catalog.db.table")));
+    Assertions.assertThrows(
+        IllegalStateException.class, calculator::calculateBulkTableStatistics);
+    Assertions.assertThrows(
+        IllegalStateException.class,
+        () -> calculator.calculateJobStatistics(NameIdentifier.parse("catalog.db.job")));
+    Assertions.assertThrows(IllegalStateException.class, calculator::calculateAllJobStatistics);
+  }
+
+  @Test
+  void testNullIdentifierFailsFast() {
+    String payload = "{\"identifier\":\"catalog.schema.table\",\"stats-type\":\"table\",\"s1\":1}";
+    LocalStatisticsCalculator calculator = new LocalStatisticsCalculator();
+    OptimizerEnv env = new OptimizerEnv(createConfig(null, payload));
+    calculator.initialize(env);
+
+    Assertions.assertThrows(
+        IllegalArgumentException.class, () -> calculator.calculateTableStatistics(null));
+    Assertions.assertThrows(
+        IllegalArgumentException.class, () -> calculator.calculateJobStatistics(null));
+  }
+
   private OptimizerConfig createConfig(String statisticsFilePath, String statisticsPayload) {
     Map<String, String> configs = new HashMap<>();
     configs.put(OptimizerConfig.GRAVITINO_DEFAULT_CATALOG_CONFIG.getKey(), "catalog");
