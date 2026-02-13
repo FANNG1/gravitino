@@ -19,6 +19,9 @@
 
 package org.apache.gravitino.maintenance.optimizer.updater.metrics.storage;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +41,8 @@ class TestH2MetricsRepository {
   private H2MetricsRepository storage;
 
   @BeforeAll
-  void setUp() {
+  void setUp() throws IOException {
+    cleanupLegacyDataFiles();
     storage = new H2MetricsRepository();
     storage.initialize(ImmutableMap.of());
     storage.cleanupAllMetricsBefore(Long.MAX_VALUE);
@@ -380,5 +384,20 @@ class TestH2MetricsRepository {
 
   private long currentEpochSeconds() {
     return Instant.now().getEpochSecond();
+  }
+
+  private void cleanupLegacyDataFiles() throws IOException {
+    deleteIfExists("data/metrics.db.mv.db");
+    deleteIfExists("data/metrics.db.trace.db");
+    deleteIfExists("maintenance/optimizer/data/metrics.db.mv.db");
+    deleteIfExists("maintenance/optimizer/data/metrics.db.trace.db");
+    deleteIfExists("maintenance/optimizer/metrics_db.mv.db");
+    deleteIfExists("maintenance/optimizer/metrics_db.trace.db");
+    deleteIfExists("metrics_db.mv.db");
+    deleteIfExists("metrics_db.trace.db");
+  }
+
+  private void deleteIfExists(String filePath) throws IOException {
+    Files.deleteIfExists(Path.of(filePath));
   }
 }

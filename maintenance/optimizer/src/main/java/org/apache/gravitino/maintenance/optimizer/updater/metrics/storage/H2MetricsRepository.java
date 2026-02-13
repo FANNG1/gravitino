@@ -104,10 +104,10 @@ public class H2MetricsRepository implements MetricsRepository {
             + "id BIGINT AUTO_INCREMENT PRIMARY KEY, "
             + "table_identifier VARCHAR(1024) NOT NULL, "
             + "metric_name VARCHAR(1024) NOT NULL, "
-            + "partition VARCHAR("
+            + "table_partition VARCHAR("
             + partitionColumnLength
             + "), "
-            + "timestamp BIGINT NOT NULL, "
+            + "metric_ts BIGINT NOT NULL, "
             + "metric_value VARCHAR(1024) NOT NULL"
             + ")";
 
@@ -116,18 +116,18 @@ public class H2MetricsRepository implements MetricsRepository {
             + "id BIGINT AUTO_INCREMENT PRIMARY KEY, "
             + "job_identifier VARCHAR(1024) NOT NULL, "
             + "metric_name VARCHAR(1024) NOT NULL, "
-            + "timestamp BIGINT NOT NULL, "
+            + "metric_ts BIGINT NOT NULL, "
             + "metric_value VARCHAR(1024) NOT NULL"
             + ")";
 
     String createIndexSql1 =
-        "CREATE INDEX IF NOT EXISTS idx_table_metrics_timestamp ON table_metrics(timestamp)";
+        "CREATE INDEX IF NOT EXISTS idx_table_metrics_metric_ts ON table_metrics(metric_ts)";
     String createIndexSql2 =
-        "CREATE INDEX IF NOT EXISTS idx_job_metrics_timestamp ON job_metrics(timestamp)";
+        "CREATE INDEX IF NOT EXISTS idx_job_metrics_metric_ts ON job_metrics(metric_ts)";
     String createIndexSql3 =
-        "CREATE INDEX IF NOT EXISTS idx_table_metrics_composite ON table_metrics(table_identifier, partition, timestamp)";
+        "CREATE INDEX IF NOT EXISTS idx_table_metrics_composite ON table_metrics(table_identifier, table_partition, metric_ts)";
     String createIndexSql4 =
-        "CREATE INDEX IF NOT EXISTS idx_job_metrics_identifier_timestamp ON job_metrics(job_identifier, timestamp)";
+        "CREATE INDEX IF NOT EXISTS idx_job_metrics_identifier_metric_ts ON job_metrics(job_identifier, metric_ts)";
     try (Connection conn = DriverManager.getConnection(jdbcUrl, username, password);
         Statement stmt = conn.createStatement()) {
       stmt.execute(createTableMetricsSql);
@@ -139,15 +139,15 @@ public class H2MetricsRepository implements MetricsRepository {
       int currentPartitionColumnLength = getCurrentPartitionColumnLength(conn);
       if (currentPartitionColumnLength <= 0) {
         String alterTablePartitionSql =
-            "ALTER TABLE table_metrics ALTER COLUMN partition VARCHAR(" + partitionColumnLength + ")";
+            "ALTER TABLE table_metrics ALTER COLUMN table_partition VARCHAR(" + partitionColumnLength + ")";
         stmt.execute(alterTablePartitionSql);
       } else if (partitionColumnLength > currentPartitionColumnLength) {
         String alterTablePartitionSql =
-            "ALTER TABLE table_metrics ALTER COLUMN partition VARCHAR(" + partitionColumnLength + ")";
+            "ALTER TABLE table_metrics ALTER COLUMN table_partition VARCHAR(" + partitionColumnLength + ")";
         stmt.execute(alterTablePartitionSql);
       } else if (partitionColumnLength < currentPartitionColumnLength) {
         LOG.warn(
-            "Skip shrinking table_metrics.partition length from {} to {} to avoid migration "
+            "Skip shrinking table_metrics.table_partition length from {} to {} to avoid migration "
                 + "failure and data truncation risk.",
             currentPartitionColumnLength,
             partitionColumnLength);
@@ -160,12 +160,12 @@ public class H2MetricsRepository implements MetricsRepository {
 
   private int getCurrentPartitionColumnLength(Connection connection) throws SQLException {
     DatabaseMetaData metaData = connection.getMetaData();
-    try (ResultSet columns = metaData.getColumns(null, null, "TABLE_METRICS", "PARTITION")) {
+    try (ResultSet columns = metaData.getColumns(null, null, "TABLE_METRICS", "TABLE_PARTITION")) {
       if (columns.next()) {
         return columns.getInt("COLUMN_SIZE");
       }
     }
-    try (ResultSet columns = metaData.getColumns(null, null, "table_metrics", "partition")) {
+    try (ResultSet columns = metaData.getColumns(null, null, "table_metrics", "table_partition")) {
       if (columns.next()) {
         return columns.getInt("COLUMN_SIZE");
       }
@@ -181,13 +181,13 @@ public class H2MetricsRepository implements MetricsRepository {
       MetricRecord metric) {
     validateWriteArguments(nameIdentifier, metricName, partition, metric);
     String insertSql =
-        "INSERT INTO table_metrics (table_identifier, metric_name, partition, timestamp, metric_value) VALUES (?, ?, ?, ?, ?)";
+        "INSERT INTO table_metrics (table_identifier, metric_name, table_partition, metric_ts, metric_value) VALUES (?, ?, ?, ?, ?)";
     String updateSqlWithPartition =
         "UPDATE table_metrics SET metric_value = ? WHERE table_identifier = ? AND metric_name = ? "
-            + "AND partition = ? AND timestamp = ?";
+            + "AND table_partition = ? AND metric_ts = ?";
     String updateSqlWithoutPartition =
         "UPDATE table_metrics SET metric_value = ? WHERE table_identifier = ? AND metric_name = ? "
-            + "AND partition IS NULL AND timestamp = ?";
+            + "AND table_partition IS NULL AND metric_ts = ?";
 
     String normalizedIdentifier = normalizeIdentifier(nameIdentifier);
     String normalizedMetricName = normalizeMetricName(metricName);
@@ -242,10 +242,10 @@ public class H2MetricsRepository implements MetricsRepository {
     Map<String, List<MetricRecord>> resultMap = new HashMap<>();
     StringBuilder sqlBuilder =
         new StringBuilder(
-            "SELECT metric_name, timestamp, metric_value FROM table_metrics "
-                + "WHERE table_identifier = ? AND timestamp >= ? AND timestamp < ?");
+            "SELECT metric_name, metric_ts, metric_value FROM table_metrics "
+                + "WHERE table_identifier = ? AND metric_ts >= ? AND metric_ts < ?");
 
-    sqlBuilder.append(" AND partition IS NULL ORDER BY timestamp ASC");
+    sqlBuilder.append(" AND table_partition IS NULL ORDER BY metric_ts ASC");
 
     try (Connection conn = getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sqlBuilder.toString())) {
@@ -256,7 +256,7 @@ public class H2MetricsRepository implements MetricsRepository {
       try (ResultSet rs = pstmt.executeQuery()) {
         while (rs.next()) {
           String metricName = rs.getString("metric_name");
-          long timestamp = rs.getLong("timestamp");
+          long timestamp = rs.getLong("metric_ts");
           String value = rs.getString("metric_value");
           MetricRecord metric = new MetricRecordImpl(timestamp, value);
           resultMap.computeIfAbsent(metricName, k -> new ArrayList<>()).add(metric);
@@ -283,9 +283,9 @@ public class H2MetricsRepository implements MetricsRepository {
     validateTimeWindow(fromSecs, toSecs);
     Map<String, List<MetricRecord>> resultMap = new HashMap<>();
     String sql =
-        "SELECT metric_name, timestamp, metric_value FROM table_metrics "
-            + "WHERE table_identifier = ? AND partition = ? AND timestamp >= ? AND timestamp < ? "
-            + "ORDER BY timestamp ASC";
+        "SELECT metric_name, metric_ts, metric_value FROM table_metrics "
+            + "WHERE table_identifier = ? AND table_partition = ? AND metric_ts >= ? AND metric_ts < ? "
+            + "ORDER BY metric_ts ASC";
 
     try (Connection conn = getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -297,7 +297,7 @@ public class H2MetricsRepository implements MetricsRepository {
       try (ResultSet rs = pstmt.executeQuery()) {
         while (rs.next()) {
           String metricName = rs.getString("metric_name");
-          long timestamp = rs.getLong("timestamp");
+          long timestamp = rs.getLong("metric_ts");
           String value = rs.getString("metric_value");
           MetricRecord metric = new MetricRecordImpl(timestamp, value);
           resultMap.computeIfAbsent(metricName, k -> new ArrayList<>()).add(metric);
@@ -323,10 +323,10 @@ public class H2MetricsRepository implements MetricsRepository {
       NameIdentifier nameIdentifier, String metricName, MetricRecord metric) {
     validateWriteArguments(nameIdentifier, metricName, Optional.empty(), metric);
     String insertSql =
-        "INSERT INTO job_metrics (job_identifier, metric_name, timestamp, metric_value) VALUES (?, ?, ?, ?)";
+        "INSERT INTO job_metrics (job_identifier, metric_name, metric_ts, metric_value) VALUES (?, ?, ?, ?)";
     String updateSql =
         "UPDATE job_metrics SET metric_value = ? WHERE job_identifier = ? AND metric_name = ? "
-            + "AND timestamp = ?";
+            + "AND metric_ts = ?";
 
     String normalizedIdentifier = normalizeIdentifier(nameIdentifier);
     String normalizedMetricName = normalizeMetricName(metricName);
@@ -364,8 +364,8 @@ public class H2MetricsRepository implements MetricsRepository {
     validateTimeWindow(fromSecs, toSecs);
     Map<String, List<MetricRecord>> resultMap = new HashMap<>();
     String sql =
-        "SELECT metric_name, timestamp, metric_value FROM job_metrics "
-            + "WHERE job_identifier = ? AND timestamp >= ? AND timestamp < ? ORDER BY timestamp ASC";
+        "SELECT metric_name, metric_ts, metric_value FROM job_metrics "
+            + "WHERE job_identifier = ? AND metric_ts >= ? AND metric_ts < ? ORDER BY metric_ts ASC";
 
     try (Connection conn = getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -376,7 +376,7 @@ public class H2MetricsRepository implements MetricsRepository {
       try (ResultSet rs = pstmt.executeQuery()) {
         while (rs.next()) {
           String metricName = rs.getString("metric_name");
-          long timestamp = rs.getLong("timestamp");
+          long timestamp = rs.getLong("metric_ts");
           String value = rs.getString("metric_value");
           MetricRecord metric = new MetricRecordImpl(timestamp, value);
           resultMap.computeIfAbsent(metricName, k -> new ArrayList<>()).add(metric);
@@ -417,7 +417,7 @@ public class H2MetricsRepository implements MetricsRepository {
         beforeTimestamp >= 0,
         "beforeTimestamp must be non-negative, but got %s",
         beforeTimestamp);
-    String sql = "DELETE FROM table_metrics WHERE timestamp < ?";
+    String sql = "DELETE FROM table_metrics WHERE metric_ts < ?";
 
     try (Connection conn = getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -437,7 +437,7 @@ public class H2MetricsRepository implements MetricsRepository {
         beforeTimestamp >= 0,
         "beforeTimestamp must be non-negative, but got %s",
         beforeTimestamp);
-    String sql = "DELETE FROM job_metrics WHERE timestamp < ?";
+    String sql = "DELETE FROM job_metrics WHERE metric_ts < ?";
 
     try (Connection conn = getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -602,7 +602,7 @@ public class H2MetricsRepository implements MetricsRepository {
 
     public static final ConfigEntry<Integer> H2_METRICS_PARTITION_COLUMN_LENGTH_CONFIG =
         new ConfigBuilder(H2_METRICS_PARTITION_COLUMN_LENGTH)
-            .doc("Length of table_metrics.partition column.")
+            .doc("Length of table_metrics.table_partition column.")
             .version(ConfigConstants.VERSION_1_2_0)
             .intConf()
             .createWithDefault(DEFAULT_PARTITION_COLUMN_LENGTH);
