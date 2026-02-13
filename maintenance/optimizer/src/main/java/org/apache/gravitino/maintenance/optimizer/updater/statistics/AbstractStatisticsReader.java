@@ -69,13 +69,6 @@ import org.slf4j.LoggerFactory;
 abstract class AbstractStatisticsReader implements StatisticsReader {
   private static final Logger LOG = LoggerFactory.getLogger(AbstractStatisticsReader.class);
 
-  static final String STATISTICS_TYPE_FIELD = "stats-type";
-  static final String IDENTIFIER_FIELD = "identifier";
-  static final String PARTITION_PATH_FIELD = "partition-path";
-  static final String TABLE_STATISTICS_TYPE = "table";
-  static final String PARTITION_STATISTICS_TYPE = "partition";
-  static final String JOB_STATISTICS_TYPE = "job";
-
   private final String defaultCatalogName;
 
   AbstractStatisticsReader(String defaultCatalogName) {
@@ -143,7 +136,7 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
         new StatisticsNodeVisitor() {
           @Override
           public void onTable(JsonNode node) {
-            NameIdentifier identifier = parseIdentifier(node.get(IDENTIFIER_FIELD), true);
+            NameIdentifier identifier = parseIdentifier(node.get(FieldName.IDENTIFIER.key()), true);
             if (identifier == null) {
               return;
             }
@@ -171,7 +164,7 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
         new StatisticsNodeVisitor() {
           @Override
           public void onTable(JsonNode node) {
-            NameIdentifier identifier = parseIdentifier(node.get(IDENTIFIER_FIELD), true);
+            NameIdentifier identifier = parseIdentifier(node.get(FieldName.IDENTIFIER.key()), true);
             if (targetIdentifier.equals(identifier)) {
               populateStatistics(node, tableStatistics);
             }
@@ -179,13 +172,13 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
 
           @Override
           public void onPartition(JsonNode node) {
-            NameIdentifier identifier = parseIdentifier(node.get(IDENTIFIER_FIELD), true);
+            NameIdentifier identifier = parseIdentifier(node.get(FieldName.IDENTIFIER.key()), true);
             if (!targetIdentifier.equals(identifier)) {
               return;
             }
 
             Optional<PartitionPath> partitionPathOpt =
-                parsePartitionPath(node.get(PARTITION_PATH_FIELD));
+                parsePartitionPath(node.get(FieldName.PARTITION_PATH.key()));
             if (partitionPathOpt.isEmpty()) {
               return;
             }
@@ -210,7 +203,7 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
         new StatisticsNodeVisitor() {
           @Override
           public void onTable(JsonNode node) {
-            NameIdentifier identifier = parseIdentifier(node.get(IDENTIFIER_FIELD), true);
+            NameIdentifier identifier = parseIdentifier(node.get(FieldName.IDENTIFIER.key()), true);
             if (identifier == null) {
               return;
             }
@@ -221,13 +214,13 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
 
           @Override
           public void onPartition(JsonNode node) {
-            NameIdentifier identifier = parseIdentifier(node.get(IDENTIFIER_FIELD), true);
+            NameIdentifier identifier = parseIdentifier(node.get(FieldName.IDENTIFIER.key()), true);
             if (identifier == null) {
               return;
             }
 
             Optional<PartitionPath> partitionPathOpt =
-                parsePartitionPath(node.get(PARTITION_PATH_FIELD));
+                parsePartitionPath(node.get(FieldName.PARTITION_PATH.key()));
             if (partitionPathOpt.isEmpty()) {
               return;
             }
@@ -266,7 +259,8 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
         new StatisticsNodeVisitor() {
           @Override
           public void onJob(JsonNode node) {
-            NameIdentifier identifier = parseIdentifier(node.get(IDENTIFIER_FIELD), false);
+            NameIdentifier identifier =
+                parseIdentifier(node.get(FieldName.IDENTIFIER.key()), false);
             if (identifier == null) {
               return;
             }
@@ -309,18 +303,22 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
   }
 
   private void dispatchNodeByStatisticsType(JsonNode node, StatisticsNodeVisitor visitor) {
-    JsonNode statsType = node.get(STATISTICS_TYPE_FIELD);
-    if (statsType == null || !statsType.isTextual()) {
+    Optional<StatisticsType> statisticsType =
+        StatisticsType.from(node.get(FieldName.STATISTICS_TYPE.key()));
+    if (statisticsType.isEmpty()) {
       return;
     }
 
-    String normalizedType = statsType.asText().toLowerCase(Locale.ROOT);
-    if (TABLE_STATISTICS_TYPE.equals(normalizedType)) {
-      visitor.onTable(node);
-    } else if (PARTITION_STATISTICS_TYPE.equals(normalizedType)) {
-      visitor.onPartition(node);
-    } else if (JOB_STATISTICS_TYPE.equals(normalizedType)) {
-      visitor.onJob(node);
+    switch (statisticsType.get()) {
+      case TABLE:
+        visitor.onTable(node);
+        break;
+      case PARTITION:
+        visitor.onPartition(node);
+        break;
+      case JOB:
+        visitor.onJob(node);
+        break;
     }
   }
 
@@ -338,9 +336,9 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
     while (fields.hasNext()) {
       Map.Entry<String, JsonNode> entry = fields.next();
       String fieldName = entry.getKey();
-      if (IDENTIFIER_FIELD.equals(fieldName)
-          || STATISTICS_TYPE_FIELD.equals(fieldName)
-          || PARTITION_PATH_FIELD.equals(fieldName)) {
+      if (FieldName.IDENTIFIER.matches(fieldName)
+          || FieldName.STATISTICS_TYPE.matches(fieldName)
+          || FieldName.PARTITION_PATH.matches(fieldName)) {
         continue;
       }
 
@@ -357,6 +355,52 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
     default void onPartition(JsonNode node) {}
 
     default void onJob(JsonNode node) {}
+  }
+
+  private enum FieldName {
+    STATISTICS_TYPE("stats-type"),
+    IDENTIFIER("identifier"),
+    PARTITION_PATH("partition-path");
+
+    private final String key;
+
+    FieldName(String key) {
+      this.key = key;
+    }
+
+    private String key() {
+      return key;
+    }
+
+    private boolean matches(String fieldName) {
+      return key.equals(fieldName);
+    }
+  }
+
+  private enum StatisticsType {
+    TABLE("table"),
+    PARTITION("partition"),
+    JOB("job");
+
+    private final String type;
+
+    StatisticsType(String type) {
+      this.type = type;
+    }
+
+    private static Optional<StatisticsType> from(JsonNode statsTypeNode) {
+      if (statsTypeNode == null || !statsTypeNode.isTextual()) {
+        return Optional.empty();
+      }
+
+      String normalizedType = statsTypeNode.asText().toLowerCase(Locale.ROOT);
+      for (StatisticsType value : values()) {
+        if (value.type.equals(normalizedType)) {
+          return Optional.of(value);
+        }
+      }
+      return Optional.empty();
+    }
   }
 
   private NameIdentifier parseIdentifier(JsonNode identifierNode, boolean applyDefaultCatalog) {
