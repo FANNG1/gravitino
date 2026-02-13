@@ -50,7 +50,7 @@ import org.slf4j.LoggerFactory;
  * H2-backed implementation of {@link MetricsRepository}.
  *
  * <p>All timestamps are epoch seconds. Read APIs use a half-open time window
- * [fromTimestamp, toTimestamp).
+ * [fromSecs, toSecs).
  */
 public class H2MetricsRepository implements MetricsRepository {
 
@@ -256,9 +256,9 @@ public class H2MetricsRepository implements MetricsRepository {
 
   @Override
   public Map<String, List<MetricRecord>> getTableMetrics(
-      NameIdentifier nameIdentifier, long fromTimestamp, long toTimestamp) {
+      NameIdentifier nameIdentifier, long fromSecs, long toSecs) {
     Preconditions.checkArgument(nameIdentifier != null, "nameIdentifier must not be null");
-    validateTimeWindow(fromTimestamp, toTimestamp);
+    validateTimeWindow(fromSecs, toSecs);
     Map<String, List<MetricRecord>> resultMap = new HashMap<>();
     StringBuilder sqlBuilder =
         new StringBuilder(
@@ -270,8 +270,8 @@ public class H2MetricsRepository implements MetricsRepository {
     try (Connection conn = getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sqlBuilder.toString())) {
       pstmt.setString(1, normalizeIdentifier(nameIdentifier));
-      pstmt.setLong(2, fromTimestamp);
-      pstmt.setLong(3, toTimestamp);
+      pstmt.setLong(2, fromSecs);
+      pstmt.setLong(3, toSecs);
 
       try (ResultSet rs = pstmt.executeQuery()) {
         while (rs.next()) {
@@ -287,9 +287,9 @@ public class H2MetricsRepository implements MetricsRepository {
           "Failed to retrieve table metrics: identifier="
               + nameIdentifier
               + ", from="
-              + fromTimestamp
+              + fromSecs
               + ", to="
-              + toTimestamp,
+              + toSecs,
           e);
     }
     return resultMap;
@@ -297,10 +297,10 @@ public class H2MetricsRepository implements MetricsRepository {
 
   @Override
   public Map<String, List<MetricRecord>> getPartitionMetrics(
-      NameIdentifier nameIdentifier, String partition, long fromTimestamp, long toTimestamp) {
+      NameIdentifier nameIdentifier, String partition, long fromSecs, long toSecs) {
     Preconditions.checkArgument(nameIdentifier != null, "nameIdentifier must not be null");
     Preconditions.checkArgument(StringUtils.isNotBlank(partition), "partition must not be blank");
-    validateTimeWindow(fromTimestamp, toTimestamp);
+    validateTimeWindow(fromSecs, toSecs);
     Map<String, List<MetricRecord>> resultMap = new HashMap<>();
     String sql =
         "SELECT metric_name, timestamp, metric_value FROM table_metrics "
@@ -311,8 +311,8 @@ public class H2MetricsRepository implements MetricsRepository {
         PreparedStatement pstmt = conn.prepareStatement(sql)) {
       pstmt.setString(1, normalizeIdentifier(nameIdentifier));
       pstmt.setString(2, normalizePartition(partition).orElse(null));
-      pstmt.setLong(3, fromTimestamp);
-      pstmt.setLong(4, toTimestamp);
+      pstmt.setLong(3, fromSecs);
+      pstmt.setLong(4, toSecs);
 
       try (ResultSet rs = pstmt.executeQuery()) {
         while (rs.next()) {
@@ -330,9 +330,9 @@ public class H2MetricsRepository implements MetricsRepository {
               + ", partition="
               + partition
               + ", from="
-              + fromTimestamp
+              + fromSecs
               + ", to="
-              + toTimestamp,
+              + toSecs,
           e);
     }
     return resultMap;
@@ -379,9 +379,9 @@ public class H2MetricsRepository implements MetricsRepository {
 
   @Override
   public Map<String, List<MetricRecord>> getJobMetrics(
-      NameIdentifier nameIdentifier, long fromTimestamp, long toTimestamp) {
+      NameIdentifier nameIdentifier, long fromSecs, long toSecs) {
     Preconditions.checkArgument(nameIdentifier != null, "nameIdentifier must not be null");
-    validateTimeWindow(fromTimestamp, toTimestamp);
+    validateTimeWindow(fromSecs, toSecs);
     Map<String, List<MetricRecord>> resultMap = new HashMap<>();
     String sql =
         "SELECT metric_name, timestamp, metric_value FROM job_metrics "
@@ -390,8 +390,8 @@ public class H2MetricsRepository implements MetricsRepository {
     try (Connection conn = getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql)) {
       pstmt.setString(1, normalizeIdentifier(nameIdentifier));
-      pstmt.setLong(2, fromTimestamp);
-      pstmt.setLong(3, toTimestamp);
+      pstmt.setLong(2, fromSecs);
+      pstmt.setLong(3, toSecs);
 
       try (ResultSet rs = pstmt.executeQuery()) {
         while (rs.next()) {
@@ -407,9 +407,9 @@ public class H2MetricsRepository implements MetricsRepository {
           "Failed to retrieve job metrics: identifier="
               + nameIdentifier
               + ", from="
-              + fromTimestamp
+              + fromSecs
               + ", to="
-              + toTimestamp,
+              + toSecs,
           e);
     }
     return resultMap;
@@ -509,12 +509,12 @@ public class H2MetricsRepository implements MetricsRepository {
     return Paths.get(gravitinoHome, configuredPath).toString();
   }
 
-  private void validateTimeWindow(long fromTimestamp, long toTimestamp) {
+  private void validateTimeWindow(long fromSecs, long toSecs) {
     Preconditions.checkArgument(
-        fromTimestamp < toTimestamp,
-        "Invalid time window: fromTimestamp (%s) must be less than toTimestamp (%s)",
-        fromTimestamp,
-        toTimestamp);
+        fromSecs < toSecs,
+        "Invalid time window: fromSecs (%s) must be less than toSecs (%s)",
+        fromSecs,
+        toSecs);
   }
 
   private void validateWriteArguments(

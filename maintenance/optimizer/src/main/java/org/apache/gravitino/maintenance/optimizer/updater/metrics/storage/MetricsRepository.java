@@ -37,12 +37,12 @@ public interface MetricsRepository extends AutoCloseable {
       Optional<String> partition,
       MetricRecord metric);
 
-  /** Load table-level metrics within a time window [fromTimestamp, toTimestamp) in epoch seconds. */
+  /** Load table-level metrics within a time window [fromSecs, toSecs) in epoch seconds. */
   Map<String, List<MetricRecord>> getTableMetrics(
       NameIdentifier nameIdentifier, long fromSecs, long toSecs);
 
   /**
-   * Load partition-level metrics within a time window [fromTimestamp, toTimestamp) in epoch
+   * Load partition-level metrics within a time window [fromSecs, toSecs) in epoch
    * seconds.
    */
   Map<String, List<MetricRecord>> getPartitionMetrics(
@@ -54,7 +54,7 @@ public interface MetricsRepository extends AutoCloseable {
   /** Persist a job metric. */
   void storeJobMetric(NameIdentifier nameIdentifier, String metricName, MetricRecord metric);
 
-  /** Load job metrics within a time window [fromTimestamp, toTimestamp) in epoch seconds. */
+  /** Load job metrics within a time window [fromSecs, toSecs) in epoch seconds. */
   Map<String, List<MetricRecord>> getJobMetrics(
       NameIdentifier nameIdentifier, long fromSecs, long toSecs);
 
