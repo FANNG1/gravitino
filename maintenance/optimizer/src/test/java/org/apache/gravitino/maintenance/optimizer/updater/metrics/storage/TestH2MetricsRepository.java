@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.time.Instant;
 import org.apache.gravitino.NameIdentifier;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -39,20 +40,21 @@ class TestH2MetricsRepository {
   void setUp() {
     storage = new H2MetricsRepository();
     storage.initialize(ImmutableMap.of());
-    storage.cleanupAllMetricsBefore(System.currentTimeMillis());
+    storage.cleanupAllMetricsBefore(Long.MAX_VALUE);
   }
 
   @AfterAll
   void tearDown() {
-    storage.cleanupAllMetricsBefore(System.currentTimeMillis());
+    storage.cleanupAllMetricsBefore(Long.MAX_VALUE);
     storage.close();
   }
 
   @Test
   void testStoreAndRetrieveTableMetricsWithNullPartition() {
     NameIdentifier nameIdentifier = NameIdentifier.of("catalog", "db", "test_null_partition");
-    MetricRecord metric = new MetricRecordImpl(System.currentTimeMillis(), "value1");
-    MetricRecord metric2 = new MetricRecordImpl(System.currentTimeMillis(), "value2");
+    long now = currentEpochSeconds();
+    MetricRecord metric = new MetricRecordImpl(now, "value1");
+    MetricRecord metric2 = new MetricRecordImpl(now, "value2");
 
     storage.storeTableMetric(nameIdentifier, "metric1", Optional.empty(), metric);
     storage.storeTableMetric(nameIdentifier, "metric2", Optional.empty(), metric);
@@ -75,7 +77,7 @@ class TestH2MetricsRepository {
         metric);
 
     Map<String, List<MetricRecord>> metrics =
-        storage.getTableMetrics(nameIdentifier, 0, System.currentTimeMillis());
+        storage.getTableMetrics(nameIdentifier, 0, Long.MAX_VALUE);
 
     Assertions.assertEquals(2, metrics.size());
 
@@ -91,9 +93,10 @@ class TestH2MetricsRepository {
   @Test
   void testStoreAndRetrieveMetricsWithNonNullPartition() {
     NameIdentifier nameIdentifier = NameIdentifier.of("catalog", "db", "test_non_null_partition");
-    MetricRecord metric = new MetricRecordImpl(System.currentTimeMillis(), "value1");
-    MetricRecord metric2 = new MetricRecordImpl(System.currentTimeMillis(), "value2");
-    MetricRecord metric3 = new MetricRecordImpl(System.currentTimeMillis(), "value3");
+    long now = currentEpochSeconds();
+    MetricRecord metric = new MetricRecordImpl(now, "value1");
+    MetricRecord metric2 = new MetricRecordImpl(now, "value2");
+    MetricRecord metric3 = new MetricRecordImpl(now, "value3");
 
     String partition1 = "a=1/b=2";
     String partition2 = "a=1/b=3";
@@ -104,14 +107,14 @@ class TestH2MetricsRepository {
     storage.storeTableMetric(nameIdentifier, "metric2", Optional.of(partition2), metric3);
 
     Map<String, List<MetricRecord>> metrics =
-        storage.getPartitionMetrics(nameIdentifier, partition1, 0, System.currentTimeMillis());
+        storage.getPartitionMetrics(nameIdentifier, partition1, 0, Long.MAX_VALUE);
 
     Assertions.assertEquals(1, metrics.size());
     Assertions.assertTrue(metrics.containsKey("metric"));
     Assertions.assertEquals(Arrays.asList("value1"), getMetricValues(metrics.get("metric")));
 
     metrics =
-        storage.getPartitionMetrics(nameIdentifier, partition2, 0, System.currentTimeMillis());
+        storage.getPartitionMetrics(nameIdentifier, partition2, 0, Long.MAX_VALUE);
     Assertions.assertEquals(2, metrics.size());
     Assertions.assertTrue(metrics.containsKey("metric"));
     Assertions.assertEquals(Arrays.asList("value1"), getMetricValues(metrics.get("metric")));
@@ -138,20 +141,20 @@ class TestH2MetricsRepository {
     storage.storeTableMetric(nameIdentifier, "metric1", Optional.of(partition2), metric3);
 
     Map<String, List<MetricRecord>> metrics =
-        storage.getTableMetrics(nameIdentifier, 0, System.currentTimeMillis());
+        storage.getTableMetrics(nameIdentifier, 0, Long.MAX_VALUE);
     Assertions.assertEquals(1, metrics.size());
     Assertions.assertTrue(metrics.containsKey("metric1"));
     Assertions.assertEquals(
         Arrays.asList("value1", "value2", "value3"), getMetricValues(metrics.get("metric1")));
 
     metrics =
-        storage.getPartitionMetrics(nameIdentifier, partition1, 0, System.currentTimeMillis());
+        storage.getPartitionMetrics(nameIdentifier, partition1, 0, Long.MAX_VALUE);
     Assertions.assertEquals(1, metrics.size());
     Assertions.assertTrue(metrics.containsKey("metric1"));
     Assertions.assertEquals(Arrays.asList("value1"), getMetricValues(metrics.get("metric1")));
 
     metrics =
-        storage.getPartitionMetrics(nameIdentifier, partition2, 0, System.currentTimeMillis());
+        storage.getPartitionMetrics(nameIdentifier, partition2, 0, Long.MAX_VALUE);
     Assertions.assertEquals(1, metrics.size());
     Assertions.assertTrue(metrics.containsKey("metric1"));
     Assertions.assertEquals(
@@ -162,7 +165,7 @@ class TestH2MetricsRepository {
   void testCaseInsensitiveIdentifierPartitionAndMetricName() {
     NameIdentifier storedId = NameIdentifier.of("CATALOGX", "DBX", "TABLEX");
     NameIdentifier queryId = NameIdentifier.of("catalogx", "dbx", "tablex");
-    MetricRecord metric = new MetricRecordImpl(System.currentTimeMillis(), "v1");
+    MetricRecord metric = new MetricRecordImpl(currentEpochSeconds(), "v1");
     String storedPartition = "Region=US/Day=2025-01-01";
     String queryPartition = "region=us/day=2025-01-01";
 
@@ -170,17 +173,21 @@ class TestH2MetricsRepository {
     storage.storeJobMetric(storedId, "JOB_METRIC", metric);
 
     Map<String, List<MetricRecord>> partitionMetrics =
-        storage.getPartitionMetrics(queryId, queryPartition, 0, System.currentTimeMillis());
+        storage.getPartitionMetrics(queryId, queryPartition, 0, Long.MAX_VALUE);
     Assertions.assertTrue(partitionMetrics.containsKey("metric_upper"));
     Assertions.assertEquals(List.of("v1"), getMetricValues(partitionMetrics.get("metric_upper")));
 
     Map<String, List<MetricRecord>> jobMetrics =
-        storage.getJobMetrics(queryId, 0, System.currentTimeMillis());
+        storage.getJobMetrics(queryId, 0, Long.MAX_VALUE);
     Assertions.assertTrue(jobMetrics.containsKey("job_metric"));
     Assertions.assertEquals(List.of("v1"), getMetricValues(jobMetrics.get("job_metric")));
   }
 
   private List<String> getMetricValues(List<MetricRecord> metrics) {
     return metrics.stream().map(MetricRecord::getValue).toList();
+  }
+
+  private long currentEpochSeconds() {
+    return Instant.now().getEpochSecond();
   }
 }

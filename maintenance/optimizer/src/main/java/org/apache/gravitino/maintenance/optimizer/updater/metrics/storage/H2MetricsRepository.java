@@ -19,6 +19,7 @@
 
 package org.apache.gravitino.maintenance.optimizer.updater.metrics.storage;
 
+import com.google.common.base.Preconditions;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -49,13 +50,13 @@ public class H2MetricsRepository implements MetricsRepository {
   private String jdbcUrl = "jdbc:h2:file:./metrics_db;AUTO_SERVER=TRUE";
   private static final String USER = "sa";
   private static final String PASSWORD = "";
+  private volatile boolean initialized = false;
 
-  public H2MetricsRepository() {
-    initializeDatabase();
-  }
+  public H2MetricsRepository() {}
 
   @Override
   public void initialize(Map<String, String> optimizerProperties) {
+    initialized = false;
     Map<String, String> h2Properties =
         MapUtils.getPrefixMap(
             optimizerProperties,
@@ -64,6 +65,7 @@ public class H2MetricsRepository implements MetricsRepository {
     String path = config.get(H2MetricsRepositoryConfig.H2_METRICS_STORAGE_PATH_CONFIG);
     jdbcUrl = "jdbc:h2:file:" + path + ";AUTO_SERVER=TRUE";
     initializeDatabase();
+    initialized = true;
   }
 
   private void initializeDatabase() {
@@ -114,7 +116,7 @@ public class H2MetricsRepository implements MetricsRepository {
     String sql =
         "INSERT INTO table_metrics (table_identifier, metric_name, partition, timestamp, value) VALUES (?, ?, ?, ?, ?)";
 
-    try (Connection conn = DriverManager.getConnection(jdbcUrl, USER, PASSWORD);
+    try (Connection conn = getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql)) {
       pstmt.setString(1, normalizeIdentifier(nameIdentifier));
       pstmt.setString(2, normalizeMetricName(metricName));
@@ -141,11 +143,11 @@ public class H2MetricsRepository implements MetricsRepository {
     StringBuilder sqlBuilder =
         new StringBuilder(
             "SELECT metric_name, timestamp, value FROM table_metrics "
-                + "WHERE table_identifier = ? AND timestamp BETWEEN ? AND ?");
+                + "WHERE table_identifier = ? AND timestamp >= ? AND timestamp < ?");
 
     sqlBuilder.append(" AND partition IS NULL ORDER BY timestamp ASC");
 
-    try (Connection conn = DriverManager.getConnection(jdbcUrl, USER, PASSWORD);
+    try (Connection conn = getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sqlBuilder.toString())) {
       pstmt.setString(1, normalizeIdentifier(nameIdentifier));
       pstmt.setLong(2, fromTimestamp);
@@ -179,10 +181,10 @@ public class H2MetricsRepository implements MetricsRepository {
     Map<String, List<MetricRecord>> resultMap = new HashMap<>();
     String sql =
         "SELECT metric_name, timestamp, value FROM table_metrics "
-            + "WHERE table_identifier = ? AND partition = ? AND timestamp BETWEEN ? AND ? "
+            + "WHERE table_identifier = ? AND partition = ? AND timestamp >= ? AND timestamp < ? "
             + "ORDER BY timestamp ASC";
 
-    try (Connection conn = DriverManager.getConnection(jdbcUrl, USER, PASSWORD);
+    try (Connection conn = getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql)) {
       pstmt.setString(1, normalizeIdentifier(nameIdentifier));
       pstmt.setString(2, normalizePartition(partition).orElse(null));
@@ -219,7 +221,7 @@ public class H2MetricsRepository implements MetricsRepository {
     String sql =
         "INSERT INTO job_metrics (job_identifier, metric_name, timestamp, value) VALUES (?, ?, ?, ?)";
 
-    try (Connection conn = DriverManager.getConnection(jdbcUrl, USER, PASSWORD);
+    try (Connection conn = getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql)) {
       pstmt.setString(1, normalizeIdentifier(nameIdentifier));
       pstmt.setString(2, normalizeMetricName(metricName));
@@ -238,9 +240,9 @@ public class H2MetricsRepository implements MetricsRepository {
     Map<String, List<MetricRecord>> resultMap = new HashMap<>();
     String sql =
         "SELECT metric_name, timestamp, value FROM job_metrics "
-            + "WHERE job_identifier = ? AND timestamp BETWEEN ? AND ? ORDER BY timestamp ASC";
+            + "WHERE job_identifier = ? AND timestamp >= ? AND timestamp < ? ORDER BY timestamp ASC";
 
-    try (Connection conn = DriverManager.getConnection(jdbcUrl, USER, PASSWORD);
+    try (Connection conn = getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql)) {
       pstmt.setString(1, normalizeIdentifier(nameIdentifier));
       pstmt.setLong(2, fromTimestamp);
@@ -288,7 +290,7 @@ public class H2MetricsRepository implements MetricsRepository {
   public int cleanupTableMetricsBefore(long beforeTimestamp) {
     String sql = "DELETE FROM table_metrics WHERE timestamp < ?";
 
-    try (Connection conn = DriverManager.getConnection(jdbcUrl, USER, PASSWORD);
+    try (Connection conn = getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql)) {
       pstmt.setLong(1, beforeTimestamp);
       int deletedRows = pstmt.executeUpdate();
@@ -304,7 +306,7 @@ public class H2MetricsRepository implements MetricsRepository {
   public int cleanupJobMetricsBefore(long beforeTimestamp) {
     String sql = "DELETE FROM job_metrics WHERE timestamp < ?";
 
-    try (Connection conn = DriverManager.getConnection(jdbcUrl, USER, PASSWORD);
+    try (Connection conn = getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql)) {
       pstmt.setLong(1, beforeTimestamp);
       int deletedRows = pstmt.executeUpdate();
@@ -323,8 +325,22 @@ public class H2MetricsRepository implements MetricsRepository {
     return totalDeleted;
   }
 
+  private Connection getConnection() throws SQLException {
+    ensureInitialized();
+    return DriverManager.getConnection(jdbcUrl, USER, PASSWORD);
+  }
+
+  private void ensureInitialized() {
+    Preconditions.checkState(
+        initialized,
+        "H2MetricsRepository has not been initialized. Call initialize(properties) before use.");
+  }
+
   @Override
-  public void close() {}
+  public void close() {
+    // No-op by design. This repository is stateless and opens/closes a JDBC connection per
+    // operation. Avoid issuing H2 SHUTDOWN here because monitor/updater may share the same DB.
+  }
 
   /** Configuration wrapper for H2 metrics storage options. */
   public static class H2MetricsRepositoryConfig extends Config {

@@ -37,11 +37,14 @@ public interface MetricsRepository extends AutoCloseable {
       Optional<String> partition,
       MetricRecord metric);
 
-  /** Load table-level metrics within a time window [fromTimestamp, toTimestamp). */
+  /** Load table-level metrics within a time window [fromTimestamp, toTimestamp) in epoch seconds. */
   Map<String, List<MetricRecord>> getTableMetrics(
       NameIdentifier nameIdentifier, long fromTimestamp, long toTimestamp);
 
-  /** Load partition-level metrics within a time window [fromTimestamp, toTimestamp). */
+  /**
+   * Load partition-level metrics within a time window [fromTimestamp, toTimestamp) in epoch
+   * seconds.
+   */
   Map<String, List<MetricRecord>> getPartitionMetrics(
       NameIdentifier nameIdentifier, String partition, long fromTimestamp, long toTimestamp);
 
@@ -51,10 +54,19 @@ public interface MetricsRepository extends AutoCloseable {
   /** Persist a job metric. */
   void storeJobMetric(NameIdentifier nameIdentifier, String metricName, MetricRecord metric);
 
-  /** Load job metrics within a time window [fromTimestamp, toTimestamp). */
+  /** Load job metrics within a time window [fromTimestamp, toTimestamp) in epoch seconds. */
   Map<String, List<MetricRecord>> getJobMetrics(
       NameIdentifier nameIdentifier, long fromTimestamp, long toTimestamp);
 
   /** Delete job metrics older than the supplied timestamp (epoch seconds), exclusive. */
   int cleanupJobMetricsBefore(long timestamp);
+
+  /**
+   * Close repository resources.
+   *
+   * <p>Implementations may choose no-op close when they use per-operation connections and do not
+   * own global database lifecycle.
+   */
+  @Override
+  void close();
 }
