@@ -367,7 +367,7 @@ class TestH2MetricsRepository {
         Map.of(
             OptimizerConfig.OPTIMIZER_PREFIX
                 + H2MetricsRepository.H2MetricsRepositoryConfig.H2_METRICS_PREFIX
-                + H2MetricsRepository.H2MetricsRepositoryConfig.H2_METRICS_PARTITION_COLUMN_LENGTH,
+                + H2MetricsRepository.H2MetricsRepositoryConfig.PARTITION_COLUMN_LENGTH,
             "2048");
     repository.initialize(configs);
     repository.cleanupTableMetricsBefore(MAX_REASONABLE_EPOCH_SECONDS);

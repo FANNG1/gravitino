@@ -41,17 +41,18 @@ import org.apache.gravitino.maintenance.optimizer.updater.statistics.StatisticsR
 public class LocalStatisticsCalculator
     implements SupportsCalculateBulkTableStatistics, SupportsCalculateBulkJobStatistics {
 
-  public static final String LOCAL_STATISTICS_CALCULATOR_NAME = "local-stats-calculator";
+  public static final String NAME = "local-stats-calculator";
+  private static final String CONFIG_KEY = "localStatsCalculator";
   public static final String STATISTICS_FILE_PATH_CONFIG =
-      OptimizerConfig.UPDATER_PREFIX + LOCAL_STATISTICS_CALCULATOR_NAME + ".statisticsFilePath";
+      OptimizerConfig.UPDATER_PREFIX + CONFIG_KEY + ".statisticsFilePath";
   public static final String STATISTICS_PAYLOAD_CONFIG =
-      OptimizerConfig.UPDATER_PREFIX + LOCAL_STATISTICS_CALCULATOR_NAME + ".statisticsPayload";
+      OptimizerConfig.UPDATER_PREFIX + CONFIG_KEY + ".statisticsPayload";
 
   private StatisticsReader statisticsReader;
 
   @Override
   public String name() {
-    return LOCAL_STATISTICS_CALCULATOR_NAME;
+    return NAME;
   }
 
   @Override

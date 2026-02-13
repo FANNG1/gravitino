@@ -79,19 +79,18 @@ public class H2MetricsRepository implements MetricsRepository {
             optimizerProperties,
             OptimizerConfig.OPTIMIZER_PREFIX + H2MetricsRepositoryConfig.H2_METRICS_PREFIX);
     H2MetricsRepositoryConfig config = new H2MetricsRepositoryConfig(h2Properties);
-    username = config.get(H2MetricsRepositoryConfig.H2_METRICS_USERNAME_CONFIG);
-    password = config.get(H2MetricsRepositoryConfig.H2_METRICS_PASSWORD_CONFIG);
-    partitionColumnLength =
-        config.get(H2MetricsRepositoryConfig.H2_METRICS_PARTITION_COLUMN_LENGTH_CONFIG);
+    username = config.get(H2MetricsRepositoryConfig.USERNAME_CONFIG);
+    password = config.get(H2MetricsRepositoryConfig.PASSWORD_CONFIG);
+    partitionColumnLength = config.get(H2MetricsRepositoryConfig.PARTITION_COLUMN_LENGTH_CONFIG);
     Preconditions.checkArgument(
         partitionColumnLength > 0,
         "Partition column length must be positive, but got %s",
         partitionColumnLength);
-    String configuredJdbcUrl = config.get(H2MetricsRepositoryConfig.H2_METRICS_JDBC_URL_CONFIG);
+    String configuredJdbcUrl = config.get(H2MetricsRepositoryConfig.JDBC_URL_CONFIG);
     if (StringUtils.isNotBlank(configuredJdbcUrl)) {
       jdbcUrl = constructH2JdbcUrl(configuredJdbcUrl);
     } else {
-      String path = resolveStoragePath(config.get(H2MetricsRepositoryConfig.H2_METRICS_STORAGE_PATH_CONFIG));
+      String path = resolveStoragePath(config.get(H2MetricsRepositoryConfig.STORAGE_PATH_CONFIG));
       jdbcUrl = constructH2JdbcUrl("jdbc:h2:file:" + path);
     }
     initializeDatabase();
@@ -563,23 +562,23 @@ public class H2MetricsRepository implements MetricsRepository {
 
   /** Configuration wrapper for H2 metrics storage options. */
   public static class H2MetricsRepositoryConfig extends Config {
-    static final String H2_METRICS_PREFIX = "h2-metrics.";
+    static final String H2_METRICS_PREFIX = "h2Metrics.";
 
-    public static final String H2_METRICS_STORAGE_PATH = "h2MetricsStoragePath";
-    public static final String H2_METRICS_JDBC_URL = "h2MetricsJdbcUrl";
-    public static final String H2_METRICS_USERNAME = "h2MetricsUsername";
-    public static final String H2_METRICS_PASSWORD = "h2MetricsPassword";
-    public static final String H2_METRICS_PARTITION_COLUMN_LENGTH = "h2MetricsPartitionColumnLength";
+    public static final String STORAGE_PATH = "storagePath";
+    public static final String JDBC_URL = "jdbcUrl";
+    public static final String USERNAME = "username";
+    public static final String PASSWORD = "password";
+    public static final String PARTITION_COLUMN_LENGTH = "partitionColumnLength";
 
-    public static final ConfigEntry<String> H2_METRICS_STORAGE_PATH_CONFIG =
-        new ConfigBuilder(H2_METRICS_STORAGE_PATH)
+    public static final ConfigEntry<String> STORAGE_PATH_CONFIG =
+        new ConfigBuilder(STORAGE_PATH)
             .doc("The path for H2 metrics storage.")
             .version(ConfigConstants.VERSION_1_2_0)
             .stringConf()
             .createWithDefault("./data/metrics.db");
 
-    public static final ConfigEntry<String> H2_METRICS_JDBC_URL_CONFIG =
-        new ConfigBuilder(H2_METRICS_JDBC_URL)
+    public static final ConfigEntry<String> JDBC_URL_CONFIG =
+        new ConfigBuilder(JDBC_URL)
             .doc(
                 "Optional H2 JDBC URL. If provided, it takes precedence over storage path and "
                     + "missing parameters DB_CLOSE_DELAY/MODE/AUTO_SERVER are auto-appended.")
@@ -587,22 +586,22 @@ public class H2MetricsRepository implements MetricsRepository {
             .stringConf()
             .createWithDefault("");
 
-    public static final ConfigEntry<String> H2_METRICS_USERNAME_CONFIG =
-        new ConfigBuilder(H2_METRICS_USERNAME)
+    public static final ConfigEntry<String> USERNAME_CONFIG =
+        new ConfigBuilder(USERNAME)
             .doc("H2 username for metrics repository.")
             .version(ConfigConstants.VERSION_1_2_0)
             .stringConf()
             .createWithDefault(DEFAULT_USER);
 
-    public static final ConfigEntry<String> H2_METRICS_PASSWORD_CONFIG =
-        new ConfigBuilder(H2_METRICS_PASSWORD)
+    public static final ConfigEntry<String> PASSWORD_CONFIG =
+        new ConfigBuilder(PASSWORD)
             .doc("H2 password for metrics repository.")
             .version(ConfigConstants.VERSION_1_2_0)
             .stringConf()
             .createWithDefault(DEFAULT_PASSWORD);
 
-    public static final ConfigEntry<Integer> H2_METRICS_PARTITION_COLUMN_LENGTH_CONFIG =
-        new ConfigBuilder(H2_METRICS_PARTITION_COLUMN_LENGTH)
+    public static final ConfigEntry<Integer> PARTITION_COLUMN_LENGTH_CONFIG =
+        new ConfigBuilder(PARTITION_COLUMN_LENGTH)
             .doc("Length of table_metrics.table_partition column.")
             .version(ConfigConstants.VERSION_1_2_0)
             .intConf()
@@ -611,7 +610,7 @@ public class H2MetricsRepository implements MetricsRepository {
     /**
      * Creates H2 metrics storage config from raw properties.
      *
-     * @param properties h2-metrics scoped properties
+     * @param properties h2Metrics scoped properties
      */
     public H2MetricsRepositoryConfig(Map<String, String> properties) {
       super(false);
