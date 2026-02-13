@@ -47,6 +47,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionEntry;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
+import org.apache.gravitino.maintenance.optimizer.api.monitor.EvaluationResult;
+import org.apache.gravitino.maintenance.optimizer.api.monitor.MetricScope;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerContent;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.maintenance.optimizer.common.PartitionEntryImpl;
@@ -348,13 +350,19 @@ public class OptimizerCmd {
                 runWithSummary(
                     "monitor_metrics",
                     () -> {
-                      Monitor monitor = new Monitor(optimizerEnv);
-                      monitor.run(
-                          nameIdentifiers,
-                          actionTimeLong,
-                          rangeSecondsLong,
-                          Optional.empty(),
-                          monitorPartitionPath);
+                      try (Monitor monitor = new Monitor(optimizerEnv)) {
+                        for (NameIdentifier nameIdentifier : nameIdentifiers) {
+                          List<EvaluationResult> results =
+                              monitor.evaluateMetrics(
+                                  nameIdentifier,
+                                  actionTimeLong,
+                                  rangeSecondsLong,
+                                  monitorPartitionPath);
+                          results.forEach(OptimizerCmd::printEvaluationResult);
+                        }
+                      } catch (Exception e) {
+                        throw new RuntimeException("Failed to run monitor metrics", e);
+                      }
                     },
                     buildSummaryDetails(
                         nameIdentifiers,
@@ -868,6 +876,23 @@ public class OptimizerCmd {
     for (String[] row : rows) {
       System.out.println(formatRow(row, widths));
     }
+  }
+
+  private static void printEvaluationResult(EvaluationResult result) {
+    MetricScope scope = result.scope();
+    String partition =
+        scope.partition().map(PartitionPath::toString).orElse("<table-or-job-scope>");
+    System.out.printf(
+        "EvaluationResult{scopeType=%s, identifier=%s, partitionPath=%s, evaluation=%s, evaluatorName=%s, actionTimeSeconds=%d, rangeSeconds=%d, beforeMetrics=%s, afterMetrics=%s}%n",
+        scope.type(),
+        scope.identifier(),
+        partition,
+        result.evaluation(),
+        result.evaluatorName(),
+        result.actionTimeSeconds(),
+        result.rangeSeconds(),
+        result.beforeMetrics(),
+        result.afterMetrics());
   }
 
   private static String formatRow(String[] values, int[] widths) {

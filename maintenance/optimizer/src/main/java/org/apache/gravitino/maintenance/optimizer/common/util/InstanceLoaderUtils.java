@@ -28,7 +28,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.gravitino.maintenance.optimizer.api.monitor.MetricsEvaluator;
-import org.apache.gravitino.maintenance.optimizer.api.recommender.StrategyHandler;
 import org.apache.gravitino.maintenance.optimizer.api.updater.StatisticsCalculator;
 
 public class InstanceLoaderUtils {
@@ -71,36 +70,6 @@ public class InstanceLoaderUtils {
                 + typeClass.getSimpleName()
                 + ": "
                 + instanceName
-                + ", class: "
-                + providerClz.getName(),
-            e);
-      }
-    }
-  }
-
-  public static <T extends MetricsEvaluator> T createMetricsEvaluatorInstance(
-      String evaluatorName) {
-    ServiceLoader<MetricsEvaluator> loader = ServiceLoader.load(MetricsEvaluator.class);
-    List<Class<? extends T>> providers =
-        Streams.stream(loader.iterator())
-            .filter(p -> p.name().equalsIgnoreCase(evaluatorName))
-            .map(p -> (Class<? extends T>) p.getClass())
-            .collect(Collectors.toList());
-
-    if (providers.isEmpty()) {
-      throw new IllegalArgumentException(
-          "No " + MetricsEvaluator.class.getSimpleName() + " class found for: " + evaluatorName);
-    } else if (providers.size() > 1) {
-      throw new IllegalArgumentException(
-          "Multiple " + MetricsEvaluator.class.getSimpleName() + " found for: " + evaluatorName);
-    } else {
-      Class<? extends T> providerClz = Iterables.getOnlyElement(providers);
-      try {
-        return providerClz.getDeclaredConstructor().newInstance();
-      } catch (Exception e) {
-        throw new RuntimeException(
-            "Failed to instantiate MetricsEvaluator: "
-                + evaluatorName
                 + ", class: "
                 + providerClz.getName(),
             e);

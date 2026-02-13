@@ -19,8 +19,6 @@
 
 package org.apache.gravitino.maintenance.optimizer.common.util;
 
-import org.apache.gravitino.maintenance.optimizer.api.monitor.JobProvider;
-import org.apache.gravitino.maintenance.optimizer.api.monitor.MetricsProvider;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.JobSubmitter;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.StatisticsProvider;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.StrategyProvider;
@@ -28,17 +26,11 @@ import org.apache.gravitino.maintenance.optimizer.api.recommender.TableMetadataP
 import org.apache.gravitino.maintenance.optimizer.monitor.callback.MonitorCallbackForTest;
 import org.apache.gravitino.maintenance.optimizer.monitor.job.JobProviderForTest;
 import org.apache.gravitino.maintenance.optimizer.monitor.metrics.MetricsProviderForTest;
-import org.apache.gravitino.maintenance.optimizer.api.updater.MetricsUpdater;
-import org.apache.gravitino.maintenance.optimizer.api.updater.StatisticsUpdater;
-import org.apache.gravitino.maintenance.optimizer.monitor.job.DummyJobProvider;
-import org.apache.gravitino.maintenance.optimizer.monitor.metrics.GravitinoMetricsProvider;
 import org.apache.gravitino.maintenance.optimizer.recommender.job.GravitinoJobSubmitter;
 import org.apache.gravitino.maintenance.optimizer.recommender.job.NoopJobSubmitter;
 import org.apache.gravitino.maintenance.optimizer.recommender.statistics.GravitinoStatisticsProvider;
 import org.apache.gravitino.maintenance.optimizer.recommender.strategy.GravitinoStrategyProvider;
 import org.apache.gravitino.maintenance.optimizer.recommender.table.GravitinoTableMetadataProvider;
-import org.apache.gravitino.maintenance.optimizer.updater.GravitinoStatisticsUpdater;
-import org.apache.gravitino.maintenance.optimizer.updater.metrics.GravitinoMetricsUpdater;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -91,36 +83,5 @@ public class TestProviderUtils {
     Assertions.assertTrue(
         ProviderUtils.createMonitorCallbackInstance(MonitorCallbackForTest.NAME)
             instanceof MonitorCallbackForTest);
-  }
-
-  @Test
-  public void testCreateStatisticsUpdaterInstance() {
-    StatisticsUpdater statisticsUpdater =
-        ProviderUtils.createStatisticsUpdaterInstance(GravitinoStatisticsUpdater.NAME);
-    Assertions.assertNotNull(statisticsUpdater);
-    Assertions.assertTrue(statisticsUpdater instanceof GravitinoStatisticsUpdater);
-  }
-
-  @Test
-  public void testCreateMetricsUpdaterInstance() {
-    MetricsUpdater metricsUpdater =
-        ProviderUtils.createMetricsUpdaterInstance(GravitinoMetricsUpdater.NAME);
-    Assertions.assertNotNull(metricsUpdater);
-    Assertions.assertTrue(metricsUpdater instanceof GravitinoMetricsUpdater);
-  }
-
-  @Test
-  public void testCreateMetricsProviderInstance() {
-    MetricsProvider metricsProvider =
-        ProviderUtils.createMetricsProviderInstance(GravitinoMetricsProvider.NAME);
-    Assertions.assertNotNull(metricsProvider);
-    Assertions.assertTrue(metricsProvider instanceof GravitinoMetricsProvider);
-  }
-
-  @Test
-  public void testCreateJobsProviderInstance() {
-    JobProvider jobProvider = ProviderUtils.createJobProviderInstance(DummyJobProvider.NAME);
-    Assertions.assertNotNull(jobProvider);
-    Assertions.assertTrue(jobProvider instanceof DummyJobProvider);
   }
 }

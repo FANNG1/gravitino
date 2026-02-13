@@ -55,7 +55,7 @@ public class FileJobProvider implements JobProvider {
   }
 
   @Override
-  public List<NameIdentifier> getJobNames(NameIdentifier tableIdentifier) {
+  public List<NameIdentifier> jobIdentifiers(NameIdentifier tableIdentifier) {
     return jobReader.readJobNames(tableIdentifier);
   }
 

@@ -55,7 +55,7 @@ public class GravitinoMetricsProvider implements MetricsProvider {
   }
 
   @Override
-  public Map<String, List<MetricSample>> getJobMetrics(
+  public Map<String, List<MetricSample>> jobMetrics(
       NameIdentifier jobIdentifier, long startTime, long endTime) {
     Map<String, List<MetricRecord>> metrics =
         metricsStorage.getJobMetrics(jobIdentifier, startTime, endTime);
@@ -64,7 +64,7 @@ public class GravitinoMetricsProvider implements MetricsProvider {
   }
 
   @Override
-  public Map<String, List<MetricSample>> getTableMetrics(
+  public Map<String, List<MetricSample>> tableMetrics(
       NameIdentifier tableIdentifier, long startTime, long endTime) {
     Map<String, List<MetricRecord>> metrics =
         metricsStorage.getTableMetrics(tableIdentifier, startTime, endTime);
@@ -73,7 +73,7 @@ public class GravitinoMetricsProvider implements MetricsProvider {
   }
 
   @Override
-  public Map<String, List<MetricSample>> getPartitionMetrics(
+  public Map<String, List<MetricSample>> partitionMetrics(
       NameIdentifier tableIdentifier, PartitionPath partitionName, long startTime, long endTime) {
     Map<String, List<MetricRecord>> metrics =
         metricsStorage.getPartitionMetrics(

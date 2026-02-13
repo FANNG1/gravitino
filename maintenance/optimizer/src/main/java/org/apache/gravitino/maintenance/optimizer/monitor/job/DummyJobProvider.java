@@ -29,7 +29,7 @@ public class DummyJobProvider implements JobProvider {
   public static final String NAME = "dummy-job-provider";
 
   @Override
-  public List<NameIdentifier> getJobNames(NameIdentifier tableIdentifier) {
+  public List<NameIdentifier> jobIdentifiers(NameIdentifier tableIdentifier) {
     return List.of();
   }
 

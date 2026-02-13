@@ -71,7 +71,7 @@ public class MetricsLister {
   private void printTableMetrics(
       NameIdentifier identifier, long startTimeSeconds, long endTimeSeconds) {
     Map<String, List<MetricSample>> metrics =
-        metricsProvider.getTableMetrics(identifier, startTimeSeconds, endTimeSeconds);
+        metricsProvider.tableMetrics(identifier, startTimeSeconds, endTimeSeconds);
     printMetrics(identifier, "table", metrics);
   }
 
@@ -81,7 +81,7 @@ public class MetricsLister {
       long startTimeSeconds,
       long endTimeSeconds) {
     Map<String, List<MetricSample>> metrics =
-        metricsProvider.getPartitionMetrics(
+        metricsProvider.partitionMetrics(
             identifier, partitionPath, startTimeSeconds, endTimeSeconds);
     printMetrics(
         identifier, "partition:" + PartitionUtils.encodePartitionPath(partitionPath), metrics);
@@ -95,7 +95,7 @@ public class MetricsLister {
 
     for (NameIdentifier identifier : identifiers) {
       Map<String, List<MetricSample>> metrics =
-          metricsProvider.getJobMetrics(identifier, startTimeSeconds, endTimeSeconds);
+          metricsProvider.jobMetrics(identifier, startTimeSeconds, endTimeSeconds);
       printMetrics(identifier, "job", metrics);
     }
   }

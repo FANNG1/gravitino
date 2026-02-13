@@ -26,16 +26,10 @@ import org.apache.gravitino.Config;
 import org.apache.gravitino.config.ConfigBuilder;
 import org.apache.gravitino.config.ConfigConstants;
 import org.apache.gravitino.config.ConfigEntry;
-import org.apache.gravitino.maintenance.optimizer.monitor.callback.ConsoleMonitorCallback;
-import org.apache.gravitino.maintenance.optimizer.monitor.evaluator.GravitinoMetricsEvaluator;
-import org.apache.gravitino.maintenance.optimizer.monitor.job.DummyJobProvider;
-import org.apache.gravitino.maintenance.optimizer.monitor.metrics.GravitinoMetricsProvider;
 import org.apache.gravitino.maintenance.optimizer.recommender.job.NoopJobSubmitter;
 import org.apache.gravitino.maintenance.optimizer.recommender.statistics.GravitinoStatisticsProvider;
 import org.apache.gravitino.maintenance.optimizer.recommender.strategy.GravitinoStrategyProvider;
 import org.apache.gravitino.maintenance.optimizer.recommender.table.GravitinoTableMetadataProvider;
-import org.apache.gravitino.maintenance.optimizer.updater.GravitinoStatisticsUpdater;
-import org.apache.gravitino.maintenance.optimizer.updater.metrics.GravitinoMetricsUpdater;
 
 /**
  * Central configuration holder for the optimizer runtime. Keys are grouped under the {@code
@@ -67,14 +61,8 @@ public class OptimizerConfig extends Config {
   private static final String JOB_PROVIDER = MONITOR_PREFIX + "jobProvider";
   private static final String METRICS_EVALUATOR = MONITOR_PREFIX + "metricsEvaluator";
   private static final String MONITOR_CALLBACKS = MONITOR_PREFIX + "callbacks";
-
-  private static final String MONITOR_PREFIX = OPTIMIZER_PREFIX + "monitor.";
-  private static final String METRICS_PROVIDER = MONITOR_PREFIX + "metricsProvider";
-  public static final String JOB_PROVIDER = MONITOR_PREFIX + "jobProvider";
-  public static final String METRICS_EVALUATOR = MONITOR_PREFIX + "metricsEvaluator";
-  public static final String MONITOR_CALLBACKS = MONITOR_PREFIX + "callbacks";
-  public static final String MONITOR_SERVICE_PORT = MONITOR_PREFIX + "service.port";
-  public static final String MONITOR_SERVICE_INTERVAL_SECONDS =
+  private static final String MONITOR_SERVICE_PORT = MONITOR_PREFIX + "service.port";
+  private static final String MONITOR_SERVICE_INTERVAL_SECONDS =
       MONITOR_PREFIX + "service.interval.seconds";
 
   public static final ConfigEntry<String> STATISTICS_PROVIDER_CONFIG =
@@ -126,61 +114,14 @@ public class OptimizerConfig extends Config {
           .doc("The statistics updater implementation name (matches Provider.name()).")
           .version(ConfigConstants.VERSION_1_2_0)
           .stringConf()
-          .createWithDefault(GravitinoStatisticsUpdater.NAME);
+          .create();
 
   public static final ConfigEntry<String> METRICS_UPDATER_CONFIG =
       new ConfigBuilder(METRICS_UPDATER)
           .doc("The metrics updater implementation name (matches Provider.name()).")
           .version(ConfigConstants.VERSION_1_2_0)
           .stringConf()
-          .createWithDefault(GravitinoMetricsUpdater.NAME);
-
-  public static final ConfigEntry<String> METRICS_PROVIDER_CONFIG =
-      new ConfigBuilder(METRICS_PROVIDER)
-          .doc("The metrics provider for the monitor.")
-          .version(ConfigConstants.VERSION_1_2_0)
-          .stringConf()
-          .createWithDefault(GravitinoMetricsProvider.NAME);
-
-  public static final ConfigEntry<String> JOB_PROVIDER_CONFIG =
-      new ConfigBuilder(JOB_PROVIDER)
-          .doc("The job provider for the monitor.")
-          .version(ConfigConstants.VERSION_1_2_0)
-          .stringConf()
-          .createWithDefault(DummyJobProvider.NAME);
-
-  public static final ConfigEntry<String> METRICS_EVALUATOR_CONFIG =
-      new ConfigBuilder(METRICS_EVALUATOR)
-          .doc("The metrics evaluator for the monitor.")
-          .version(ConfigConstants.VERSION_1_2_0)
-          .stringConf()
-          .createWithDefault(GravitinoMetricsEvaluator.NAME);
-
-  public static final ConfigEntry<String> MONITOR_CALLBACKS_CONFIG =
-      new ConfigBuilder(MONITOR_CALLBACKS)
-          .doc(
-              "Comma-separated list of monitor callbacks to invoke after evaluation. Example: '"
-                  + ConsoleMonitorCallback.NAME
-                  + "'.")
-          .version(ConfigConstants.VERSION_1_2_0)
-          .stringConf()
-          .createWithDefault(ConsoleMonitorCallback.NAME);
-
-  public static final ConfigEntry<Integer> MONITOR_SERVICE_PORT_CONFIG =
-      new ConfigBuilder(MONITOR_SERVICE_PORT)
-          .doc("Monitor service HTTP port (0 to bind to an ephemeral port).")
-          .version(ConfigConstants.VERSION_1_2_0)
-          .intConf()
-          .checkValue(v -> v >= 0, ConfigConstants.NON_NEGATIVE_NUMBER_ERROR_MSG)
-          .createWithDefault(8000);
-
-  public static final ConfigEntry<Integer> MONITOR_SERVICE_INTERVAL_SECONDS_CONFIG =
-      new ConfigBuilder(MONITOR_SERVICE_INTERVAL_SECONDS)
-          .doc("Monitor service check interval in seconds.")
-          .version(ConfigConstants.VERSION_1_2_0)
-          .intConf()
-          .checkValue(v -> v > 0, "Monitor service interval must be > 0.")
-          .createWithDefault(2);
+          .create();
 
   public static final ConfigEntry<String> METRICS_PROVIDER_CONFIG =
       new ConfigBuilder(METRICS_PROVIDER)
@@ -220,6 +161,22 @@ public class OptimizerConfig extends Config {
           .stringConf()
           .toSequence()
           .createWithDefault(List.of());
+
+  public static final ConfigEntry<Integer> MONITOR_SERVICE_PORT_CONFIG =
+      new ConfigBuilder(MONITOR_SERVICE_PORT)
+          .doc("Monitor service HTTP port (0 to bind to an ephemeral port).")
+          .version(ConfigConstants.VERSION_1_2_0)
+          .intConf()
+          .checkValue(v -> v >= 0, ConfigConstants.NON_NEGATIVE_NUMBER_ERROR_MSG)
+          .createWithDefault(8000);
+
+  public static final ConfigEntry<Integer> MONITOR_SERVICE_INTERVAL_SECONDS_CONFIG =
+      new ConfigBuilder(MONITOR_SERVICE_INTERVAL_SECONDS)
+          .doc("Monitor service check interval in seconds.")
+          .version(ConfigConstants.VERSION_1_2_0)
+          .intConf()
+          .checkValue(v -> v > 0, "Monitor service interval must be > 0.")
+          .createWithDefault(2);
 
   public static final ConfigEntry<String> GRAVITINO_URI_CONFIG =
       new ConfigBuilder(GRAVITINO_URI)

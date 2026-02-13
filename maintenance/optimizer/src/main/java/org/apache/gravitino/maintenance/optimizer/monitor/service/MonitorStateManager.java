@@ -238,7 +238,7 @@ public class MonitorStateManager {
           request.actionTimeSeconds,
           request.rangeSeconds);
       List<EvaluationResult> results =
-          monitor.runAndCollect(
+          monitor.evaluateMetrics(
               request.identifier,
               request.actionTimeSeconds,
               request.rangeSeconds,

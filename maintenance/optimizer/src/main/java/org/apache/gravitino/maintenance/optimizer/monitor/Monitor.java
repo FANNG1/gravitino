@@ -20,7 +20,6 @@
 package org.apache.gravitino.maintenance.optimizer.monitor;
 
 import com.google.common.base.Preconditions;
-import com.google.common.base.Splitter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -28,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.maintenance.optimizer.api.common.MetricSample;
@@ -170,28 +168,32 @@ public class Monitor implements AutoCloseable {
     }
   }
 
+  /**
+   * Return the latest observed metric timestamp for table/partition and related jobs within the
+   * given time window.
+   */
   public long latestMetricTimestampSeconds(
       NameIdentifier tableIdentifier,
-      long actionTime,
+      long actionTimeSeconds,
       long rangeSeconds,
       Optional<PartitionPath> partitionPath) {
-    Pair<Long, Long> timeRange = getTimeRange(actionTime, rangeSeconds);
+    Pair<Long, Long> timeRange = timeRange(actionTimeSeconds, rangeSeconds);
     Map<String, List<MetricSample>> tableMetrics =
         partitionPath
             .map(
                 path ->
-                    metricsProvider.getPartitionMetrics(
+                    metricsProvider.partitionMetrics(
                         tableIdentifier, path, timeRange.getLeft(), timeRange.getRight()))
             .orElseGet(
                 () ->
-                    metricsProvider.getTableMetrics(
+                    metricsProvider.tableMetrics(
                         tableIdentifier, timeRange.getLeft(), timeRange.getRight()));
     long maxTimestamp = maxTimestamp(tableMetrics);
 
-    List<NameIdentifier> jobs = jobProvider.getJobNames(tableIdentifier);
+    List<NameIdentifier> jobs = jobProvider.jobIdentifiers(tableIdentifier);
     for (NameIdentifier job : jobs) {
       Map<String, List<MetricSample>> jobMetrics =
-          metricsProvider.getJobMetrics(job, timeRange.getLeft(), timeRange.getRight());
+          metricsProvider.jobMetrics(job, timeRange.getLeft(), timeRange.getRight());
       maxTimestamp = Math.max(maxTimestamp, maxTimestamp(jobMetrics));
     }
     return maxTimestamp;
@@ -204,7 +206,6 @@ public class Monitor implements AutoCloseable {
       long rangeSeconds,
       Optional<PartitionPath> partitionPath) {
     Pair<Long, Long> timeRange = timeRange(actionTimeSeconds, rangeSeconds);
-
     Map<String, List<MetricSample>> metrics =
         partitionPath
             .map(
