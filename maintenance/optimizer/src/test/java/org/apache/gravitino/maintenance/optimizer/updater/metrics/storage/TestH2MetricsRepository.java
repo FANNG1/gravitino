@@ -34,7 +34,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class TestH2MetricsRepository {
@@ -45,7 +44,7 @@ class TestH2MetricsRepository {
   void setUp() throws IOException {
     cleanupLegacyDataFiles();
     storage = new H2MetricsRepository();
-    storage.initialize(ImmutableMap.of());
+    storage.initialize(Map.of());
     storage.cleanupAllMetricsBefore(MAX_REASONABLE_EPOCH_SECONDS);
   }
 
@@ -190,10 +189,10 @@ class TestH2MetricsRepository {
   @Test
   void testInitializeTwiceFails() {
     H2MetricsRepository repository = new H2MetricsRepository();
-    repository.initialize(ImmutableMap.of());
+    repository.initialize(Map.of());
 
     IllegalStateException e =
-        Assertions.assertThrows(IllegalStateException.class, () -> repository.initialize(ImmutableMap.of()));
+        Assertions.assertThrows(IllegalStateException.class, () -> repository.initialize(Map.of()));
     Assertions.assertTrue(e.getMessage().contains("already been initialized"));
   }
 
