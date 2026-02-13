@@ -35,6 +35,7 @@ import org.apache.gravitino.json.JsonUtils;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionEntry;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
 import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
+import org.apache.gravitino.maintenance.optimizer.api.common.TableStatisticsBundle;
 import org.apache.gravitino.maintenance.optimizer.common.PartitionEntryImpl;
 import org.apache.gravitino.maintenance.optimizer.updater.StatisticEntryImpl;
 import org.apache.gravitino.stats.StatisticValue;
@@ -81,37 +82,13 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
   }
 
   @Override
-  public List<StatisticEntry<?>> readTableStatistics(NameIdentifier tableIdentifier) {
-    Map<NameIdentifier, Map<String, StatisticValue<?>>> aggregated =
-        aggregateStatistics(tableIdentifier);
-    Map<String, StatisticValue<?>> mergedStatistics = aggregated.get(tableIdentifier);
-    if (mergedStatistics == null || mergedStatistics.isEmpty()) {
-      return ImmutableList.of();
-    }
-
-    List<StatisticEntry<?>> statistics = new ArrayList<>();
-    mergedStatistics.forEach(
-        (name, value) -> statistics.add(new StatisticEntryImpl<>(name, value)));
-    return ImmutableList.copyOf(statistics);
+  public TableStatisticsBundle readTableStatistics(NameIdentifier tableIdentifier) {
+    return aggregateTableStatisticsBundle(tableIdentifier);
   }
 
   @Override
-  public Map<NameIdentifier, List<StatisticEntry<?>>> readAllTableStatistics() {
-    Map<NameIdentifier, Map<String, StatisticValue<?>>> aggregated = aggregateStatistics(null);
-    Map<NameIdentifier, List<StatisticEntry<?>>> result = new LinkedHashMap<>();
-    aggregated.forEach(
-        (identifier, statsByName) -> {
-          List<StatisticEntry<?>> statistics = new ArrayList<>();
-          statsByName.forEach(
-              (name, value) -> statistics.add(new StatisticEntryImpl<>(name, value)));
-          if (!statistics.isEmpty()) {
-            result.put(identifier, ImmutableList.copyOf(statistics));
-          } else {
-            result.put(identifier, ImmutableList.of());
-          }
-        });
-
-    return result;
+  public Map<NameIdentifier, TableStatisticsBundle> readBulkTableStatistics() {
+    return aggregateAllTableStatisticsBundles();
   }
 
   @Override
@@ -130,7 +107,7 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
   }
 
   @Override
-  public Map<NameIdentifier, List<StatisticEntry<?>>> readAllJobStatistics() {
+  public Map<NameIdentifier, List<StatisticEntry<?>>> readBulkJobStatistics() {
     Map<NameIdentifier, Map<String, StatisticValue<?>>> aggregated = aggregateJobStatistics(null);
     Map<NameIdentifier, List<StatisticEntry<?>>> result = new LinkedHashMap<>();
     aggregated.forEach(
@@ -148,46 +125,25 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
     return result;
   }
 
-  @Override
-  public Map<PartitionPath, List<StatisticEntry<?>>> readPartitionStatistics(
-      NameIdentifier tableIdentifier) {
-    Map<NameIdentifier, Map<PartitionPath, Map<String, StatisticValue<?>>>> aggregated =
-        aggregatePartitionStatistics(tableIdentifier);
-    Map<PartitionPath, Map<String, StatisticValue<?>>> partitionStatistics =
-        aggregated.get(tableIdentifier);
-    if (partitionStatistics == null || partitionStatistics.isEmpty()) {
+  private List<StatisticEntry<?>> toStatisticEntries(Map<String, StatisticValue<?>> statsByName) {
+    if (statsByName == null || statsByName.isEmpty()) {
+      return ImmutableList.of();
+    }
+
+    List<StatisticEntry<?>> statistics = new ArrayList<>();
+    statsByName.forEach((name, value) -> statistics.add(new StatisticEntryImpl<>(name, value)));
+    return ImmutableList.copyOf(statistics);
+  }
+
+  private Map<PartitionPath, List<StatisticEntry<?>>> toPartitionStatisticEntries(
+      Map<PartitionPath, Map<String, StatisticValue<?>>> statsByPartition) {
+    if (statsByPartition == null || statsByPartition.isEmpty()) {
       return Map.of();
     }
 
     Map<PartitionPath, List<StatisticEntry<?>>> result = new LinkedHashMap<>();
-    partitionStatistics.forEach(
-        (partitionPath, statisticsByName) -> {
-          List<StatisticEntry<?>> statistics = new ArrayList<>();
-          statisticsByName.forEach(
-              (name, value) -> statistics.add(new StatisticEntryImpl<>(name, value)));
-          result.put(partitionPath, ImmutableList.copyOf(statistics));
-        });
-    return result;
-  }
-
-  @Override
-  public Map<NameIdentifier, Map<PartitionPath, List<StatisticEntry<?>>>>
-      readAllPartitionStatistics() {
-    Map<NameIdentifier, Map<PartitionPath, Map<String, StatisticValue<?>>>> aggregated =
-        aggregatePartitionStatistics(null);
-    Map<NameIdentifier, Map<PartitionPath, List<StatisticEntry<?>>>> result = new LinkedHashMap<>();
-    aggregated.forEach(
-        (identifier, statisticsByPartition) -> {
-          Map<PartitionPath, List<StatisticEntry<?>>> perPartition = new LinkedHashMap<>();
-          statisticsByPartition.forEach(
-              (partitionPath, statisticsByName) -> {
-                List<StatisticEntry<?>> statistics = new ArrayList<>();
-                statisticsByName.forEach(
-                    (name, value) -> statistics.add(new StatisticEntryImpl<>(name, value)));
-                perPartition.put(partitionPath, ImmutableList.copyOf(statistics));
-              });
-          result.put(identifier, perPartition);
-        });
+    statsByPartition.forEach(
+        (partitionPath, statsByName) -> result.put(partitionPath, toStatisticEntries(statsByName)));
     return result;
   }
 
@@ -226,6 +182,130 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
     return aggregated;
   }
 
+  private TableStatisticsBundle aggregateTableStatisticsBundle(NameIdentifier targetIdentifier) {
+    if (targetIdentifier == null) {
+      return new TableStatisticsBundle(ImmutableList.of(), Map.of());
+    }
+
+    Map<String, StatisticValue<?>> tableStatistics = new LinkedHashMap<>();
+    Map<PartitionPath, Map<String, StatisticValue<?>>> partitionStatistics = new LinkedHashMap<>();
+    try (BufferedReader reader = openReader()) {
+      String line;
+      while ((line = reader.readLine()) != null) {
+        if (StringUtils.isBlank(line)) {
+          continue;
+        }
+
+        JsonNode node = parseJson(line);
+        if (node == null) {
+          continue;
+        }
+
+        if (isTableStatistics(node)) {
+          NameIdentifier identifier = parseIdentifier(node.get(IDENTIFIER_FIELD), true);
+          if (targetIdentifier.equals(identifier)) {
+            populateStatistics(node, tableStatistics);
+          }
+          continue;
+        }
+
+        if (!isPartitionStatistics(node)) {
+          continue;
+        }
+
+        NameIdentifier identifier = parseIdentifier(node.get(IDENTIFIER_FIELD), true);
+        if (!targetIdentifier.equals(identifier)) {
+          continue;
+        }
+
+        Optional<PartitionPath> partitionPathOpt = parsePartitionPath(node.get(PARTITION_PATH_FIELD));
+        if (partitionPathOpt.isEmpty()) {
+          continue;
+        }
+
+        Map<String, StatisticValue<?>> partitionStatsByName =
+            partitionStatistics.computeIfAbsent(partitionPathOpt.get(), k -> new LinkedHashMap<>());
+        populateStatistics(node, partitionStatsByName);
+      }
+    } catch (IOException e) {
+      throw new RuntimeException("Failed to read statistics", e);
+    }
+
+    return new TableStatisticsBundle(
+        toStatisticEntries(tableStatistics), toPartitionStatisticEntries(partitionStatistics));
+  }
+
+  private Map<NameIdentifier, TableStatisticsBundle> aggregateAllTableStatisticsBundles() {
+    Map<NameIdentifier, Map<String, StatisticValue<?>>> tableStatisticsByIdentifier =
+        new LinkedHashMap<>();
+    Map<NameIdentifier, Map<PartitionPath, Map<String, StatisticValue<?>>>>
+        partitionStatisticsByIdentifier = new LinkedHashMap<>();
+
+    try (BufferedReader reader = openReader()) {
+      String line;
+      while ((line = reader.readLine()) != null) {
+        if (StringUtils.isBlank(line)) {
+          continue;
+        }
+
+        JsonNode node = parseJson(line);
+        if (node == null) {
+          continue;
+        }
+
+        if (isTableStatistics(node)) {
+          NameIdentifier identifier = parseIdentifier(node.get(IDENTIFIER_FIELD), true);
+          if (identifier == null) {
+            continue;
+          }
+          Map<String, StatisticValue<?>> tableStats =
+              tableStatisticsByIdentifier.computeIfAbsent(identifier, k -> new LinkedHashMap<>());
+          populateStatistics(node, tableStats);
+          continue;
+        }
+
+        if (!isPartitionStatistics(node)) {
+          continue;
+        }
+
+        NameIdentifier identifier = parseIdentifier(node.get(IDENTIFIER_FIELD), true);
+        if (identifier == null) {
+          continue;
+        }
+
+        Optional<PartitionPath> partitionPathOpt = parsePartitionPath(node.get(PARTITION_PATH_FIELD));
+        if (partitionPathOpt.isEmpty()) {
+          continue;
+        }
+
+        Map<PartitionPath, Map<String, StatisticValue<?>>> partitionStatsByPath =
+            partitionStatisticsByIdentifier.computeIfAbsent(
+                identifier, k -> new LinkedHashMap<>());
+        Map<String, StatisticValue<?>> partitionStatsByName =
+            partitionStatsByPath.computeIfAbsent(partitionPathOpt.get(), k -> new LinkedHashMap<>());
+        populateStatistics(node, partitionStatsByName);
+      }
+    } catch (IOException e) {
+      throw new RuntimeException("Failed to read statistics", e);
+    }
+
+    Map<NameIdentifier, TableStatisticsBundle> bundles = new LinkedHashMap<>();
+    tableStatisticsByIdentifier.forEach(
+        (identifier, tableStats) ->
+            bundles.put(
+                identifier,
+                new TableStatisticsBundle(
+                    toStatisticEntries(tableStats),
+                    toPartitionStatisticEntries(partitionStatisticsByIdentifier.get(identifier)))));
+    partitionStatisticsByIdentifier.forEach(
+        (identifier, partitionStats) ->
+            bundles.putIfAbsent(
+                identifier,
+                new TableStatisticsBundle(
+                    ImmutableList.of(), toPartitionStatisticEntries(partitionStats))));
+    return bundles;
+  }
+
   private Map<NameIdentifier, Map<String, StatisticValue<?>>> aggregateJobStatistics(
       NameIdentifier targetIdentifier) {
     Map<NameIdentifier, Map<String, StatisticValue<?>>> aggregated = new LinkedHashMap<>();
@@ -252,51 +332,6 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
 
         Map<String, StatisticValue<?>> statisticsByName =
             aggregated.computeIfAbsent(identifier, k -> new LinkedHashMap<>());
-        populateStatistics(node, statisticsByName);
-      }
-    } catch (IOException e) {
-      throw new RuntimeException("Failed to read statistics", e);
-    }
-
-    return aggregated;
-  }
-
-  private Map<NameIdentifier, Map<PartitionPath, Map<String, StatisticValue<?>>>>
-      aggregatePartitionStatistics(NameIdentifier targetIdentifier) {
-    Map<NameIdentifier, Map<PartitionPath, Map<String, StatisticValue<?>>>> aggregated =
-        new LinkedHashMap<>();
-
-    try (BufferedReader reader = openReader()) {
-      String line;
-      while ((line = reader.readLine()) != null) {
-        if (StringUtils.isBlank(line)) {
-          continue;
-        }
-
-        JsonNode node = parseJson(line);
-        if (node == null || !isPartitionStatistics(node)) {
-          continue;
-        }
-
-        NameIdentifier identifier = parseIdentifier(node.get(IDENTIFIER_FIELD), true);
-        if (identifier == null) {
-          continue;
-        }
-        if (targetIdentifier != null && !targetIdentifier.equals(identifier)) {
-          continue;
-        }
-
-        Optional<PartitionPath> partitionPathOpt =
-            parsePartitionPath(node.get(PARTITION_PATH_FIELD));
-        if (partitionPathOpt.isEmpty()) {
-          continue;
-        }
-        PartitionPath partitionPath = partitionPathOpt.get();
-
-        Map<PartitionPath, Map<String, StatisticValue<?>>> partitionStatisticsByName =
-            aggregated.computeIfAbsent(identifier, k -> new LinkedHashMap<>());
-        Map<String, StatisticValue<?>> statisticsByName =
-            partitionStatisticsByName.computeIfAbsent(partitionPath, k -> new LinkedHashMap<>());
         populateStatistics(node, statisticsByName);
       }
     } catch (IOException e) {

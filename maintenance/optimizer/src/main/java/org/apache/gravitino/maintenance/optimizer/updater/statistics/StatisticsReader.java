@@ -22,25 +22,25 @@ package org.apache.gravitino.maintenance.optimizer.updater.statistics;
 import java.util.List;
 import java.util.Map;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
 import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
+import org.apache.gravitino.maintenance.optimizer.api.common.TableStatisticsBundle;
 
 /** Reader abstraction for table, partition, and job statistics. */
 public interface StatisticsReader {
   /**
-   * Reads table-level statistics for a single table.
+   * Reads table-level and partition-level statistics for a single table.
    *
    * @param tableIdentifier table identifier
-   * @return table statistics for the table, empty when absent
+   * @return table statistics bundle for the table, empty when absent
    */
-  List<StatisticEntry<?>> readTableStatistics(NameIdentifier tableIdentifier);
+  TableStatisticsBundle readTableStatistics(NameIdentifier tableIdentifier);
 
   /**
-   * Reads table-level statistics for all tables in the source.
+   * Reads table-level and partition-level statistics for all tables in the source.
    *
    * @return map keyed by table identifier
    */
-  Map<NameIdentifier, List<StatisticEntry<?>>> readAllTableStatistics();
+  Map<NameIdentifier, TableStatisticsBundle> readBulkTableStatistics();
 
   /**
    * Reads job-level statistics for a single job.
@@ -55,21 +55,6 @@ public interface StatisticsReader {
    *
    * @return map keyed by job identifier
    */
-  Map<NameIdentifier, List<StatisticEntry<?>>> readAllJobStatistics();
+  Map<NameIdentifier, List<StatisticEntry<?>>> readBulkJobStatistics();
 
-  /**
-   * Read partition-level statistics for a given table.
-   *
-   * @param tableIdentifier table identifier
-   * @return map keyed by partition path with statistics for that partition
-   */
-  Map<PartitionPath, List<StatisticEntry<?>>> readPartitionStatistics(
-      NameIdentifier tableIdentifier);
-
-  /**
-   * Read partition-level statistics for all tables.
-   *
-   * @return map keyed by table identifier then partition path
-   */
-  Map<NameIdentifier, Map<PartitionPath, List<StatisticEntry<?>>>> readAllPartitionStatistics();
 }

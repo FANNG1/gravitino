@@ -21,12 +21,10 @@ package org.apache.gravitino.maintenance.optimizer.updater.calculator;
 
 import com.google.common.base.Preconditions;
 import java.nio.file.Path;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
 import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.maintenance.optimizer.api.common.TableStatisticsBundle;
 import org.apache.gravitino.maintenance.optimizer.api.updater.SupportsCalculateBulkJobStatistics;
@@ -88,38 +86,13 @@ public class LocalStatisticsCalculator
   public TableStatisticsBundle calculateTableStatistics(NameIdentifier tableIdentifier) {
     ensureInitialized();
     Preconditions.checkArgument(tableIdentifier != null, "tableIdentifier must not be null");
-    List<StatisticEntry<?>> tableStatistics = statisticsReader.readTableStatistics(tableIdentifier);
-    Map<PartitionPath, List<StatisticEntry<?>>> partitionStatistics =
-        statisticsReader.readPartitionStatistics(tableIdentifier);
-    return new TableStatisticsBundle(tableStatistics, partitionStatistics);
+    return statisticsReader.readTableStatistics(tableIdentifier);
   }
 
   @Override
   public Map<NameIdentifier, TableStatisticsBundle> calculateBulkTableStatistics() {
     ensureInitialized();
-    Map<NameIdentifier, List<StatisticEntry<?>>> tableStatistics =
-        statisticsReader.readAllTableStatistics();
-    Map<NameIdentifier, Map<PartitionPath, List<StatisticEntry<?>>>> partitionStatistics =
-        statisticsReader.readAllPartitionStatistics();
-
-    Map<NameIdentifier, TableStatisticsBundle> bundles = new HashMap<>();
-    if (tableStatistics != null) {
-      tableStatistics.forEach(
-          (identifier, statistics) ->
-              bundles.put(
-                  identifier,
-                  new TableStatisticsBundle(
-                      statistics,
-                      partitionStatistics != null
-                          ? partitionStatistics.getOrDefault(identifier, Map.of())
-                          : Map.of())));
-    }
-    if (partitionStatistics != null) {
-      partitionStatistics.forEach(
-          (identifier, partitions) ->
-              bundles.putIfAbsent(identifier, new TableStatisticsBundle(List.of(), partitions)));
-    }
-    return bundles;
+    return statisticsReader.readBulkTableStatistics();
   }
 
   @Override
@@ -132,7 +105,7 @@ public class LocalStatisticsCalculator
   @Override
   public Map<NameIdentifier, List<StatisticEntry<?>>> calculateAllJobStatistics() {
     ensureInitialized();
-    return statisticsReader.readAllJobStatistics();
+    return statisticsReader.readBulkJobStatistics();
   }
 
   private void ensureInitialized() {
