@@ -27,41 +27,14 @@ import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
  * handles, metrics) as the optimizer matures.
  */
 public class OptimizerEnv {
-  private OptimizerConfig config;
-  private OptimizerContent content;
-
-  private OptimizerEnv() {}
+  // The config items from the config file
+  private final OptimizerConfig config;
 
   public OptimizerEnv(OptimizerConfig config) {
     this.config = config;
   }
 
-  private static class InstanceHolder {
-    private static final OptimizerEnv INSTANCE = new OptimizerEnv();
-  }
-
-  public static OptimizerEnv getInstance() {
-    return InstanceHolder.INSTANCE;
-  }
-
-  public void initialize(OptimizerConfig config) {
-    initialize(config, null);
-  }
-
-  public void initialize(OptimizerConfig config, OptimizerContent content) {
-    this.config = config;
-    this.content = content;
-  }
-
   public OptimizerConfig config() {
     return config;
-  }
-
-  public OptimizerContent content() {
-    return content;
-  }
-
-  public void setContent(OptimizerContent content) {
-    this.content = content;
   }
 }
