@@ -20,6 +20,8 @@
 package org.apache.gravitino.maintenance.optimizer.updater.metrics.storage;
 
 import com.google.common.base.Preconditions;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -32,6 +34,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.gravitino.Config;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.config.ConfigBuilder;
@@ -47,9 +50,11 @@ public class H2MetricsRepository implements MetricsRepository {
 
   private static final Logger LOG = LoggerFactory.getLogger(H2MetricsRepository.class);
 
-  private String jdbcUrl = "jdbc:h2:file:./metrics_db;AUTO_SERVER=TRUE";
-  private static final String USER = "sa";
-  private static final String PASSWORD = "";
+  private static final String DEFAULT_USER = "sa";
+  private static final String DEFAULT_PASSWORD = "";
+  private String jdbcUrl = "jdbc:h2:file:./metrics_db;DB_CLOSE_DELAY=-1;MODE=MYSQL;AUTO_SERVER=TRUE";
+  private String username = DEFAULT_USER;
+  private String password = DEFAULT_PASSWORD;
   private volatile boolean initialized = false;
 
   public H2MetricsRepository() {}
@@ -62,8 +67,15 @@ public class H2MetricsRepository implements MetricsRepository {
             optimizerProperties,
             OptimizerConfig.OPTIMIZER_PREFIX + H2MetricsRepositoryConfig.H2_METRICS_PREFIX);
     H2MetricsRepositoryConfig config = new H2MetricsRepositoryConfig(h2Properties);
-    String path = config.get(H2MetricsRepositoryConfig.H2_METRICS_STORAGE_PATH_CONFIG);
-    jdbcUrl = "jdbc:h2:file:" + path + ";AUTO_SERVER=TRUE";
+    username = config.get(H2MetricsRepositoryConfig.H2_METRICS_USERNAME_CONFIG);
+    password = config.get(H2MetricsRepositoryConfig.H2_METRICS_PASSWORD_CONFIG);
+    String configuredJdbcUrl = config.get(H2MetricsRepositoryConfig.H2_METRICS_JDBC_URL_CONFIG);
+    if (StringUtils.isNotBlank(configuredJdbcUrl)) {
+      jdbcUrl = constructH2JdbcUrl(configuredJdbcUrl);
+    } else {
+      String path = resolveStoragePath(config.get(H2MetricsRepositoryConfig.H2_METRICS_STORAGE_PATH_CONFIG));
+      jdbcUrl = constructH2JdbcUrl("jdbc:h2:file:" + path);
+    }
     initializeDatabase();
     initialized = true;
   }
@@ -95,7 +107,7 @@ public class H2MetricsRepository implements MetricsRepository {
     String createIndexSql3 =
         "CREATE INDEX IF NOT EXISTS idx_table_metrics_composite ON table_metrics(table_identifier, partition, timestamp)";
 
-    try (Connection conn = DriverManager.getConnection(jdbcUrl, USER, PASSWORD);
+    try (Connection conn = DriverManager.getConnection(jdbcUrl, username, password);
         Statement stmt = conn.createStatement()) {
       stmt.execute(createTableMetricsSql);
       stmt.execute(createJobMetricsSql);
@@ -327,7 +339,7 @@ public class H2MetricsRepository implements MetricsRepository {
 
   private Connection getConnection() throws SQLException {
     ensureInitialized();
-    return DriverManager.getConnection(jdbcUrl, USER, PASSWORD);
+    return DriverManager.getConnection(jdbcUrl, username, password);
   }
 
   private void ensureInitialized() {
@@ -342,18 +354,78 @@ public class H2MetricsRepository implements MetricsRepository {
     // operation. Avoid issuing H2 SHUTDOWN here because monitor/updater may share the same DB.
   }
 
+  private String resolveStoragePath(String configuredPath) {
+    Path path = Paths.get(configuredPath);
+    if (path.isAbsolute()) {
+      return configuredPath;
+    }
+
+    String gravitinoHome = System.getenv("GRAVITINO_HOME");
+    if (StringUtils.isBlank(gravitinoHome)) {
+      return configuredPath;
+    }
+
+    return Paths.get(gravitinoHome, configuredPath).toString();
+  }
+
+  private String constructH2JdbcUrl(String originUrl) {
+    String resolvedUrl = originUrl;
+    if (!containsJdbcParam(resolvedUrl, "DB_CLOSE_DELAY")) {
+      resolvedUrl = resolvedUrl + ";DB_CLOSE_DELAY=-1";
+    }
+    if (!containsJdbcParam(resolvedUrl, "MODE")) {
+      resolvedUrl = resolvedUrl + ";MODE=MYSQL";
+    }
+    if (!containsJdbcParam(resolvedUrl, "AUTO_SERVER")) {
+      resolvedUrl = resolvedUrl + ";AUTO_SERVER=TRUE";
+    }
+    return resolvedUrl;
+  }
+
+  private boolean containsJdbcParam(String jdbcUrl, String paramName) {
+    String upperUrl = jdbcUrl.toUpperCase(Locale.ROOT);
+    String target = (paramName + "=").toUpperCase(Locale.ROOT);
+    return upperUrl.contains(target);
+  }
+
   /** Configuration wrapper for H2 metrics storage options. */
   public static class H2MetricsRepositoryConfig extends Config {
     static final String H2_METRICS_PREFIX = "h2-metrics.";
 
-    public static final String H2_METRICS_STORAGE_PATH = "h2-metrics-storage-path";
+    public static final String H2_METRICS_STORAGE_PATH = "h2MetricsStoragePath";
+    public static final String H2_METRICS_JDBC_URL = "h2MetricsJdbcUrl";
+    public static final String H2_METRICS_USERNAME = "h2MetricsUsername";
+    public static final String H2_METRICS_PASSWORD = "h2MetricsPassword";
 
     public static final ConfigEntry<String> H2_METRICS_STORAGE_PATH_CONFIG =
         new ConfigBuilder(H2_METRICS_STORAGE_PATH)
             .doc("The path for H2 metrics storage.")
-            .version(ConfigConstants.VERSION_1_1_0)
+            .version(ConfigConstants.VERSION_1_2_0)
             .stringConf()
             .createWithDefault("./data/metrics.db");
+
+    public static final ConfigEntry<String> H2_METRICS_JDBC_URL_CONFIG =
+        new ConfigBuilder(H2_METRICS_JDBC_URL)
+            .doc(
+                "Optional H2 JDBC URL. If provided, it takes precedence over storage path and "
+                    + "missing parameters DB_CLOSE_DELAY/MODE/AUTO_SERVER are auto-appended.")
+            .version(ConfigConstants.VERSION_1_2_0)
+            .stringConf()
+            .createWithDefault("");
+
+    public static final ConfigEntry<String> H2_METRICS_USERNAME_CONFIG =
+        new ConfigBuilder(H2_METRICS_USERNAME)
+            .doc("H2 username for metrics repository.")
+            .version(ConfigConstants.VERSION_1_2_0)
+            .stringConf()
+            .createWithDefault(DEFAULT_USER);
+
+    public static final ConfigEntry<String> H2_METRICS_PASSWORD_CONFIG =
+        new ConfigBuilder(H2_METRICS_PASSWORD)
+            .doc("H2 password for metrics repository.")
+            .version(ConfigConstants.VERSION_1_2_0)
+            .stringConf()
+            .createWithDefault(DEFAULT_PASSWORD);
 
     /**
      * Creates H2 metrics storage config from raw properties.
