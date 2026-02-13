@@ -27,6 +27,7 @@ import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.maintenance.optimizer.api.common.MetricSample;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionMetricSample;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
+import org.apache.gravitino.maintenance.optimizer.api.monitor.EvaluationResult;
 import org.apache.gravitino.maintenance.optimizer.api.monitor.MetricScope;
 import org.apache.gravitino.maintenance.optimizer.common.MetricSampleImpl;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
@@ -70,10 +71,6 @@ public class MonitorIT {
     long actionTime = 10;
     long rangeSeconds = 2;
     NameIdentifier table1 = NameIdentifier.of("db", "table");
-    NameIdentifier job1 = JobProviderForTest.job1;
-    NameIdentifier job2 = JobProviderForTest.job2;
-
-    // update table1, job1, job2 metrics by updater
 
     updater.updateTableMetrics(
         table1,
@@ -89,10 +86,15 @@ public class MonitorIT {
             new MetricSampleImpl(
                 12, new StatisticEntryImpl("storage", StatisticValues.longValue(100L)))));
 
-    monitor.run(table1, actionTime, rangeSeconds, Optional.empty());
-    MetricsEvaluatorForTest evaluator = (MetricsEvaluatorForTest) monitor.metricsEvaluator();
-    Map<String, List<MetricSample>> tableBeforeMetrics = evaluator.tableBeforeMetrics;
+    List<EvaluationResult> results =
+        monitor.evaluateMetrics(table1, actionTime, rangeSeconds, Optional.empty());
+    EvaluationResult tableResult =
+        results.stream()
+            .filter(result -> result.scope().type() == MetricScope.Type.TABLE)
+            .findFirst()
+            .orElseThrow();
 
+    Map<String, List<MetricSample>> tableBeforeMetrics = tableResult.beforeMetrics();
     Assertions.assertTrue(tableBeforeMetrics.containsKey("storage"));
     List<MetricSample> storageMetrics = tableBeforeMetrics.get("storage");
     Assertions.assertEquals(1, storageMetrics.size());
@@ -105,7 +107,7 @@ public class MonitorIT {
     Assertions.assertEquals(1000L, s3CostMetrics.get(0).statistic().value().value());
     Assertions.assertEquals(9, s3CostMetrics.get(0).timestamp());
 
-    Map<String, List<MetricSample>> tableAfterMetrics = evaluator.tableAfterMetrics;
+    Map<String, List<MetricSample>> tableAfterMetrics = tableResult.afterMetrics();
     Assertions.assertTrue(tableAfterMetrics.containsKey("storage"));
     storageMetrics = tableAfterMetrics.get("storage");
     Assertions.assertEquals(1, storageMetrics.size());
@@ -143,16 +145,21 @@ public class MonitorIT {
                 new StatisticEntryImpl("s3_cost", StatisticValues.longValue(5)),
                 partitionPath)));
 
-    monitor.run(table1, actionTime, rangeSeconds, Optional.empty(), Optional.of(partitionPath));
-    MetricsEvaluatorForTest evaluator = (MetricsEvaluatorForTest) monitor.metricsEvaluator();
+    List<EvaluationResult> results =
+        monitor.evaluateMetrics(table1, actionTime, rangeSeconds, Optional.of(partitionPath));
+    EvaluationResult partitionResult =
+        results.stream()
+            .filter(result -> result.scope().type() == MetricScope.Type.PARTITION)
+            .findFirst()
+            .orElseThrow();
 
-    Map<String, List<MetricSample>> tableBeforeMetrics = evaluator.tableBeforeMetrics;
+    Map<String, List<MetricSample>> tableBeforeMetrics = partitionResult.beforeMetrics();
     Assertions.assertTrue(tableBeforeMetrics.containsKey("storage"));
     List<MetricSample> storageBefore = tableBeforeMetrics.get("storage");
     Assertions.assertEquals(1, storageBefore.size());
     assertPartitionMetric(storageBefore.get(0), partitionPath, 8, 10L);
 
-    Map<String, List<MetricSample>> tableAfterMetrics = evaluator.tableAfterMetrics;
+    Map<String, List<MetricSample>> tableAfterMetrics = partitionResult.afterMetrics();
     Assertions.assertTrue(tableAfterMetrics.containsKey("storage"));
     List<MetricSample> storageAfter = tableAfterMetrics.get("storage");
     Assertions.assertEquals(1, storageAfter.size());
@@ -168,8 +175,8 @@ public class MonitorIT {
   void testJobMetrics() {
     long actionTime = 10;
     long rangeSeconds = 2;
-    NameIdentifier job1 = JobProviderForTest.job1;
-    NameIdentifier job2 = JobProviderForTest.job2;
+    NameIdentifier job1 = JobProviderForTest.JOB1;
+    NameIdentifier job2 = JobProviderForTest.JOB2;
 
     List<MetricSample> jobMetrics =
         Arrays.asList(
@@ -184,14 +191,31 @@ public class MonitorIT {
             new MetricSampleImpl(
                 12, new StatisticEntryImpl("job_runtime", StatisticValues.longValue(12L))));
 
-    // update job1, job2 metrics by updater
     updater.updateJobMetrics(job1, jobMetrics);
     updater.updateJobMetrics(job2, jobMetrics);
 
-    monitor.run(NameIdentifier.of("db", "table"), actionTime, rangeSeconds, Optional.empty());
-    MetricsEvaluatorForTest evaluator = (MetricsEvaluatorForTest) monitor.metricsEvaluator();
-    checkJobMetrics(evaluator.jobBeforeMetrics1, evaluator.jobAfterMetrics1);
-    checkJobMetrics(evaluator.jobBeforeMetrics2, evaluator.jobAfterMetrics2);
+    List<EvaluationResult> results =
+        monitor.evaluateMetrics(
+            NameIdentifier.of("db", "table"), actionTime, rangeSeconds, Optional.empty());
+    EvaluationResult job1Result =
+        results.stream()
+            .filter(
+                result ->
+                    result.scope().type() == MetricScope.Type.JOB
+                        && result.scope().identifier().equals(JobProviderForTest.JOB1))
+            .findFirst()
+            .orElseThrow();
+    EvaluationResult job2Result =
+        results.stream()
+            .filter(
+                result ->
+                    result.scope().type() == MetricScope.Type.JOB
+                        && result.scope().identifier().equals(JobProviderForTest.JOB2))
+            .findFirst()
+            .orElseThrow();
+
+    checkJobMetrics(job1Result.beforeMetrics(), job1Result.afterMetrics());
+    checkJobMetrics(job2Result.beforeMetrics(), job2Result.afterMetrics());
   }
 
   @Test
@@ -199,7 +223,7 @@ public class MonitorIT {
     MonitorCallbackForTest.reset();
     NameIdentifier table = NameIdentifier.of("db", "table");
 
-    monitor.run(table, 10, 1, Optional.empty());
+    monitor.evaluateMetrics(table, 10, 1, Optional.empty());
 
     Assertions.assertEquals(3, MonitorCallbackForTest.INVOCATIONS.get());
     Assertions.assertTrue(
@@ -211,10 +235,10 @@ public class MonitorIT {
       Map<String, List<MetricSample>> jobBeforeMetrics,
       Map<String, List<MetricSample>> jobAfterMetrics) {
     Assertions.assertTrue(jobBeforeMetrics.containsKey("job_runtime"));
-    List<MetricSample> job_runtimeMetrics = jobBeforeMetrics.get("job_runtime");
-    Assertions.assertEquals(1, job_runtimeMetrics.size());
-    Assertions.assertEquals(8, job_runtimeMetrics.get(0).timestamp());
-    Assertions.assertEquals(8L, job_runtimeMetrics.get(0).statistic().value().value());
+    List<MetricSample> jobRuntimeMetrics = jobBeforeMetrics.get("job_runtime");
+    Assertions.assertEquals(1, jobRuntimeMetrics.size());
+    Assertions.assertEquals(8, jobRuntimeMetrics.get(0).timestamp());
+    Assertions.assertEquals(8L, jobRuntimeMetrics.get(0).statistic().value().value());
 
     Assertions.assertTrue(jobBeforeMetrics.containsKey("job_cost"));
     List<MetricSample> jobCostMetrics = jobBeforeMetrics.get("job_cost");
@@ -223,10 +247,10 @@ public class MonitorIT {
     Assertions.assertEquals(9, jobCostMetrics.get(0).timestamp());
 
     Assertions.assertTrue(jobAfterMetrics.containsKey("job_runtime"));
-    job_runtimeMetrics = jobAfterMetrics.get("job_runtime");
-    Assertions.assertEquals(1, job_runtimeMetrics.size());
-    Assertions.assertEquals(12, job_runtimeMetrics.get(0).timestamp());
-    Assertions.assertEquals(12L, job_runtimeMetrics.get(0).statistic().value().value());
+    jobRuntimeMetrics = jobAfterMetrics.get("job_runtime");
+    Assertions.assertEquals(1, jobRuntimeMetrics.size());
+    Assertions.assertEquals(12, jobRuntimeMetrics.get(0).timestamp());
+    Assertions.assertEquals(12L, jobRuntimeMetrics.get(0).statistic().value().value());
 
     Assertions.assertTrue(jobAfterMetrics.containsKey("job_cost"));
     jobCostMetrics = jobAfterMetrics.get("job_cost");
@@ -250,9 +274,9 @@ public class MonitorIT {
   private OptimizerEnv getOptimizerEnv() {
     Map<String, String> configs =
         ImmutableMap.<String, String>builder()
-            .put(OptimizerConfig.METRICS_EVALUATOR, MetricsEvaluatorForTest.NAME)
-            .put(OptimizerConfig.JOB_PROVIDER, JobProviderForTest.NAME)
-            .put(OptimizerConfig.MONITOR_CALLBACKS, MonitorCallbackForTest.NAME)
+            .put(OptimizerConfig.METRICS_EVALUATOR_CONFIG.getKey(), MetricsEvaluatorForTest.NAME)
+            .put(OptimizerConfig.JOB_PROVIDER_CONFIG.getKey(), JobProviderForTest.NAME)
+            .put(OptimizerConfig.MONITOR_CALLBACKS_CONFIG.getKey(), MonitorCallbackForTest.NAME)
             .build();
 
     OptimizerConfig config = new OptimizerConfig(configs);

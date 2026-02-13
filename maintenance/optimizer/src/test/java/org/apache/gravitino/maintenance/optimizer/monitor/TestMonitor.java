@@ -50,7 +50,8 @@ public class TestMonitor {
                 .put(OptimizerConfig.MONITOR_CALLBACKS_CONFIG.getKey(), MonitorCallbackForTest.NAME)
                 .build());
 
-    OptimizerEnv env = new OptimizerEnv(config);
+    OptimizerEnv env = OptimizerEnv.getInstance();
+    env.initialize(config);
 
     MonitorCallbackForTest.reset();
     MetricsEvaluatorForTest.reset();
@@ -132,7 +133,8 @@ public class TestMonitor {
                 .put(OptimizerConfig.MONITOR_CALLBACKS_CONFIG.getKey(), MonitorCallbackForTest.NAME)
                 .build());
 
-    OptimizerEnv env = new OptimizerEnv(config);
+    OptimizerEnv env = OptimizerEnv.getInstance();
+    env.initialize(config);
 
     MonitorCallbackForTest.reset();
     MetricsEvaluatorForTest.reset();
@@ -177,7 +179,8 @@ public class TestMonitor {
                     OptimizerConfig.METRICS_EVALUATOR_CONFIG.getKey(), MetricsEvaluatorForTest.NAME)
                 .put(OptimizerConfig.MONITOR_CALLBACKS_CONFIG.getKey(), MonitorCallbackForTest.NAME)
                 .build());
-    OptimizerEnv env = new OptimizerEnv(config);
+    OptimizerEnv env = OptimizerEnv.getInstance();
+    env.initialize(config);
 
     try (Monitor monitor = new Monitor(env)) {
       IllegalArgumentException exception =

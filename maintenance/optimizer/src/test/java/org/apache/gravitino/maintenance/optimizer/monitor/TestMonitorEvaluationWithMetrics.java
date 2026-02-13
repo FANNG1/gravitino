@@ -54,9 +54,9 @@ class TestMonitorEvaluationWithMetrics {
         ImmutableMap.<String, String>builder()
             .put(OptimizerConfig.GRAVITINO_DEFAULT_CATALOG, "test")
             .put(OptimizerConfig.GRAVITINO_METALAKE, "test-metalake")
-            .put(OptimizerConfig.JOB_PROVIDER, FileJobProvider.NAME)
+            .put(OptimizerConfig.JOB_PROVIDER_CONFIG.getKey(), FileJobProvider.NAME)
             .put(FileJobProvider.JOB_FILE_PATH_CONFIG, jobMappingFile.toString())
-            .put(OptimizerConfig.MONITOR_CALLBACKS, TestMonitorCallback.NAME)
+            .put(OptimizerConfig.MONITOR_CALLBACKS_CONFIG.getKey(), TestMonitorCallback.NAME)
             .put(
                 OptimizerConfig.STATISTICS_UPDATER_CONFIG.getKey(),
                 org.apache.gravitino.maintenance.optimizer.updater.TestStatisticsUpdater.NAME)
@@ -101,7 +101,7 @@ class TestMonitorEvaluationWithMetrics {
 
     TestMonitorCallback.reset(2);
     Monitor monitor = new Monitor(env);
-    monitor.run(tableIdentifier, actionTimeSeconds, 10, java.util.Optional.empty());
+    monitor.evaluateMetrics(tableIdentifier, actionTimeSeconds, 10, java.util.Optional.empty());
 
     Assertions.assertTrue(TestMonitorCallback.await(10, TimeUnit.SECONDS));
     List<org.apache.gravitino.maintenance.optimizer.api.monitor.EvaluationResult> results =

@@ -39,7 +39,8 @@ public class TestMonitorServiceServer {
   @Test
   void testHealthEndpoint() throws Exception {
     OptimizerConfig config =
-        new OptimizerConfig(ImmutableMap.of(OptimizerConfig.MONITOR_SERVICE_PORT, "0"));
+        new OptimizerConfig(
+            ImmutableMap.of(OptimizerConfig.MONITOR_SERVICE_PORT_CONFIG.getKey(), "0"));
     OptimizerEnv env = OptimizerEnv.getInstance();
     env.initialize(config);
 
@@ -66,7 +67,8 @@ public class TestMonitorServiceServer {
   @Test
   void testSubmitAndStatus() throws Exception {
     OptimizerConfig config =
-        new OptimizerConfig(ImmutableMap.of(OptimizerConfig.MONITOR_SERVICE_PORT, "0"));
+        new OptimizerConfig(
+            ImmutableMap.of(OptimizerConfig.MONITOR_SERVICE_PORT_CONFIG.getKey(), "0"));
     OptimizerEnv env = OptimizerEnv.getInstance();
     env.initialize(config);
 
@@ -108,7 +110,8 @@ public class TestMonitorServiceServer {
   @Test
   void testListMonitors() throws Exception {
     OptimizerConfig config =
-        new OptimizerConfig(ImmutableMap.of(OptimizerConfig.MONITOR_SERVICE_PORT, "0"));
+        new OptimizerConfig(
+            ImmutableMap.of(OptimizerConfig.MONITOR_SERVICE_PORT_CONFIG.getKey(), "0"));
     OptimizerEnv env = OptimizerEnv.getInstance();
     env.initialize(config);
 
@@ -144,7 +147,8 @@ public class TestMonitorServiceServer {
   @Test
   void testCancelMonitor() throws Exception {
     OptimizerConfig config =
-        new OptimizerConfig(ImmutableMap.of(OptimizerConfig.MONITOR_SERVICE_PORT, "0"));
+        new OptimizerConfig(
+            ImmutableMap.of(OptimizerConfig.MONITOR_SERVICE_PORT_CONFIG.getKey(), "0"));
     OptimizerEnv env = OptimizerEnv.getInstance();
     env.initialize(config);
 

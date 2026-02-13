@@ -104,7 +104,7 @@ public class UpdaterIT extends GravitinoOptimizerEnvIT {
         UpdateType.METRICS);
 
     Map<String, List<MetricSample>> tableMetrics =
-        metricsProvider.getTableMetrics(tableIdentifier, 0, Long.MAX_VALUE);
+        metricsProvider.tableMetrics(tableIdentifier, 0, Long.MAX_VALUE);
     Assertions.assertEquals(1, tableMetrics.size());
     Assertions.assertTrue(tableMetrics.containsKey(DummyTableStatisticsComputer.TABLE_STAT_NAME));
     List<MetricSample> tableMetricsList =
@@ -116,7 +116,7 @@ public class UpdaterIT extends GravitinoOptimizerEnvIT {
     Assertions.assertEquals(1L, tableMetricsList.get(0).statistic().value().value());
 
     Map<String, List<MetricSample>> partitionMetrics =
-        metricsProvider.getPartitionMetrics(
+        metricsProvider.partitionMetrics(
             tableIdentifier,
             PartitionPath.of(DummyTableStatisticsComputer.getPartitionName()),
             0,
@@ -149,7 +149,7 @@ public class UpdaterIT extends GravitinoOptimizerEnvIT {
         UpdateType.METRICS);
 
     Map<String, List<MetricSample>> jobMetrics =
-        metricsProvider.getJobMetrics(jobIdentifier, 0, Long.MAX_VALUE);
+        metricsProvider.jobMetrics(jobIdentifier, 0, Long.MAX_VALUE);
     Assertions.assertEquals(1, jobMetrics.size());
     Assertions.assertTrue(jobMetrics.containsKey(DummyJobMetricsComputer.JOB_STAT_NAME));
     List<MetricSample> jobMetricsList = jobMetrics.get(DummyJobMetricsComputer.JOB_STAT_NAME);

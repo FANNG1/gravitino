@@ -36,7 +36,8 @@ class TestOptimizerMonitorCli {
   @Test
   void testMonitorCommands() throws Exception {
     OptimizerConfig config =
-        new OptimizerConfig(ImmutableMap.of(OptimizerConfig.MONITOR_SERVICE_PORT, "0"));
+        new OptimizerConfig(
+            ImmutableMap.of(OptimizerConfig.MONITOR_SERVICE_PORT_CONFIG.getKey(), "0"));
     OptimizerEnv env = OptimizerEnv.getInstance();
     env.initialize(config);
 

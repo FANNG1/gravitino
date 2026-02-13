@@ -84,7 +84,7 @@ public class GravitinoMetricsIT {
             new MetricSampleImpl(
                 1001, new StatisticEntryImpl("a", StatisticValues.longValue(100L)))));
 
-    Map<String, List<MetricSample>> metrics = provider.getTableMetrics(tableIdentifier, 1000, 1002);
+    Map<String, List<MetricSample>> metrics = provider.tableMetrics(tableIdentifier, 1000, 1002);
 
     Assertions.assertEquals(2, metrics.size());
 
@@ -103,7 +103,7 @@ public class GravitinoMetricsIT {
     Assertions.assertEquals(1000, bMetrics.get(0).timestamp());
 
     Map<String, List<MetricSample>> partitionMetrics =
-        provider.getPartitionMetrics(tableIdentifier, partition1, 1000, 1002);
+        provider.partitionMetrics(tableIdentifier, partition1, 1000, 1002);
     Assertions.assertEquals(1, partitionMetrics.size());
 
     Assertions.assertTrue(partitionMetrics.containsKey("b"));
@@ -115,7 +115,7 @@ public class GravitinoMetricsIT {
     Assertions.assertEquals(1003L, metricSample1.statistic().value().value());
     Assertions.assertEquals(1000, metricSample1.timestamp());
 
-    partitionMetrics = provider.getPartitionMetrics(tableIdentifier, partition2, 1000, 1002);
+    partitionMetrics = provider.partitionMetrics(tableIdentifier, partition2, 1000, 1002);
     Assertions.assertEquals(1, partitionMetrics.size());
 
     Assertions.assertTrue(partitionMetrics.containsKey("b"));
@@ -141,7 +141,7 @@ public class GravitinoMetricsIT {
             new MetricSampleImpl(
                 2001, new StatisticEntryImpl("x", StatisticValues.longValue(200L)))));
 
-    Map<String, List<MetricSample>> metrics = provider.getJobMetrics(jobIdentifier, 2000, 2002);
+    Map<String, List<MetricSample>> metrics = provider.jobMetrics(jobIdentifier, 2000, 2002);
 
     Assertions.assertEquals(2, metrics.size());
 

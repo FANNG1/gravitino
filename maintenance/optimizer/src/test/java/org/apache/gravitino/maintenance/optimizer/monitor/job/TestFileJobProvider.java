@@ -54,7 +54,8 @@ class TestFileJobProvider {
     optimizerEnv.initialize(createConfig(jobFile));
     provider.initialize(optimizerEnv);
 
-    List<NameIdentifier> jobs = provider.getJobNames(NameIdentifier.parse("catalog.schema.table"));
+    List<NameIdentifier> jobs =
+        provider.jobIdentifiers(NameIdentifier.parse("catalog.schema.table"));
 
     Assertions.assertEquals(
         List.of(
