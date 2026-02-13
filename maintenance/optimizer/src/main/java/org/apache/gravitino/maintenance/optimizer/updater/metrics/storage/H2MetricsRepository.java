@@ -42,15 +42,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** H2-backed implementation of {@link MetricsRepository}. */
-public class H2MetricsStorage implements MetricsRepository {
+public class H2MetricsRepository implements MetricsRepository {
 
-  private static final Logger LOG = LoggerFactory.getLogger(H2MetricsStorage.class);
+  private static final Logger LOG = LoggerFactory.getLogger(H2MetricsRepository.class);
 
   private String jdbcUrl = "jdbc:h2:file:./metrics_db;AUTO_SERVER=TRUE";
   private static final String USER = "sa";
   private static final String PASSWORD = "";
 
-  public H2MetricsStorage() {
+  public H2MetricsRepository() {
     initializeDatabase();
   }
 
@@ -59,9 +59,9 @@ public class H2MetricsStorage implements MetricsRepository {
     Map<String, String> h2Properties =
         MapUtils.getPrefixMap(
             optimizerProperties,
-            OptimizerConfig.OPTIMIZER_PREFIX + H2MetricsStorageConfig.H2_METRICS_PREFIX);
-    H2MetricsStorageConfig config = new H2MetricsStorageConfig(h2Properties);
-    String path = config.get(H2MetricsStorageConfig.H2_METRICS_STORAGE_PATH_CONFIG);
+            OptimizerConfig.OPTIMIZER_PREFIX + H2MetricsRepositoryConfig.H2_METRICS_PREFIX);
+    H2MetricsRepositoryConfig config = new H2MetricsRepositoryConfig(h2Properties);
+    String path = config.get(H2MetricsRepositoryConfig.H2_METRICS_STORAGE_PATH_CONFIG);
     jdbcUrl = "jdbc:h2:file:" + path + ";AUTO_SERVER=TRUE";
     initializeDatabase();
   }
@@ -327,7 +327,7 @@ public class H2MetricsStorage implements MetricsRepository {
   public void close() {}
 
   /** Configuration wrapper for H2 metrics storage options. */
-  public static class H2MetricsStorageConfig extends Config {
+  public static class H2MetricsRepositoryConfig extends Config {
     static final String H2_METRICS_PREFIX = "h2-metrics.";
 
     public static final String H2_METRICS_STORAGE_PATH = "h2-metrics-storage-path";
@@ -344,7 +344,7 @@ public class H2MetricsStorage implements MetricsRepository {
      *
      * @param properties h2-metrics scoped properties
      */
-    public H2MetricsStorageConfig(Map<String, String> properties) {
+    public H2MetricsRepositoryConfig(Map<String, String> properties) {
       super(false);
       loadFromMap(properties, k -> true);
     }

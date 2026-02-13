@@ -32,12 +32,12 @@ import org.junit.jupiter.api.TestInstance;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class TestH2MetricsStorage {
-  private H2MetricsStorage storage;
+class TestH2MetricsRepository {
+  private H2MetricsRepository storage;
 
   @BeforeAll
   void setUp() {
-    storage = new H2MetricsStorage();
+    storage = new H2MetricsRepository();
     storage.initialize(ImmutableMap.of());
     storage.cleanupAllMetricsBefore(System.currentTimeMillis());
   }
