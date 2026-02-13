@@ -17,7 +17,28 @@
  * under the License.
  */
 
-package org.apache.gravitino.maintenance.optimizer.common;
+package org.apache.gravitino.maintenance.optimizer.updater.statistics;
 
-/** Marker interface for optimizer-specific content injected into the runtime environment. */
-public interface OptimizerContent {}
+import com.google.common.base.Preconditions;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.StringReader;
+import org.apache.commons.lang3.StringUtils;
+
+/** Reader for inline JSON-lines statistics payloads. */
+public class PayloadStatisticsReader extends AbstractStatisticsReader {
+
+  private final String payload;
+
+  public PayloadStatisticsReader(String payload, String defaultCatalogName) {
+    super(defaultCatalogName);
+    Preconditions.checkArgument(
+        StringUtils.isNotBlank(payload), "Statistics payload must be provided");
+    this.payload = payload;
+  }
+
+  @Override
+  protected BufferedReader openReader() throws IOException {
+    return new BufferedReader(new StringReader(payload));
+  }
+}

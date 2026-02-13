@@ -33,9 +33,9 @@ import org.apache.gravitino.maintenance.optimizer.api.updater.SupportsCalculateB
 import org.apache.gravitino.maintenance.optimizer.api.updater.SupportsCalculateBulkTableStatistics;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
-import org.apache.gravitino.maintenance.optimizer.recommender.statistics.FileStatisticsReader;
-import org.apache.gravitino.maintenance.optimizer.recommender.statistics.PayloadStatisticsReader;
-import org.apache.gravitino.maintenance.optimizer.recommender.statistics.StatisticsReader;
+import org.apache.gravitino.maintenance.optimizer.updater.statistics.FileStatisticsReader;
+import org.apache.gravitino.maintenance.optimizer.updater.statistics.PayloadStatisticsReader;
+import org.apache.gravitino.maintenance.optimizer.updater.statistics.StatisticsReader;
 
 /**
  * Statistics calculator that reads statistics from either a local file path or an inline payload.

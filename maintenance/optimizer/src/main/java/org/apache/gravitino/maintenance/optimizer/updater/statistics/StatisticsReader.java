@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.gravitino.maintenance.optimizer.recommender.statistics;
+package org.apache.gravitino.maintenance.optimizer.updater.statistics;
 
 import java.util.List;
 import java.util.Map;

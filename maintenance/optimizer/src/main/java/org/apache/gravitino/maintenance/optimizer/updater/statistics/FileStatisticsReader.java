@@ -17,28 +17,28 @@
  * under the License.
  */
 
-package org.apache.gravitino.maintenance.optimizer.recommender.statistics;
+package org.apache.gravitino.maintenance.optimizer.updater.statistics;
 
-import com.google.common.base.Preconditions;
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.StringReader;
-import org.apache.commons.lang3.StringUtils;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Objects;
 
-/** Reader for inline JSON-lines statistics payloads. */
-public class PayloadStatisticsReader extends AbstractStatisticsReader {
+/** Shared reader for file-based table statistics. */
+public class FileStatisticsReader extends AbstractStatisticsReader {
 
-  private final String payload;
+  private final Path statisticsFilePath;
 
-  public PayloadStatisticsReader(String payload, String defaultCatalogName) {
+  public FileStatisticsReader(Path statisticsFilePath, String defaultCatalogName) {
     super(defaultCatalogName);
-    Preconditions.checkArgument(
-        StringUtils.isNotBlank(payload), "Statistics payload must be provided");
-    this.payload = payload;
+    this.statisticsFilePath =
+        Objects.requireNonNull(statisticsFilePath, "statisticsFilePath cannot be null");
   }
 
   @Override
   protected BufferedReader openReader() throws IOException {
-    return new BufferedReader(new StringReader(payload));
+    return Files.newBufferedReader(statisticsFilePath, StandardCharsets.UTF_8);
   }
 }
