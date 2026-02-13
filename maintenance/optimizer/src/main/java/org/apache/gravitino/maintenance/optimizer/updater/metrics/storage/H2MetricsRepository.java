@@ -61,7 +61,7 @@ public class H2MetricsRepository implements MetricsRepository {
 
   @Override
   public void initialize(Map<String, String> optimizerProperties) {
-    initialized = false;
+    Preconditions.checkState(!initialized, "H2MetricsRepository has already been initialized.");
     Map<String, String> h2Properties =
         MapUtils.getPrefixMap(
             optimizerProperties,
@@ -115,7 +115,8 @@ public class H2MetricsRepository implements MetricsRepository {
       stmt.execute(createIndexSql2);
       stmt.execute(createIndexSql3);
     } catch (SQLException e) {
-      throw new RuntimeException("Failed to initialize H2 metrics storage with URL: " + jdbcUrl, e);
+      throw new MetricsStorageException(
+          "Failed to initialize H2 metrics storage with URL: " + jdbcUrl, e);
     }
   }
 
@@ -137,7 +138,7 @@ public class H2MetricsRepository implements MetricsRepository {
       pstmt.setString(5, metric.getValue());
       pstmt.executeUpdate();
     } catch (SQLException e) {
-      throw new RuntimeException(
+      throw new MetricsStorageException(
           "Failed to store table metric: identifier="
               + nameIdentifier
               + ", metric="
@@ -151,6 +152,7 @@ public class H2MetricsRepository implements MetricsRepository {
   @Override
   public Map<String, List<MetricRecord>> getTableMetrics(
       NameIdentifier nameIdentifier, long fromTimestamp, long toTimestamp) {
+    validateTimeWindow(fromTimestamp, toTimestamp);
     Map<String, List<MetricRecord>> resultMap = new HashMap<>();
     StringBuilder sqlBuilder =
         new StringBuilder(
@@ -175,7 +177,7 @@ public class H2MetricsRepository implements MetricsRepository {
         }
       }
     } catch (SQLException e) {
-      throw new RuntimeException(
+      throw new MetricsStorageException(
           "Failed to retrieve table metrics: identifier="
               + nameIdentifier
               + ", from="
@@ -190,6 +192,7 @@ public class H2MetricsRepository implements MetricsRepository {
   @Override
   public Map<String, List<MetricRecord>> getPartitionMetrics(
       NameIdentifier nameIdentifier, String partition, long fromTimestamp, long toTimestamp) {
+    validateTimeWindow(fromTimestamp, toTimestamp);
     Map<String, List<MetricRecord>> resultMap = new HashMap<>();
     String sql =
         "SELECT metric_name, timestamp, value FROM table_metrics "
@@ -213,7 +216,7 @@ public class H2MetricsRepository implements MetricsRepository {
         }
       }
     } catch (SQLException e) {
-      throw new RuntimeException(
+      throw new MetricsStorageException(
           "Failed to retrieve partition metrics: identifier="
               + nameIdentifier
               + ", partition="
@@ -241,7 +244,7 @@ public class H2MetricsRepository implements MetricsRepository {
       pstmt.setString(4, metric.getValue());
       pstmt.executeUpdate();
     } catch (SQLException e) {
-      throw new RuntimeException(
+      throw new MetricsStorageException(
           "Failed to store job metric: identifier=" + nameIdentifier + ", metric=" + metricName, e);
     }
   }
@@ -249,6 +252,7 @@ public class H2MetricsRepository implements MetricsRepository {
   @Override
   public Map<String, List<MetricRecord>> getJobMetrics(
       NameIdentifier nameIdentifier, long fromTimestamp, long toTimestamp) {
+    validateTimeWindow(fromTimestamp, toTimestamp);
     Map<String, List<MetricRecord>> resultMap = new HashMap<>();
     String sql =
         "SELECT metric_name, timestamp, value FROM job_metrics "
@@ -270,7 +274,7 @@ public class H2MetricsRepository implements MetricsRepository {
         }
       }
     } catch (SQLException e) {
-      throw new RuntimeException(
+      throw new MetricsStorageException(
           "Failed to retrieve job metrics: identifier="
               + nameIdentifier
               + ", from="
@@ -309,7 +313,7 @@ public class H2MetricsRepository implements MetricsRepository {
       LOG.info("Cleaned up {} rows from table_metrics before {}", deletedRows, beforeTimestamp);
       return deletedRows;
     } catch (SQLException e) {
-      throw new RuntimeException(
+      throw new MetricsStorageException(
           "Failed to cleanup table metrics before timestamp: " + beforeTimestamp, e);
     }
   }
@@ -325,7 +329,7 @@ public class H2MetricsRepository implements MetricsRepository {
       LOG.info("Cleaned up {} rows from job_metrics before {}", deletedRows, beforeTimestamp);
       return deletedRows;
     } catch (SQLException e) {
-      throw new RuntimeException(
+      throw new MetricsStorageException(
           "Failed to cleanup job metrics before timestamp: " + beforeTimestamp, e);
     }
   }
@@ -366,6 +370,14 @@ public class H2MetricsRepository implements MetricsRepository {
     }
 
     return Paths.get(gravitinoHome, configuredPath).toString();
+  }
+
+  private void validateTimeWindow(long fromTimestamp, long toTimestamp) {
+    Preconditions.checkArgument(
+        fromTimestamp < toTimestamp,
+        "Invalid time window: fromTimestamp (%s) must be less than toTimestamp (%s)",
+        fromTimestamp,
+        toTimestamp);
   }
 
   private String constructH2JdbcUrl(String originUrl) {

@@ -183,6 +183,36 @@ class TestH2MetricsRepository {
     Assertions.assertEquals(List.of("v1"), getMetricValues(jobMetrics.get("job_metric")));
   }
 
+  @Test
+  void testInitializeTwiceFails() {
+    H2MetricsRepository repository = new H2MetricsRepository();
+    repository.initialize(ImmutableMap.of());
+
+    IllegalStateException e =
+        Assertions.assertThrows(IllegalStateException.class, () -> repository.initialize(ImmutableMap.of()));
+    Assertions.assertTrue(e.getMessage().contains("already been initialized"));
+  }
+
+  @Test
+  void testInvalidTimeWindowFailsFast() {
+    NameIdentifier id = NameIdentifier.of("catalog", "db", "table");
+
+    IllegalArgumentException tableException =
+        Assertions.assertThrows(
+            IllegalArgumentException.class, () -> storage.getTableMetrics(id, 10, 10));
+    Assertions.assertTrue(tableException.getMessage().contains("Invalid time window"));
+
+    IllegalArgumentException partitionException =
+        Assertions.assertThrows(
+            IllegalArgumentException.class, () -> storage.getPartitionMetrics(id, "p=1", 20, 10));
+    Assertions.assertTrue(partitionException.getMessage().contains("Invalid time window"));
+
+    IllegalArgumentException jobException =
+        Assertions.assertThrows(
+            IllegalArgumentException.class, () -> storage.getJobMetrics(id, 30, 30));
+    Assertions.assertTrue(jobException.getMessage().contains("Invalid time window"));
+  }
+
   private List<String> getMetricValues(List<MetricRecord> metrics) {
     return metrics.stream().map(MetricRecord::getValue).toList();
   }
