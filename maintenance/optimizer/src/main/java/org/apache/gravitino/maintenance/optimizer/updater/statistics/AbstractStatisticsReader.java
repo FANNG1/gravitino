@@ -27,8 +27,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.json.JsonUtils;
@@ -67,7 +69,6 @@ import org.slf4j.LoggerFactory;
 abstract class AbstractStatisticsReader implements StatisticsReader {
   private static final Logger LOG = LoggerFactory.getLogger(AbstractStatisticsReader.class);
 
-  // support table and partition statistics
   static final String STATISTICS_TYPE_FIELD = "stats-type";
   static final String IDENTIFIER_FIELD = "identifier";
   static final String PARTITION_PATH_FIELD = "partition-path";
@@ -93,36 +94,12 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
 
   @Override
   public List<StatisticEntry<?>> readJobStatistics(NameIdentifier jobIdentifier) {
-    Map<NameIdentifier, Map<String, StatisticValue<?>>> aggregated =
-        aggregateJobStatistics(jobIdentifier);
-    Map<String, StatisticValue<?>> mergedStatistics = aggregated.get(jobIdentifier);
-    if (mergedStatistics == null || mergedStatistics.isEmpty()) {
-      return ImmutableList.of();
-    }
-
-    List<StatisticEntry<?>> statistics = new ArrayList<>();
-    mergedStatistics.forEach(
-        (name, value) -> statistics.add(new StatisticEntryImpl<>(name, value)));
-    return ImmutableList.copyOf(statistics);
+    return toStatisticEntries(aggregateJobStatistics(jobIdentifier).get(jobIdentifier));
   }
 
   @Override
   public Map<NameIdentifier, List<StatisticEntry<?>>> readBulkJobStatistics() {
-    Map<NameIdentifier, Map<String, StatisticValue<?>>> aggregated = aggregateJobStatistics(null);
-    Map<NameIdentifier, List<StatisticEntry<?>>> result = new LinkedHashMap<>();
-    aggregated.forEach(
-        (identifier, statsByName) -> {
-          List<StatisticEntry<?>> statistics = new ArrayList<>();
-          statsByName.forEach(
-              (name, value) -> statistics.add(new StatisticEntryImpl<>(name, value)));
-          if (!statistics.isEmpty()) {
-            result.put(identifier, ImmutableList.copyOf(statistics));
-          } else {
-            result.put(identifier, ImmutableList.of());
-          }
-        });
-
-    return result;
+    return toIdentifierStatisticEntries(aggregateJobStatistics(null));
   }
 
   private List<StatisticEntry<?>> toStatisticEntries(Map<String, StatisticValue<?>> statsByName) {
@@ -147,37 +124,38 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
     return result;
   }
 
+  private Map<NameIdentifier, List<StatisticEntry<?>>> toIdentifierStatisticEntries(
+      Map<NameIdentifier, Map<String, StatisticValue<?>>> statsByIdentifier) {
+    Map<NameIdentifier, List<StatisticEntry<?>>> result = new LinkedHashMap<>();
+    if (statsByIdentifier == null || statsByIdentifier.isEmpty()) {
+      return result;
+    }
+
+    statsByIdentifier.forEach(
+        (identifier, statsByName) -> result.put(identifier, toStatisticEntries(statsByName)));
+    return result;
+  }
+
   private Map<NameIdentifier, Map<String, StatisticValue<?>>> aggregateStatistics(
       NameIdentifier targetIdentifier) {
     Map<NameIdentifier, Map<String, StatisticValue<?>>> aggregated = new LinkedHashMap<>();
+    visitParsedNodes(
+        new StatisticsNodeVisitor() {
+          @Override
+          public void onTable(JsonNode node) {
+          NameIdentifier identifier = parseIdentifier(node.get(IDENTIFIER_FIELD), true);
+          if (identifier == null) {
+            return;
+          }
+          if (targetIdentifier != null && !targetIdentifier.equals(identifier)) {
+            return;
+          }
 
-    try (BufferedReader reader = openReader()) {
-      String line;
-      while ((line = reader.readLine()) != null) {
-        if (StringUtils.isBlank(line)) {
-          continue;
-        }
-
-        JsonNode node = parseJson(line);
-        if (node == null || !isTableStatistics(node)) {
-          continue;
-        }
-
-        NameIdentifier identifier = parseIdentifier(node.get(IDENTIFIER_FIELD), true);
-        if (identifier == null) {
-          continue;
-        }
-        if (targetIdentifier != null && !targetIdentifier.equals(identifier)) {
-          continue;
-        }
-
-        Map<String, StatisticValue<?>> statisticsByName =
-            aggregated.computeIfAbsent(identifier, k -> new LinkedHashMap<>());
-        populateStatistics(node, statisticsByName);
-      }
-    } catch (IOException e) {
-      throw new RuntimeException("Failed to read statistics", e);
-    }
+          Map<String, StatisticValue<?>> statisticsByName =
+              aggregated.computeIfAbsent(identifier, k -> new LinkedHashMap<>());
+          populateStatistics(node, statisticsByName);
+          }
+        });
 
     return aggregated;
   }
@@ -189,47 +167,34 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
 
     Map<String, StatisticValue<?>> tableStatistics = new LinkedHashMap<>();
     Map<PartitionPath, Map<String, StatisticValue<?>>> partitionStatistics = new LinkedHashMap<>();
-    try (BufferedReader reader = openReader()) {
-      String line;
-      while ((line = reader.readLine()) != null) {
-        if (StringUtils.isBlank(line)) {
-          continue;
-        }
-
-        JsonNode node = parseJson(line);
-        if (node == null) {
-          continue;
-        }
-
-        if (isTableStatistics(node)) {
-          NameIdentifier identifier = parseIdentifier(node.get(IDENTIFIER_FIELD), true);
-          if (targetIdentifier.equals(identifier)) {
-            populateStatistics(node, tableStatistics);
+    visitParsedNodes(
+        new StatisticsNodeVisitor() {
+          @Override
+          public void onTable(JsonNode node) {
+            NameIdentifier identifier = parseIdentifier(node.get(IDENTIFIER_FIELD), true);
+            if (targetIdentifier.equals(identifier)) {
+              populateStatistics(node, tableStatistics);
+            }
           }
-          continue;
-        }
 
-        if (!isPartitionStatistics(node)) {
-          continue;
-        }
+          @Override
+          public void onPartition(JsonNode node) {
+          NameIdentifier identifier = parseIdentifier(node.get(IDENTIFIER_FIELD), true);
+          if (!targetIdentifier.equals(identifier)) {
+            return;
+          }
 
-        NameIdentifier identifier = parseIdentifier(node.get(IDENTIFIER_FIELD), true);
-        if (!targetIdentifier.equals(identifier)) {
-          continue;
-        }
+          Optional<PartitionPath> partitionPathOpt =
+              parsePartitionPath(node.get(PARTITION_PATH_FIELD));
+          if (partitionPathOpt.isEmpty()) {
+            return;
+          }
 
-        Optional<PartitionPath> partitionPathOpt = parsePartitionPath(node.get(PARTITION_PATH_FIELD));
-        if (partitionPathOpt.isEmpty()) {
-          continue;
-        }
-
-        Map<String, StatisticValue<?>> partitionStatsByName =
-            partitionStatistics.computeIfAbsent(partitionPathOpt.get(), k -> new LinkedHashMap<>());
-        populateStatistics(node, partitionStatsByName);
-      }
-    } catch (IOException e) {
-      throw new RuntimeException("Failed to read statistics", e);
-    }
+          Map<String, StatisticValue<?>> partitionStatsByName =
+              partitionStatistics.computeIfAbsent(partitionPathOpt.get(), k -> new LinkedHashMap<>());
+          populateStatistics(node, partitionStatsByName);
+          }
+        });
 
     return new TableStatisticsBundle(
         toStatisticEntries(tableStatistics), toPartitionStatisticEntries(partitionStatistics));
@@ -240,54 +205,41 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
         new LinkedHashMap<>();
     Map<NameIdentifier, Map<PartitionPath, Map<String, StatisticValue<?>>>>
         partitionStatisticsByIdentifier = new LinkedHashMap<>();
+    visitParsedNodes(
+        new StatisticsNodeVisitor() {
+          @Override
+          public void onTable(JsonNode node) {
+            NameIdentifier identifier = parseIdentifier(node.get(IDENTIFIER_FIELD), true);
+            if (identifier == null) {
+              return;
+            }
+            Map<String, StatisticValue<?>> tableStats =
+                tableStatisticsByIdentifier.computeIfAbsent(identifier, k -> new LinkedHashMap<>());
+            populateStatistics(node, tableStats);
+          }
 
-    try (BufferedReader reader = openReader()) {
-      String line;
-      while ((line = reader.readLine()) != null) {
-        if (StringUtils.isBlank(line)) {
-          continue;
-        }
-
-        JsonNode node = parseJson(line);
-        if (node == null) {
-          continue;
-        }
-
-        if (isTableStatistics(node)) {
+          @Override
+          public void onPartition(JsonNode node) {
           NameIdentifier identifier = parseIdentifier(node.get(IDENTIFIER_FIELD), true);
           if (identifier == null) {
-            continue;
+            return;
           }
-          Map<String, StatisticValue<?>> tableStats =
-              tableStatisticsByIdentifier.computeIfAbsent(identifier, k -> new LinkedHashMap<>());
-          populateStatistics(node, tableStats);
-          continue;
-        }
 
-        if (!isPartitionStatistics(node)) {
-          continue;
-        }
+          Optional<PartitionPath> partitionPathOpt =
+              parsePartitionPath(node.get(PARTITION_PATH_FIELD));
+          if (partitionPathOpt.isEmpty()) {
+            return;
+          }
 
-        NameIdentifier identifier = parseIdentifier(node.get(IDENTIFIER_FIELD), true);
-        if (identifier == null) {
-          continue;
-        }
-
-        Optional<PartitionPath> partitionPathOpt = parsePartitionPath(node.get(PARTITION_PATH_FIELD));
-        if (partitionPathOpt.isEmpty()) {
-          continue;
-        }
-
-        Map<PartitionPath, Map<String, StatisticValue<?>>> partitionStatsByPath =
-            partitionStatisticsByIdentifier.computeIfAbsent(
-                identifier, k -> new LinkedHashMap<>());
-        Map<String, StatisticValue<?>> partitionStatsByName =
-            partitionStatsByPath.computeIfAbsent(partitionPathOpt.get(), k -> new LinkedHashMap<>());
-        populateStatistics(node, partitionStatsByName);
-      }
-    } catch (IOException e) {
-      throw new RuntimeException("Failed to read statistics", e);
-    }
+          Map<PartitionPath, Map<String, StatisticValue<?>>> partitionStatsByPath =
+              partitionStatisticsByIdentifier.computeIfAbsent(
+                  identifier, k -> new LinkedHashMap<>());
+          Map<String, StatisticValue<?>> partitionStatsByName =
+              partitionStatsByPath.computeIfAbsent(
+                  partitionPathOpt.get(), k -> new LinkedHashMap<>());
+          populateStatistics(node, partitionStatsByName);
+          }
+        });
 
     Map<NameIdentifier, TableStatisticsBundle> bundles = new LinkedHashMap<>();
     tableStatisticsByIdentifier.forEach(
@@ -309,7 +261,30 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
   private Map<NameIdentifier, Map<String, StatisticValue<?>>> aggregateJobStatistics(
       NameIdentifier targetIdentifier) {
     Map<NameIdentifier, Map<String, StatisticValue<?>>> aggregated = new LinkedHashMap<>();
+    visitParsedNodes(
+        new StatisticsNodeVisitor() {
+          @Override
+          public void onJob(JsonNode node) {
+          NameIdentifier identifier = parseIdentifier(node.get(IDENTIFIER_FIELD), false);
+          if (identifier == null) {
+            return;
+          }
+          if (targetIdentifier != null && !targetIdentifier.equals(identifier)) {
+            return;
+          }
 
+          Map<String, StatisticValue<?>> statisticsByName =
+              aggregated.computeIfAbsent(identifier, k -> new LinkedHashMap<>());
+          populateStatistics(node, statisticsByName);
+          }
+        });
+
+    return aggregated;
+  }
+
+  protected abstract BufferedReader openReader() throws IOException;
+
+  private void forEachParsedNode(Consumer<JsonNode> nodeConsumer) {
     try (BufferedReader reader = openReader()) {
       String line;
       while ((line = reader.readLine()) != null) {
@@ -318,30 +293,35 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
         }
 
         JsonNode node = parseJson(line);
-        if (node == null || !isJobStatistics(node)) {
+        if (node == null) {
           continue;
         }
-
-        NameIdentifier identifier = parseIdentifier(node.get(IDENTIFIER_FIELD), false);
-        if (identifier == null) {
-          continue;
-        }
-        if (targetIdentifier != null && !targetIdentifier.equals(identifier)) {
-          continue;
-        }
-
-        Map<String, StatisticValue<?>> statisticsByName =
-            aggregated.computeIfAbsent(identifier, k -> new LinkedHashMap<>());
-        populateStatistics(node, statisticsByName);
+        nodeConsumer.accept(node);
       }
     } catch (IOException e) {
       throw new RuntimeException("Failed to read statistics", e);
     }
-
-    return aggregated;
   }
 
-  protected abstract BufferedReader openReader() throws IOException;
+  private void visitParsedNodes(StatisticsNodeVisitor visitor) {
+    forEachParsedNode(node -> dispatchNodeByStatisticsType(node, visitor));
+  }
+
+  private void dispatchNodeByStatisticsType(JsonNode node, StatisticsNodeVisitor visitor) {
+    JsonNode statsType = node.get(STATISTICS_TYPE_FIELD);
+    if (statsType == null || !statsType.isTextual()) {
+      return;
+    }
+
+    String normalizedType = statsType.asText().toLowerCase(Locale.ROOT);
+    if (TABLE_STATISTICS_TYPE.equals(normalizedType)) {
+      visitor.onTable(node);
+    } else if (PARTITION_STATISTICS_TYPE.equals(normalizedType)) {
+      visitor.onPartition(node);
+    } else if (JOB_STATISTICS_TYPE.equals(normalizedType)) {
+      visitor.onJob(node);
+    }
+  }
 
   private JsonNode parseJson(String line) {
     try {
@@ -370,34 +350,12 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
     }
   }
 
-  private boolean isTableStatistics(JsonNode node) {
-    if (node == null) {
-      return false;
-    }
-    JsonNode statsType = node.get(STATISTICS_TYPE_FIELD);
-    return statsType != null
-        && statsType.isTextual()
-        && TABLE_STATISTICS_TYPE.equalsIgnoreCase(statsType.asText());
-  }
+  private interface StatisticsNodeVisitor {
+    default void onTable(JsonNode node) {}
 
-  private boolean isPartitionStatistics(JsonNode node) {
-    if (node == null) {
-      return false;
-    }
-    JsonNode statsType = node.get(STATISTICS_TYPE_FIELD);
-    return statsType != null
-        && statsType.isTextual()
-        && PARTITION_STATISTICS_TYPE.equalsIgnoreCase(statsType.asText());
-  }
+    default void onPartition(JsonNode node) {}
 
-  private boolean isJobStatistics(JsonNode node) {
-    if (node == null) {
-      return false;
-    }
-    JsonNode statsType = node.get(STATISTICS_TYPE_FIELD);
-    return statsType != null
-        && statsType.isTextual()
-        && JOB_STATISTICS_TYPE.equalsIgnoreCase(statsType.asText());
+    default void onJob(JsonNode node) {}
   }
 
   private NameIdentifier parseIdentifier(JsonNode identifierNode, boolean applyDefaultCatalog) {
