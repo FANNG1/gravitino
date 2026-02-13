@@ -126,8 +126,8 @@ public class H2MetricsRepository implements MetricsRepository {
         "CREATE INDEX IF NOT EXISTS idx_job_metrics_timestamp ON job_metrics(timestamp)";
     String createIndexSql3 =
         "CREATE INDEX IF NOT EXISTS idx_table_metrics_composite ON table_metrics(table_identifier, partition, timestamp)";
-    String dropUniqueIndexSql1 = "DROP INDEX IF EXISTS uk_table_metrics_record";
-    String dropUniqueIndexSql2 = "DROP INDEX IF EXISTS uk_job_metrics_record";
+    String createIndexSql4 =
+        "CREATE INDEX IF NOT EXISTS idx_job_metrics_identifier_timestamp ON job_metrics(job_identifier, timestamp)";
     try (Connection conn = DriverManager.getConnection(jdbcUrl, username, password);
         Statement stmt = conn.createStatement()) {
       stmt.execute(createTableMetricsSql);
@@ -135,8 +135,7 @@ public class H2MetricsRepository implements MetricsRepository {
       stmt.execute(createIndexSql1);
       stmt.execute(createIndexSql2);
       stmt.execute(createIndexSql3);
-      stmt.execute(dropUniqueIndexSql1);
-      stmt.execute(dropUniqueIndexSql2);
+      stmt.execute(createIndexSql4);
       int currentPartitionColumnLength = getCurrentPartitionColumnLength(conn);
       if (currentPartitionColumnLength <= 0) {
         String alterTablePartitionSql =
