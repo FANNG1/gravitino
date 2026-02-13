@@ -209,6 +209,17 @@ class TestLocalStatisticsCalculator {
         IllegalArgumentException.class, () -> calculator.calculateJobStatistics(null));
   }
 
+  @Test
+  void testInitializeWithoutFilePathAndPayloadFails() {
+    LocalStatisticsCalculator calculator = new LocalStatisticsCalculator();
+    OptimizerEnv env = new OptimizerEnv(createConfig(null, null));
+
+    IllegalArgumentException exception =
+        Assertions.assertThrows(IllegalArgumentException.class, () -> calculator.initialize(env));
+    Assertions.assertTrue(exception.getMessage().contains(LocalStatisticsCalculator.STATISTICS_FILE_PATH_CONFIG));
+    Assertions.assertTrue(exception.getMessage().contains(LocalStatisticsCalculator.STATISTICS_PAYLOAD_CONFIG));
+  }
+
   private OptimizerConfig createConfig(String statisticsFilePath, String statisticsPayload) {
     Map<String, String> configs = new HashMap<>();
     configs.put(OptimizerConfig.GRAVITINO_DEFAULT_CATALOG_CONFIG.getKey(), "catalog");

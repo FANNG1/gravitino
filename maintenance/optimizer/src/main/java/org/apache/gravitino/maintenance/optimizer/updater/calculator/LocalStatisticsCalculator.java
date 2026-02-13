@@ -68,22 +68,25 @@ public class LocalStatisticsCalculator
         optimizerEnv.config().get(OptimizerConfig.GRAVITINO_DEFAULT_CATALOG_CONFIG);
     String statisticsFilePath = optimizerEnv.config().getRawString(STATISTICS_FILE_PATH_CONFIG);
     String statisticsPayload = optimizerEnv.config().getRawString(STATISTICS_PAYLOAD_CONFIG);
+    boolean hasStatisticsFilePath = StringUtils.isNotBlank(statisticsFilePath);
+    boolean hasStatisticsPayload = StringUtils.isNotBlank(statisticsPayload);
 
     Preconditions.checkArgument(
-        !(StringUtils.isNotBlank(statisticsFilePath) && StringUtils.isNotBlank(statisticsPayload)),
+        hasStatisticsFilePath || hasStatisticsPayload,
+        "One of %s or %s must be provided",
+        STATISTICS_FILE_PATH_CONFIG,
+        STATISTICS_PAYLOAD_CONFIG);
+
+    Preconditions.checkArgument(
+        !(hasStatisticsFilePath && hasStatisticsPayload),
         "Only one of %s or %s can be provided",
         STATISTICS_FILE_PATH_CONFIG,
         STATISTICS_PAYLOAD_CONFIG);
 
-    if (StringUtils.isNotBlank(statisticsFilePath)) {
+    if (hasStatisticsFilePath) {
       this.statisticsReader = new FileStatisticsReader(Path.of(statisticsFilePath), defaultCatalog);
       return;
     }
-
-    Preconditions.checkArgument(
-        StringUtils.isNotBlank(statisticsPayload),
-        "Statistics payload must be provided by config key %s",
-        STATISTICS_PAYLOAD_CONFIG);
     this.statisticsReader = new PayloadStatisticsReader(statisticsPayload, defaultCatalog);
   }
 

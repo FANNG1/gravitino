@@ -65,14 +65,6 @@ public class GravitinoMetricsUpdater implements MetricsUpdater {
     }
   }
 
-  public int cleanupTableMetricsBefore(long timestamp) {
-    return metricsStorage.cleanupTableMetricsBefore(timestamp);
-  }
-
-  public int cleanupJobMetricsBefore(long timestamp) {
-    return metricsStorage.cleanupJobMetricsBefore(timestamp);
-  }
-
   private void doUpdateJobMetrics(
       NameIdentifier nameIdentifier, long timestamp, StatisticEntry<?> statistic) {
     metricsStorage.storeJobMetric(
