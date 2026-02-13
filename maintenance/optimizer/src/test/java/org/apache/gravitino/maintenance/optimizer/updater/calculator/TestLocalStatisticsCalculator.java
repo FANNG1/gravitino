@@ -116,6 +116,30 @@ class TestLocalStatisticsCalculator {
   }
 
   @Test
+  void testSkipNonNumericTextualStatistics() {
+    String payload =
+        String.join(
+            "\n",
+            "{\"identifier\":\"catalog.schema.table\",\"stats-type\":\"table\",\"s1\":1,"
+                + "\"text_metric\":\"abc\"}",
+            "{\"identifier\":\"catalog.schema.table\",\"stats-type\":\"table\",\"s2\":\"2.5\"}");
+
+    LocalStatisticsCalculator calculator = new LocalStatisticsCalculator();
+    OptimizerEnv env = new OptimizerEnv(createConfig(null, payload));
+    calculator.initialize(env);
+
+    List<StatisticEntry<?>> stats =
+        calculator
+            .calculateTableStatistics(NameIdentifier.parse("catalog.schema.table"))
+            .tableStatistics();
+    Map<String, StatisticEntry<?>> map = toNameMap(stats);
+    Assertions.assertEquals(2, map.size());
+    Assertions.assertEquals(1L, map.get("s1").value().value());
+    Assertions.assertEquals(2.5D, map.get("s2").value().value());
+    Assertions.assertFalse(map.containsKey("text_metric"));
+  }
+
+  @Test
   void testComputeJobStatisticsFromPayload() {
     String payload =
         String.join(

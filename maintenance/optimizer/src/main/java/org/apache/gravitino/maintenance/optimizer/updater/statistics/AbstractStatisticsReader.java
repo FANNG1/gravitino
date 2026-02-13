@@ -328,7 +328,7 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
         continue;
       }
 
-      StatisticValue<?> value = parseStatisticValue(entry.getValue());
+      StatisticValue<?> value = parseStatisticValue(fieldName, entry.getValue());
       if (value != null) {
         statisticsByName.put(fieldName, value);
       }
@@ -414,7 +414,12 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
     return Optional.of(PartitionPath.of(entries));
   }
 
-  private StatisticValue<?> parseStatisticValue(JsonNode node) {
+  /**
+   * Parse metric values as numeric statistics only.
+   *
+   * <p>Non-numeric textual values are skipped and logged.
+   */
+  private StatisticValue<?> parseStatisticValue(String fieldName, JsonNode node) {
     if (node == null || node.isNull()) {
       return null;
     }
@@ -442,6 +447,10 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
         double doubleValue = Double.parseDouble(text);
         return StatisticValues.doubleValue(doubleValue);
       } catch (NumberFormatException e) {
+        LOG.warn(
+            "Skip non-numeric textual statistic value for field '{}': {}",
+            fieldName,
+            text);
         return null;
       }
     }
