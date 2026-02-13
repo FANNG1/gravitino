@@ -50,6 +50,7 @@ public class H2MetricsRepository implements MetricsRepository {
 
   private static final Logger LOG = LoggerFactory.getLogger(H2MetricsRepository.class);
   private static final int DEFAULT_PARTITION_COLUMN_LENGTH = 1024;
+  private static final int MAX_METRIC_VALUE_LENGTH = 1024;
 
   private static final String DEFAULT_USER = "sa";
   private static final String DEFAULT_PASSWORD = "";
@@ -139,7 +140,7 @@ public class H2MetricsRepository implements MetricsRepository {
       String metricName,
       Optional<String> partition,
       MetricRecord metric) {
-    validateWriteArguments(nameIdentifier, metricName, metric);
+    validateWriteArguments(nameIdentifier, metricName, partition, metric);
     String sql =
         "INSERT INTO table_metrics (table_identifier, metric_name, partition, timestamp, value) VALUES (?, ?, ?, ?, ?)";
 
@@ -166,6 +167,7 @@ public class H2MetricsRepository implements MetricsRepository {
   @Override
   public Map<String, List<MetricRecord>> getTableMetrics(
       NameIdentifier nameIdentifier, long fromTimestamp, long toTimestamp) {
+    Preconditions.checkArgument(nameIdentifier != null, "nameIdentifier must not be null");
     validateTimeWindow(fromTimestamp, toTimestamp);
     Map<String, List<MetricRecord>> resultMap = new HashMap<>();
     StringBuilder sqlBuilder =
@@ -206,6 +208,8 @@ public class H2MetricsRepository implements MetricsRepository {
   @Override
   public Map<String, List<MetricRecord>> getPartitionMetrics(
       NameIdentifier nameIdentifier, String partition, long fromTimestamp, long toTimestamp) {
+    Preconditions.checkArgument(nameIdentifier != null, "nameIdentifier must not be null");
+    Preconditions.checkArgument(StringUtils.isNotBlank(partition), "partition must not be blank");
     validateTimeWindow(fromTimestamp, toTimestamp);
     Map<String, List<MetricRecord>> resultMap = new HashMap<>();
     String sql =
@@ -247,7 +251,7 @@ public class H2MetricsRepository implements MetricsRepository {
   @Override
   public void storeJobMetric(
       NameIdentifier nameIdentifier, String metricName, MetricRecord metric) {
-    validateWriteArguments(nameIdentifier, metricName, metric);
+    validateWriteArguments(nameIdentifier, metricName, Optional.empty(), metric);
     String sql =
         "INSERT INTO job_metrics (job_identifier, metric_name, timestamp, value) VALUES (?, ?, ?, ?)";
 
@@ -267,6 +271,7 @@ public class H2MetricsRepository implements MetricsRepository {
   @Override
   public Map<String, List<MetricRecord>> getJobMetrics(
       NameIdentifier nameIdentifier, long fromTimestamp, long toTimestamp) {
+    Preconditions.checkArgument(nameIdentifier != null, "nameIdentifier must not be null");
     validateTimeWindow(fromTimestamp, toTimestamp);
     Map<String, List<MetricRecord>> resultMap = new HashMap<>();
     String sql =
@@ -319,6 +324,10 @@ public class H2MetricsRepository implements MetricsRepository {
 
   @Override
   public int cleanupTableMetricsBefore(long beforeTimestamp) {
+    Preconditions.checkArgument(
+        beforeTimestamp >= 0,
+        "beforeTimestamp must be non-negative, but got %s",
+        beforeTimestamp);
     String sql = "DELETE FROM table_metrics WHERE timestamp < ?";
 
     try (Connection conn = getConnection();
@@ -335,6 +344,10 @@ public class H2MetricsRepository implements MetricsRepository {
 
   @Override
   public int cleanupJobMetricsBefore(long beforeTimestamp) {
+    Preconditions.checkArgument(
+        beforeTimestamp >= 0,
+        "beforeTimestamp must be non-negative, but got %s",
+        beforeTimestamp);
     String sql = "DELETE FROM job_metrics WHERE timestamp < ?";
 
     try (Connection conn = getConnection();
@@ -396,10 +409,32 @@ public class H2MetricsRepository implements MetricsRepository {
   }
 
   private void validateWriteArguments(
-      NameIdentifier nameIdentifier, String metricName, MetricRecord metric) {
+      NameIdentifier nameIdentifier,
+      String metricName,
+      Optional<String> partition,
+      MetricRecord metric) {
     Preconditions.checkArgument(nameIdentifier != null, "nameIdentifier must not be null");
     Preconditions.checkArgument(StringUtils.isNotBlank(metricName), "metricName must not be blank");
     Preconditions.checkArgument(metric != null, "metric record must not be null");
+    Preconditions.checkArgument(
+        metric.getTimestamp() >= 0,
+        "metric timestamp must be non-negative, but got %s",
+        metric.getTimestamp());
+    Preconditions.checkArgument(metric.getValue() != null, "metric value must not be null");
+    Preconditions.checkArgument(
+        metric.getValue().length() <= MAX_METRIC_VALUE_LENGTH,
+        "metric value length exceeds max %s: actual=%s",
+        MAX_METRIC_VALUE_LENGTH,
+        metric.getValue().length());
+    if (partition.isPresent()) {
+      Preconditions.checkArgument(
+          StringUtils.isNotBlank(partition.get()), "partition must not be blank");
+      Preconditions.checkArgument(
+          partition.get().length() <= partitionColumnLength,
+          "partition length exceeds max %s: actual=%s",
+          partitionColumnLength,
+          partition.get().length());
+    }
   }
 
   private String constructH2JdbcUrl(String originUrl) {

@@ -212,6 +212,15 @@ class TestH2MetricsRepository {
         Assertions.assertThrows(
             IllegalArgumentException.class, () -> storage.getJobMetrics(id, 30, 30));
     Assertions.assertTrue(jobException.getMessage().contains("Invalid time window"));
+
+    Assertions.assertThrows(
+        IllegalArgumentException.class, () -> storage.getTableMetrics(null, 0, 1));
+    Assertions.assertThrows(
+        IllegalArgumentException.class, () -> storage.getJobMetrics(null, 0, 1));
+    Assertions.assertThrows(
+        IllegalArgumentException.class, () -> storage.getPartitionMetrics(null, "p=1", 0, 1));
+    Assertions.assertThrows(
+        IllegalArgumentException.class, () -> storage.getPartitionMetrics(id, " ", 0, 1));
   }
 
   @Test
@@ -235,6 +244,51 @@ class TestH2MetricsRepository {
         IllegalArgumentException.class, () -> storage.storeJobMetric(id, "", metric));
     Assertions.assertThrows(
         IllegalArgumentException.class, () -> storage.storeJobMetric(id, "metric", null));
+    Assertions.assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            storage.storeTableMetric(
+                id, "metric", Optional.empty(), new MetricRecordImpl(-1, "v1")));
+    Assertions.assertThrows(
+        IllegalArgumentException.class,
+        () -> storage.storeJobMetric(id, "metric", new MetricRecordImpl(-1, "v1")));
+    Assertions.assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            storage.storeTableMetric(
+                id, "metric", Optional.of(" "), new MetricRecordImpl(currentEpochSeconds(), "v1")));
+    Assertions.assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            storage.storeTableMetric(
+                id,
+                "metric",
+                Optional.of("p=" + "x".repeat(2000)),
+                new MetricRecordImpl(currentEpochSeconds(), "v1")));
+    Assertions.assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            storage.storeTableMetric(
+                id, "metric", Optional.empty(), new MetricRecordImpl(currentEpochSeconds(), null)));
+    Assertions.assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            storage.storeTableMetric(
+                id,
+                "metric",
+                Optional.empty(),
+                new MetricRecordImpl(currentEpochSeconds(), "x".repeat(1025))));
+    Assertions.assertThrows(
+        IllegalArgumentException.class,
+        () -> storage.storeJobMetric(id, "metric", new MetricRecordImpl(currentEpochSeconds(), "x".repeat(1025))));
+  }
+
+  @Test
+  void testCleanupValidationFailsFast() {
+    Assertions.assertThrows(
+        IllegalArgumentException.class, () -> storage.cleanupTableMetricsBefore(-1));
+    Assertions.assertThrows(
+        IllegalArgumentException.class, () -> storage.cleanupJobMetricsBefore(-1));
   }
 
   @Test
