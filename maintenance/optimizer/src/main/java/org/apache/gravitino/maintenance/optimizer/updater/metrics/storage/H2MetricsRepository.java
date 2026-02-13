@@ -136,13 +136,12 @@ public class H2MetricsRepository implements MetricsRepository {
       stmt.execute(createIndexSql3);
       stmt.execute(createIndexSql4);
       int currentPartitionColumnLength = getCurrentPartitionColumnLength(conn);
-      if (currentPartitionColumnLength <= 0) {
-        String alterTablePartitionSql =
-            "ALTER TABLE table_metrics ALTER COLUMN table_partition VARCHAR(" + partitionColumnLength + ")";
-        stmt.execute(alterTablePartitionSql);
-      } else if (partitionColumnLength > currentPartitionColumnLength) {
-        String alterTablePartitionSql =
-            "ALTER TABLE table_metrics ALTER COLUMN table_partition VARCHAR(" + partitionColumnLength + ")";
+      String alterTablePartitionSql =
+          "ALTER TABLE table_metrics ALTER COLUMN table_partition VARCHAR("
+              + partitionColumnLength
+              + ")";
+      if (currentPartitionColumnLength <= 0
+          || partitionColumnLength > currentPartitionColumnLength) {
         stmt.execute(alterTablePartitionSql);
       } else if (partitionColumnLength < currentPartitionColumnLength) {
         LOG.warn(
