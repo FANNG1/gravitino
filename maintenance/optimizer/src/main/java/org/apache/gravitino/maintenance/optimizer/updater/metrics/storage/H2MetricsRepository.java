@@ -459,13 +459,6 @@ public class H2MetricsRepository implements MetricsRepository {
     }
   }
 
-  public int cleanupAllMetricsBefore(long beforeTimestamp) {
-    int totalDeleted =
-        cleanupTableMetricsBefore(beforeTimestamp) + cleanupJobMetricsBefore(beforeTimestamp);
-    LOG.info("Total cleaned up rows: {}", totalDeleted);
-    return totalDeleted;
-  }
-
   private Connection getConnection() throws SQLException {
     ensureInitialized();
     return DriverManager.getConnection(jdbcUrl, username, password);

@@ -45,12 +45,14 @@ class TestH2MetricsRepository {
     cleanupLegacyDataFiles();
     storage = new H2MetricsRepository();
     storage.initialize(Map.of());
-    storage.cleanupAllMetricsBefore(MAX_REASONABLE_EPOCH_SECONDS);
+    storage.cleanupTableMetricsBefore(MAX_REASONABLE_EPOCH_SECONDS);
+    storage.cleanupJobMetricsBefore(MAX_REASONABLE_EPOCH_SECONDS);
   }
 
   @AfterAll
   void tearDown() {
-    storage.cleanupAllMetricsBefore(MAX_REASONABLE_EPOCH_SECONDS);
+    storage.cleanupTableMetricsBefore(MAX_REASONABLE_EPOCH_SECONDS);
+    storage.cleanupJobMetricsBefore(MAX_REASONABLE_EPOCH_SECONDS);
     storage.close();
   }
 
@@ -368,7 +370,8 @@ class TestH2MetricsRepository {
                 + H2MetricsRepository.H2MetricsRepositoryConfig.H2_METRICS_PARTITION_COLUMN_LENGTH,
             "2048");
     repository.initialize(configs);
-    repository.cleanupAllMetricsBefore(MAX_REASONABLE_EPOCH_SECONDS);
+    repository.cleanupTableMetricsBefore(MAX_REASONABLE_EPOCH_SECONDS);
+    repository.cleanupJobMetricsBefore(MAX_REASONABLE_EPOCH_SECONDS);
 
     NameIdentifier tableId = NameIdentifier.of("catalog", "db", "long_partition_table");
     String longPartition = "p=" + "y".repeat(1500);
@@ -380,7 +383,8 @@ class TestH2MetricsRepository {
         repository.getPartitionMetrics(tableId, longPartition, 0, Long.MAX_VALUE);
     Assertions.assertTrue(partitionMetrics.containsKey("metric_long_partition"));
     Assertions.assertEquals(List.of("v1"), getMetricValues(partitionMetrics.get("metric_long_partition")));
-    repository.cleanupAllMetricsBefore(MAX_REASONABLE_EPOCH_SECONDS);
+    repository.cleanupTableMetricsBefore(MAX_REASONABLE_EPOCH_SECONDS);
+    repository.cleanupJobMetricsBefore(MAX_REASONABLE_EPOCH_SECONDS);
     repository.close();
   }
 
