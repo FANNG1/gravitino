@@ -137,8 +137,6 @@ public class H2MetricsRepository implements MetricsRepository {
       stmt.execute(createIndexSql3);
       stmt.execute(dropUniqueIndexSql1);
       stmt.execute(dropUniqueIndexSql2);
-      renameLegacyValueColumnIfNeeded(conn, stmt, "TABLE_METRICS");
-      renameLegacyValueColumnIfNeeded(conn, stmt, "JOB_METRICS");
       int currentPartitionColumnLength = getCurrentPartitionColumnLength(conn);
       if (currentPartitionColumnLength <= 0) {
         String alterTablePartitionSql =
@@ -174,23 +172,6 @@ public class H2MetricsRepository implements MetricsRepository {
       }
     }
     return -1;
-  }
-
-  private void renameLegacyValueColumnIfNeeded(
-      Connection connection, Statement statement, String tableName) throws SQLException {
-    if (hasColumn(connection, tableName, "VALUE")
-        && !hasColumn(connection, tableName, "METRIC_VALUE")) {
-      statement.execute(
-          "ALTER TABLE " + tableName + " ALTER COLUMN VALUE RENAME TO METRIC_VALUE");
-    }
-  }
-
-  private boolean hasColumn(Connection connection, String tableName, String columnName)
-      throws SQLException {
-    DatabaseMetaData metaData = connection.getMetaData();
-    try (ResultSet columns = metaData.getColumns(null, null, tableName, columnName)) {
-      return columns.next();
-    }
   }
 
   @Override
