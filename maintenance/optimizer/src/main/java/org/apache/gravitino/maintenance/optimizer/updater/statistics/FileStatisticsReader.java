@@ -19,12 +19,12 @@
 
 package org.apache.gravitino.maintenance.optimizer.updater.statistics;
 
+import com.google.common.base.Preconditions;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Objects;
 
 /** Shared reader for file-based table statistics. */
 public class FileStatisticsReader extends AbstractStatisticsReader {
@@ -33,8 +33,9 @@ public class FileStatisticsReader extends AbstractStatisticsReader {
 
   public FileStatisticsReader(Path statisticsFilePath, String defaultCatalogName) {
     super(defaultCatalogName);
-    this.statisticsFilePath =
-        Objects.requireNonNull(statisticsFilePath, "statisticsFilePath cannot be null");
+    Preconditions.checkArgument(
+        statisticsFilePath != null, "statisticsFilePath must not be null");
+    this.statisticsFilePath = statisticsFilePath;
   }
 
   @Override
