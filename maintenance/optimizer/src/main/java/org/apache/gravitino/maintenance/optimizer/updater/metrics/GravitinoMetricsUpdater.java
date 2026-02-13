@@ -33,7 +33,7 @@ import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.H2Metr
 import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.MetricRecordImpl;
 import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.MetricsRepository;
 
-// Update metrics to h2
+/** Metrics updater that persists table/job metrics into the configured metrics repository. */
 public class GravitinoMetricsUpdater implements MetricsUpdater {
 
   public static final String NAME = "gravitino-metrics-updater";
@@ -53,14 +53,16 @@ public class GravitinoMetricsUpdater implements MetricsUpdater {
 
   @Override
   public void updateTableMetrics(NameIdentifier nameIdentifier, List<MetricSample> metrics) {
-    metrics.stream().forEach(metric -> doUpdateTableMetrics(nameIdentifier, metric));
+    for (MetricSample metric : metrics) {
+      doUpdateTableMetrics(nameIdentifier, metric);
+    }
   }
 
   @Override
   public void updateJobMetrics(NameIdentifier nameIdentifier, List<MetricSample> metrics) {
-    metrics.stream()
-        .forEach(
-            metric -> doUpdateJobMetrics(nameIdentifier, metric.timestamp(), metric.statistic()));
+    for (MetricSample metric : metrics) {
+      doUpdateJobMetrics(nameIdentifier, metric.timestamp(), metric.statistic());
+    }
   }
 
   public int cleanupTableMetricsBefore(long timestamp) {

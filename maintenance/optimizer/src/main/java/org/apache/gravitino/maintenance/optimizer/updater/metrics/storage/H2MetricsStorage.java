@@ -31,9 +31,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import org.apache.gravitino.Config;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.config.ConfigBuilder;
@@ -44,29 +41,28 @@ import org.apache.gravitino.utils.MapUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/** H2-backed implementation of {@link MetricsRepository}. */
 public class H2MetricsStorage implements MetricsRepository {
 
   private static final Logger LOG = LoggerFactory.getLogger(H2MetricsStorage.class);
 
-  private static String JDBC_URL = "jdbc:h2:file:./metrics_db;AUTO_SERVER=TRUE";
+  private String jdbcUrl = "jdbc:h2:file:./metrics_db;AUTO_SERVER=TRUE";
   private static final String USER = "sa";
   private static final String PASSWORD = "";
-
-  private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
   public H2MetricsStorage() {
     initializeDatabase();
   }
 
   @Override
-  public void initialize(Map<String, String> OptimizerProperties) {
+  public void initialize(Map<String, String> optimizerProperties) {
     Map<String, String> h2Properties =
         MapUtils.getPrefixMap(
-            OptimizerProperties,
+            optimizerProperties,
             OptimizerConfig.OPTIMIZER_PREFIX + H2MetricsStorageConfig.H2_METRICS_PREFIX);
     H2MetricsStorageConfig config = new H2MetricsStorageConfig(h2Properties);
     String path = config.get(H2MetricsStorageConfig.H2_METRICS_STORAGE_PATH_CONFIG);
-    JDBC_URL = "jdbc:h2:file:" + path + ";AUTO_SERVER=TRUE";
+    jdbcUrl = "jdbc:h2:file:" + path + ";AUTO_SERVER=TRUE";
     initializeDatabase();
   }
 
@@ -97,7 +93,7 @@ public class H2MetricsStorage implements MetricsRepository {
     String createIndexSql3 =
         "CREATE INDEX IF NOT EXISTS idx_table_metrics_composite ON table_metrics(table_identifier, partition, timestamp)";
 
-    try (Connection conn = DriverManager.getConnection(JDBC_URL, USER, PASSWORD);
+    try (Connection conn = DriverManager.getConnection(jdbcUrl, USER, PASSWORD);
         Statement stmt = conn.createStatement()) {
       stmt.execute(createTableMetricsSql);
       stmt.execute(createJobMetricsSql);
@@ -105,7 +101,7 @@ public class H2MetricsStorage implements MetricsRepository {
       stmt.execute(createIndexSql2);
       stmt.execute(createIndexSql3);
     } catch (SQLException e) {
-      throw new RuntimeException("Failed to initialize H2 metrics storage", e);
+      throw new RuntimeException("Failed to initialize H2 metrics storage with URL: " + jdbcUrl, e);
     }
   }
 
@@ -118,7 +114,7 @@ public class H2MetricsStorage implements MetricsRepository {
     String sql =
         "INSERT INTO table_metrics (table_identifier, metric_name, partition, timestamp, value) VALUES (?, ?, ?, ?, ?)";
 
-    try (Connection conn = DriverManager.getConnection(JDBC_URL, USER, PASSWORD);
+    try (Connection conn = DriverManager.getConnection(jdbcUrl, USER, PASSWORD);
         PreparedStatement pstmt = conn.prepareStatement(sql)) {
       pstmt.setString(1, normalizeIdentifier(nameIdentifier));
       pstmt.setString(2, normalizeMetricName(metricName));
@@ -127,7 +123,14 @@ public class H2MetricsStorage implements MetricsRepository {
       pstmt.setString(5, metric.getValue());
       pstmt.executeUpdate();
     } catch (SQLException e) {
-      throw new RuntimeException("Failed to store table metric", e);
+      throw new RuntimeException(
+          "Failed to store table metric: identifier="
+              + nameIdentifier
+              + ", metric="
+              + metricName
+              + ", partition="
+              + partition.orElse("<table-level>"),
+          e);
     }
   }
 
@@ -142,7 +145,7 @@ public class H2MetricsStorage implements MetricsRepository {
 
     sqlBuilder.append(" AND partition IS NULL ORDER BY timestamp ASC");
 
-    try (Connection conn = DriverManager.getConnection(JDBC_URL, USER, PASSWORD);
+    try (Connection conn = DriverManager.getConnection(jdbcUrl, USER, PASSWORD);
         PreparedStatement pstmt = conn.prepareStatement(sqlBuilder.toString())) {
       pstmt.setString(1, normalizeIdentifier(nameIdentifier));
       pstmt.setLong(2, fromTimestamp);
@@ -158,7 +161,14 @@ public class H2MetricsStorage implements MetricsRepository {
         }
       }
     } catch (SQLException e) {
-      throw new RuntimeException("Failed to retrieve table metrics", e);
+      throw new RuntimeException(
+          "Failed to retrieve table metrics: identifier="
+              + nameIdentifier
+              + ", from="
+              + fromTimestamp
+              + ", to="
+              + toTimestamp,
+          e);
     }
     return resultMap;
   }
@@ -172,7 +182,7 @@ public class H2MetricsStorage implements MetricsRepository {
             + "WHERE table_identifier = ? AND partition = ? AND timestamp BETWEEN ? AND ? "
             + "ORDER BY timestamp ASC";
 
-    try (Connection conn = DriverManager.getConnection(JDBC_URL, USER, PASSWORD);
+    try (Connection conn = DriverManager.getConnection(jdbcUrl, USER, PASSWORD);
         PreparedStatement pstmt = conn.prepareStatement(sql)) {
       pstmt.setString(1, normalizeIdentifier(nameIdentifier));
       pstmt.setString(2, normalizePartition(partition).orElse(null));
@@ -189,7 +199,16 @@ public class H2MetricsStorage implements MetricsRepository {
         }
       }
     } catch (SQLException e) {
-      throw new RuntimeException("Failed to retrieve partition metrics", e);
+      throw new RuntimeException(
+          "Failed to retrieve partition metrics: identifier="
+              + nameIdentifier
+              + ", partition="
+              + partition
+              + ", from="
+              + fromTimestamp
+              + ", to="
+              + toTimestamp,
+          e);
     }
     return resultMap;
   }
@@ -200,7 +219,7 @@ public class H2MetricsStorage implements MetricsRepository {
     String sql =
         "INSERT INTO job_metrics (job_identifier, metric_name, timestamp, value) VALUES (?, ?, ?, ?)";
 
-    try (Connection conn = DriverManager.getConnection(JDBC_URL, USER, PASSWORD);
+    try (Connection conn = DriverManager.getConnection(jdbcUrl, USER, PASSWORD);
         PreparedStatement pstmt = conn.prepareStatement(sql)) {
       pstmt.setString(1, normalizeIdentifier(nameIdentifier));
       pstmt.setString(2, normalizeMetricName(metricName));
@@ -208,7 +227,8 @@ public class H2MetricsStorage implements MetricsRepository {
       pstmt.setString(4, metric.getValue());
       pstmt.executeUpdate();
     } catch (SQLException e) {
-      throw new RuntimeException("Failed to store job metric", e);
+      throw new RuntimeException(
+          "Failed to store job metric: identifier=" + nameIdentifier + ", metric=" + metricName, e);
     }
   }
 
@@ -220,7 +240,7 @@ public class H2MetricsStorage implements MetricsRepository {
         "SELECT metric_name, timestamp, value FROM job_metrics "
             + "WHERE job_identifier = ? AND timestamp BETWEEN ? AND ? ORDER BY timestamp ASC";
 
-    try (Connection conn = DriverManager.getConnection(JDBC_URL, USER, PASSWORD);
+    try (Connection conn = DriverManager.getConnection(jdbcUrl, USER, PASSWORD);
         PreparedStatement pstmt = conn.prepareStatement(sql)) {
       pstmt.setString(1, normalizeIdentifier(nameIdentifier));
       pstmt.setLong(2, fromTimestamp);
@@ -236,7 +256,14 @@ public class H2MetricsStorage implements MetricsRepository {
         }
       }
     } catch (SQLException e) {
-      throw new RuntimeException("Failed to retrieve job metrics", e);
+      throw new RuntimeException(
+          "Failed to retrieve job metrics: identifier="
+              + nameIdentifier
+              + ", from="
+              + fromTimestamp
+              + ", to="
+              + toTimestamp,
+          e);
     }
     return resultMap;
   }
@@ -261,15 +288,15 @@ public class H2MetricsStorage implements MetricsRepository {
   public int cleanupTableMetricsBefore(long beforeTimestamp) {
     String sql = "DELETE FROM table_metrics WHERE timestamp < ?";
 
-    try (Connection conn = DriverManager.getConnection(JDBC_URL, USER, PASSWORD);
+    try (Connection conn = DriverManager.getConnection(jdbcUrl, USER, PASSWORD);
         PreparedStatement pstmt = conn.prepareStatement(sql)) {
       pstmt.setLong(1, beforeTimestamp);
       int deletedRows = pstmt.executeUpdate();
-      conn.commit();
       LOG.info("Cleaned up {} rows from table_metrics before {}", deletedRows, beforeTimestamp);
       return deletedRows;
     } catch (SQLException e) {
-      throw new RuntimeException("Failed to cleanup table metrics", e);
+      throw new RuntimeException(
+          "Failed to cleanup table metrics before timestamp: " + beforeTimestamp, e);
     }
   }
 
@@ -277,15 +304,15 @@ public class H2MetricsStorage implements MetricsRepository {
   public int cleanupJobMetricsBefore(long beforeTimestamp) {
     String sql = "DELETE FROM job_metrics WHERE timestamp < ?";
 
-    try (Connection conn = DriverManager.getConnection(JDBC_URL, USER, PASSWORD);
+    try (Connection conn = DriverManager.getConnection(jdbcUrl, USER, PASSWORD);
         PreparedStatement pstmt = conn.prepareStatement(sql)) {
       pstmt.setLong(1, beforeTimestamp);
       int deletedRows = pstmt.executeUpdate();
-      conn.commit();
       LOG.info("Cleaned up {} rows from job_metrics before {}", deletedRows, beforeTimestamp);
       return deletedRows;
     } catch (SQLException e) {
-      throw new RuntimeException("Failed to cleanup job metrics", e);
+      throw new RuntimeException(
+          "Failed to cleanup job metrics before timestamp: " + beforeTimestamp, e);
     }
   }
 
@@ -297,18 +324,9 @@ public class H2MetricsStorage implements MetricsRepository {
   }
 
   @Override
-  public void close() {
-    scheduler.shutdown();
-    try {
-      if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
-        scheduler.shutdownNow();
-      }
-    } catch (InterruptedException e) {
-      scheduler.shutdownNow();
-      Thread.currentThread().interrupt();
-    }
-  }
+  public void close() {}
 
+  /** Configuration wrapper for H2 metrics storage options. */
   public static class H2MetricsStorageConfig extends Config {
     static final String H2_METRICS_PREFIX = "h2-metrics.";
 
@@ -321,6 +339,11 @@ public class H2MetricsStorage implements MetricsRepository {
             .stringConf()
             .createWithDefault("./data/metrics.db");
 
+    /**
+     * Creates H2 metrics storage config from raw properties.
+     *
+     * @param properties h2-metrics scoped properties
+     */
     public H2MetricsStorageConfig(Map<String, String> properties) {
       super(false);
       loadFromMap(properties, k -> true);

@@ -37,6 +37,9 @@ import org.apache.gravitino.maintenance.optimizer.recommender.statistics.FileSta
 import org.apache.gravitino.maintenance.optimizer.recommender.statistics.PayloadStatisticsReader;
 import org.apache.gravitino.maintenance.optimizer.recommender.statistics.StatisticsReader;
 
+/**
+ * Statistics calculator that reads statistics from either a local file path or an inline payload.
+ */
 public class LocalStatisticsCalculator
     implements SupportsCalculateBulkTableStatistics, SupportsCalculateBulkJobStatistics {
 

@@ -49,8 +49,7 @@ class TestLocalStatisticsCalculator {
             "{\"identifier\":\"other\",\"stats-type\":\"table\",\"s1\":100}"));
 
     LocalStatisticsCalculator calculator = new LocalStatisticsCalculator();
-    OptimizerEnv env = OptimizerEnv.getInstance();
-    env.initialize(createConfig(statsFile.toString(), null));
+    OptimizerEnv env = new OptimizerEnv(createConfig(statsFile.toString(), null));
     calculator.initialize(env);
 
     List<StatisticEntry<?>> stats =
@@ -73,8 +72,7 @@ class TestLocalStatisticsCalculator {
             "{\"identifier\":\"catalog.schema.other\",\"stats-type\":\"table\",\"s1\":10}"));
 
     LocalStatisticsCalculator calculator = new LocalStatisticsCalculator();
-    OptimizerEnv env = OptimizerEnv.getInstance();
-    env.initialize(createConfig(statsFile.toString(), null));
+    OptimizerEnv env = new OptimizerEnv(createConfig(statsFile.toString(), null));
     calculator.initialize(env);
 
     Map<NameIdentifier, TableStatisticsBundle> allStatistics =
@@ -104,8 +102,7 @@ class TestLocalStatisticsCalculator {
             "{\"identifier\":\"catalog.schema.table\",\"stats-type\":\"table\",\"s1\":3}");
 
     LocalStatisticsCalculator calculator = new LocalStatisticsCalculator();
-    OptimizerEnv env = OptimizerEnv.getInstance();
-    env.initialize(createConfig(null, payload));
+    OptimizerEnv env = new OptimizerEnv(createConfig(null, payload));
     calculator.initialize(env);
 
     List<StatisticEntry<?>> stats =
@@ -129,8 +126,7 @@ class TestLocalStatisticsCalculator {
             "{\"identifier\":\"catalog.schema.job2\",\"stats-type\":\"job\",\"duration\":1}");
 
     LocalStatisticsCalculator calculator = new LocalStatisticsCalculator();
-    OptimizerEnv env = OptimizerEnv.getInstance();
-    env.initialize(createConfig(null, payload));
+    OptimizerEnv env = new OptimizerEnv(createConfig(null, payload));
     calculator.initialize(env);
 
     List<StatisticEntry<?>> stats =
@@ -150,8 +146,7 @@ class TestLocalStatisticsCalculator {
             "{\"identifier\":\"catalog.schema.job2\",\"stats-type\":\"job\",\"duration\":7}");
 
     LocalStatisticsCalculator calculator = new LocalStatisticsCalculator();
-    OptimizerEnv env = OptimizerEnv.getInstance();
-    env.initialize(createConfig(null, payload));
+    OptimizerEnv env = new OptimizerEnv(createConfig(null, payload));
     calculator.initialize(env);
 
     Map<NameIdentifier, List<StatisticEntry<?>>> allStatistics =
@@ -176,8 +171,7 @@ class TestLocalStatisticsCalculator {
     String payload = "{\"identifier\":\"job-1\",\"stats-type\":\"job\",\"duration\":10}";
 
     LocalStatisticsCalculator calculator = new LocalStatisticsCalculator();
-    OptimizerEnv env = OptimizerEnv.getInstance();
-    env.initialize(createConfig(null, payload));
+    OptimizerEnv env = new OptimizerEnv(createConfig(null, payload));
     calculator.initialize(env);
 
     List<StatisticEntry<?>> stats =

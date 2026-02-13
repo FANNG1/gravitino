@@ -25,13 +25,36 @@ import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
 import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
 
+/** Reader abstraction for table, partition, and job statistics. */
 public interface StatisticsReader {
+  /**
+   * Reads table-level statistics for a single table.
+   *
+   * @param tableIdentifier table identifier
+   * @return table statistics for the table, empty when absent
+   */
   List<StatisticEntry<?>> readTableStatistics(NameIdentifier tableIdentifier);
 
+  /**
+   * Reads table-level statistics for all tables in the source.
+   *
+   * @return map keyed by table identifier
+   */
   Map<NameIdentifier, List<StatisticEntry<?>>> readAllTableStatistics();
 
+  /**
+   * Reads job-level statistics for a single job.
+   *
+   * @param jobIdentifier job identifier
+   * @return job statistics for the job, empty when absent
+   */
   List<StatisticEntry<?>> readJobStatistics(NameIdentifier jobIdentifier);
 
+  /**
+   * Reads job-level statistics for all jobs in the source.
+   *
+   * @return map keyed by job identifier
+   */
   Map<NameIdentifier, List<StatisticEntry<?>>> readAllJobStatistics();
 
   /**

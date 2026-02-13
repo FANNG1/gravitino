@@ -34,6 +34,7 @@ import org.apache.gravitino.maintenance.optimizer.recommender.util.PartitionUtil
 import org.apache.gravitino.stats.PartitionStatisticsUpdate;
 import org.apache.gravitino.stats.StatisticValue;
 
+/** Statistics updater that persists table/partition statistics to Gravitino. */
 public class GravitinoStatisticsUpdater implements StatisticsUpdater {
 
   public static final String NAME = "gravitino-statistics-updater";
@@ -77,8 +78,13 @@ public class GravitinoStatisticsUpdater implements StatisticsUpdater {
   }
 
   private Map<String, StatisticValue<?>> getTableStatisticsMap(List<StatisticEntry<?>> statistics) {
+    if (statistics == null || statistics.isEmpty()) {
+      return Map.of();
+    }
     return statistics.stream()
-        .collect(Collectors.toMap(StatisticEntry::name, StatisticEntry::value));
+        .collect(
+            Collectors.toMap(
+                StatisticEntry::name, StatisticEntry::value, (first, second) -> second));
   }
 
   private List<PartitionStatisticsUpdate> getPartitionStatisticsUpdates(

@@ -286,7 +286,8 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
           continue;
         }
 
-        Optional<PartitionPath> partitionPathOpt = parsePartitionPath(node.get(PARTITION_PATH_FIELD));
+        Optional<PartitionPath> partitionPathOpt =
+            parsePartitionPath(node.get(PARTITION_PATH_FIELD));
         if (partitionPathOpt.isEmpty()) {
           continue;
         }

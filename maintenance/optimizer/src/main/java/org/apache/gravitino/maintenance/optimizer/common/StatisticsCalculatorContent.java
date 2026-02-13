@@ -19,19 +19,32 @@
 
 package org.apache.gravitino.maintenance.optimizer.common;
 
+/**
+ * Carries optional runtime input for statistics calculators.
+ *
+ * <p>Only one of {@code statisticsFilePath} or {@code statisticsPayload} should be provided.
+ */
 public class StatisticsCalculatorContent implements OptimizerContent {
   private final String statisticsFilePath;
   private final String statisticsPayload;
 
+  /**
+   * Creates calculator content.
+   *
+   * @param statisticsFilePath path to an input statistics file
+   * @param statisticsPayload inline statistics payload
+   */
   public StatisticsCalculatorContent(String statisticsFilePath, String statisticsPayload) {
     this.statisticsFilePath = statisticsFilePath;
     this.statisticsPayload = statisticsPayload;
   }
 
+  /** Returns the configured statistics file path, or {@code null} when absent. */
   public String statisticsFilePath() {
     return statisticsFilePath;
   }
 
+  /** Returns the configured inline statistics payload, or {@code null} when absent. */
   public String statisticsPayload() {
     return statisticsPayload;
   }
