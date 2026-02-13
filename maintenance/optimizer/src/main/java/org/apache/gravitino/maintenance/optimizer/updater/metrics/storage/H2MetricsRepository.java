@@ -417,6 +417,10 @@ public class H2MetricsRepository implements MetricsRepository {
         beforeTimestamp >= 0,
         "beforeTimestamp must be non-negative, but got %s",
         beforeTimestamp);
+    Preconditions.checkArgument(
+        beforeTimestamp <= MAX_REASONABLE_EPOCH_SECONDS,
+        "beforeTimestamp must be epoch seconds, but got suspiciously large value %s",
+        beforeTimestamp);
     String sql = "DELETE FROM table_metrics WHERE metric_ts < ?";
 
     try (Connection conn = getConnection();
@@ -436,6 +440,10 @@ public class H2MetricsRepository implements MetricsRepository {
     Preconditions.checkArgument(
         beforeTimestamp >= 0,
         "beforeTimestamp must be non-negative, but got %s",
+        beforeTimestamp);
+    Preconditions.checkArgument(
+        beforeTimestamp <= MAX_REASONABLE_EPOCH_SECONDS,
+        "beforeTimestamp must be epoch seconds, but got suspiciously large value %s",
         beforeTimestamp);
     String sql = "DELETE FROM job_metrics WHERE metric_ts < ?";
 

@@ -38,6 +38,7 @@ import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class TestH2MetricsRepository {
+  private static final long MAX_REASONABLE_EPOCH_SECONDS = 9_999_999_999L;
   private H2MetricsRepository storage;
 
   @BeforeAll
@@ -45,12 +46,12 @@ class TestH2MetricsRepository {
     cleanupLegacyDataFiles();
     storage = new H2MetricsRepository();
     storage.initialize(ImmutableMap.of());
-    storage.cleanupAllMetricsBefore(Long.MAX_VALUE);
+    storage.cleanupAllMetricsBefore(MAX_REASONABLE_EPOCH_SECONDS);
   }
 
   @AfterAll
   void tearDown() {
-    storage.cleanupAllMetricsBefore(Long.MAX_VALUE);
+    storage.cleanupAllMetricsBefore(MAX_REASONABLE_EPOCH_SECONDS);
     storage.close();
   }
 
@@ -315,6 +316,12 @@ class TestH2MetricsRepository {
         IllegalArgumentException.class, () -> storage.cleanupTableMetricsBefore(-1));
     Assertions.assertThrows(
         IllegalArgumentException.class, () -> storage.cleanupJobMetricsBefore(-1));
+    Assertions.assertThrows(
+        IllegalArgumentException.class,
+        () -> storage.cleanupTableMetricsBefore(System.currentTimeMillis()));
+    Assertions.assertThrows(
+        IllegalArgumentException.class,
+        () -> storage.cleanupJobMetricsBefore(System.currentTimeMillis()));
   }
 
   @Test
@@ -362,7 +369,7 @@ class TestH2MetricsRepository {
                 + H2MetricsRepository.H2MetricsRepositoryConfig.H2_METRICS_PARTITION_COLUMN_LENGTH,
             "2048");
     repository.initialize(configs);
-    repository.cleanupAllMetricsBefore(Long.MAX_VALUE);
+    repository.cleanupAllMetricsBefore(MAX_REASONABLE_EPOCH_SECONDS);
 
     NameIdentifier tableId = NameIdentifier.of("catalog", "db", "long_partition_table");
     String longPartition = "p=" + "y".repeat(1500);
@@ -374,7 +381,7 @@ class TestH2MetricsRepository {
         repository.getPartitionMetrics(tableId, longPartition, 0, Long.MAX_VALUE);
     Assertions.assertTrue(partitionMetrics.containsKey("metric_long_partition"));
     Assertions.assertEquals(List.of("v1"), getMetricValues(partitionMetrics.get("metric_long_partition")));
-    repository.cleanupAllMetricsBefore(Long.MAX_VALUE);
+    repository.cleanupAllMetricsBefore(MAX_REASONABLE_EPOCH_SECONDS);
     repository.close();
   }
 
