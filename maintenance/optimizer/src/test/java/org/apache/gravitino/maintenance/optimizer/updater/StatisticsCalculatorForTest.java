@@ -29,6 +29,7 @@ import org.apache.gravitino.maintenance.optimizer.api.common.TableStatisticsBund
 import org.apache.gravitino.maintenance.optimizer.api.updater.SupportsCalculateBulkJobStatistics;
 import org.apache.gravitino.maintenance.optimizer.api.updater.SupportsCalculateBulkTableStatistics;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
+import org.apache.gravitino.maintenance.optimizer.common.StatisticEntryImpl;
 import org.apache.gravitino.stats.StatisticValue;
 import org.apache.gravitino.stats.StatisticValues;
 
@@ -76,7 +77,7 @@ public class StatisticsCalculatorForTest
 
   private static StatisticEntry<?> entry(String name, long value) {
     StatisticValue statisticValue = StatisticValues.longValue(value);
-    return new StatisticEntryImpl(name, statisticValue);
+    return new StatisticEntryImpl<>(name, statisticValue);
   }
 
   private static final class TestPartitionEntry implements PartitionEntry {
