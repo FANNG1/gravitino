@@ -26,8 +26,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
 import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.maintenance.optimizer.api.common.TableStatisticsBundle;
+import org.apache.gravitino.maintenance.optimizer.common.PartitionEntryImpl;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
 import org.junit.jupiter.api.Assertions;
@@ -159,6 +161,76 @@ class TestLocalStatisticsCalculator {
     Assertions.assertEquals(2, map.size());
     Assertions.assertEquals(20L, map.get("duration").value().value());
     Assertions.assertEquals(5L, map.get("planning").value().value());
+  }
+
+  @Test
+  void testComputePartitionStatisticsFromPayload() {
+    String payload =
+        String.join(
+            "\n",
+            "{\"identifier\":\"catalog.schema.table\",\"stats-type\":\"partition\","
+                + "\"partition-path\":{\"dt\":\"2024-01-01\"},\"rows\":10,\"size\":100}",
+            "{\"identifier\":\"catalog.schema.table\",\"stats-type\":\"partition\","
+                + "\"partition-path\":{\"dt\":\"2024-01-01\"},\"rows\":20,\"size\":200}",
+            "{\"identifier\":\"catalog.schema.table\",\"stats-type\":\"partition\","
+                + "\"partition-path\":{\"dt\":\"2024-01-02\"},\"rows\":5}");
+
+    LocalStatisticsCalculator calculator = new LocalStatisticsCalculator();
+    OptimizerEnv env = new OptimizerEnv(createConfig(null, payload));
+    calculator.initialize(env);
+
+    Map<PartitionPath, List<StatisticEntry<?>>> partitionStatistics =
+        calculator
+            .calculateTableStatistics(NameIdentifier.parse("catalog.schema.table"))
+            .partitionStatistics();
+
+    Assertions.assertEquals(2, partitionStatistics.size());
+
+    PartitionPath p1 = PartitionPath.of(List.of(new PartitionEntryImpl("dt", "2024-01-01")));
+    Map<String, StatisticEntry<?>> p1Stats = toNameMap(partitionStatistics.get(p1));
+    Assertions.assertEquals(2, p1Stats.size());
+    Assertions.assertEquals(20L, p1Stats.get("rows").value().value());
+    Assertions.assertEquals(200L, p1Stats.get("size").value().value());
+
+    PartitionPath p2 = PartitionPath.of(List.of(new PartitionEntryImpl("dt", "2024-01-02")));
+    Map<String, StatisticEntry<?>> p2Stats = toNameMap(partitionStatistics.get(p2));
+    Assertions.assertEquals(1, p2Stats.size());
+    Assertions.assertEquals(5L, p2Stats.get("rows").value().value());
+  }
+
+  @Test
+  void testComputeAllPartitionStatistics() {
+    String payload =
+        String.join(
+            "\n",
+            "{\"identifier\":\"catalog.schema.table1\",\"stats-type\":\"partition\","
+                + "\"partition-path\":{\"dt\":\"2024-01-01\"},\"rows\":10}",
+            "{\"identifier\":\"catalog.schema.table2\",\"stats-type\":\"partition\","
+                + "\"partition-path\":{\"dt\":\"2024-01-02\"},\"rows\":30}");
+
+    LocalStatisticsCalculator calculator = new LocalStatisticsCalculator();
+    OptimizerEnv env = new OptimizerEnv(createConfig(null, payload));
+    calculator.initialize(env);
+
+    Map<NameIdentifier, TableStatisticsBundle> allStatistics =
+        calculator.calculateBulkTableStatistics();
+    Assertions.assertEquals(2, allStatistics.size());
+
+    PartitionPath p1 = PartitionPath.of(List.of(new PartitionEntryImpl("dt", "2024-01-01")));
+    Map<PartitionPath, List<StatisticEntry<?>>> table1Partitions =
+        allStatistics.get(NameIdentifier.parse("catalog.schema.table1")).partitionStatistics();
+    Assertions.assertEquals(1, table1Partitions.size());
+    Assertions.assertEquals(10L, toNameMap(table1Partitions.get(p1)).get("rows").value().value());
+    Assertions.assertTrue(
+        allStatistics.get(NameIdentifier.parse("catalog.schema.table1")).tableStatistics().isEmpty());
+
+    PartitionPath p2 = PartitionPath.of(List.of(new PartitionEntryImpl("dt", "2024-01-02")));
+    Map<PartitionPath, List<StatisticEntry<?>>> table2Partitions =
+        allStatistics.get(NameIdentifier.parse("catalog.schema.table2")).partitionStatistics();
+    Assertions.assertEquals(1, table2Partitions.size());
+    Assertions.assertEquals(30L, toNameMap(table2Partitions.get(p2)).get("rows").value().value());
+    Assertions.assertTrue(
+        allStatistics.get(NameIdentifier.parse("catalog.schema.table2")).tableStatistics().isEmpty());
   }
 
   @Test
