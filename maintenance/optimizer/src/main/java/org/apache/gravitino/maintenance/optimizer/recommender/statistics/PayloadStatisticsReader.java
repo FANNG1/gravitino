@@ -19,6 +19,7 @@
 
 package org.apache.gravitino.maintenance.optimizer.recommender.statistics;
 
+import com.google.common.base.Preconditions;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
@@ -31,9 +32,8 @@ public class PayloadStatisticsReader extends AbstractStatisticsReader {
 
   public PayloadStatisticsReader(String payload, String defaultCatalogName) {
     super(defaultCatalogName);
-    if (StringUtils.isBlank(payload)) {
-      throw new IllegalArgumentException("Statistics payload must be provided");
-    }
+    Preconditions.checkArgument(
+        StringUtils.isNotBlank(payload), "Statistics payload must be provided");
     this.payload = payload;
   }
 

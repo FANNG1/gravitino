@@ -69,6 +69,7 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
   // support table and partition statistics
   static final String STATISTICS_TYPE_FIELD = "stats-type";
   static final String IDENTIFIER_FIELD = "identifier";
+  static final String PARTITION_PATH_FIELD = "partition-path";
   static final String TABLE_STATISTICS_TYPE = "table";
   static final String PARTITION_STATISTICS_TYPE = "partition";
   static final String JOB_STATISTICS_TYPE = "job";
@@ -285,7 +286,7 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
           continue;
         }
 
-        Optional<PartitionPath> partitionPathOpt = parsePartitionPath(node.get("partition-path"));
+        Optional<PartitionPath> partitionPathOpt = parsePartitionPath(node.get(PARTITION_PATH_FIELD));
         if (partitionPathOpt.isEmpty()) {
           continue;
         }
@@ -322,7 +323,7 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
       String fieldName = entry.getKey();
       if (IDENTIFIER_FIELD.equals(fieldName)
           || STATISTICS_TYPE_FIELD.equals(fieldName)
-          || "partition-path".equals(fieldName)) {
+          || PARTITION_PATH_FIELD.equals(fieldName)) {
         continue;
       }
 

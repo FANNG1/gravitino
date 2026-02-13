@@ -31,9 +31,7 @@ import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.maintenance.optimizer.api.common.TableStatisticsBundle;
 import org.apache.gravitino.maintenance.optimizer.api.updater.SupportsCalculateBulkJobStatistics;
 import org.apache.gravitino.maintenance.optimizer.api.updater.SupportsCalculateBulkTableStatistics;
-import org.apache.gravitino.maintenance.optimizer.common.OptimizerContent;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
-import org.apache.gravitino.maintenance.optimizer.common.StatisticsCalculatorContent;
 import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
 import org.apache.gravitino.maintenance.optimizer.recommender.statistics.FileStatisticsReader;
 import org.apache.gravitino.maintenance.optimizer.recommender.statistics.PayloadStatisticsReader;
@@ -43,6 +41,16 @@ public class LocalStatisticsCalculator
     implements SupportsCalculateBulkTableStatistics, SupportsCalculateBulkJobStatistics {
 
   public static final String LOCAL_STATISTICS_CALCULATOR_NAME = "local-stats-calculator";
+  public static final String STATISTICS_FILE_PATH_CONFIG =
+      OptimizerConfig.OPTIMIZER_PREFIX
+          + "updater."
+          + LOCAL_STATISTICS_CALCULATOR_NAME
+          + ".statisticsFilePath";
+  public static final String STATISTICS_PAYLOAD_CONFIG =
+      OptimizerConfig.OPTIMIZER_PREFIX
+          + "updater."
+          + LOCAL_STATISTICS_CALCULATOR_NAME
+          + ".statisticsPayload";
 
   private StatisticsReader statisticsReader;
 
@@ -53,25 +61,27 @@ public class LocalStatisticsCalculator
 
   @Override
   public void initialize(OptimizerEnv optimizerEnv) {
-    OptimizerContent content = optimizerEnv.content();
-    Preconditions.checkArgument(
-        content instanceof StatisticsCalculatorContent,
-        "StatisticsCalculatorContent is required for LocalStatisticsCalculator");
-
-    StatisticsCalculatorContent statisticsContent = (StatisticsCalculatorContent) content;
     String defaultCatalog =
         optimizerEnv.config().get(OptimizerConfig.GRAVITINO_DEFAULT_CATALOG_CONFIG);
+    String statisticsFilePath = optimizerEnv.config().getRawString(STATISTICS_FILE_PATH_CONFIG);
+    String statisticsPayload = optimizerEnv.config().getRawString(STATISTICS_PAYLOAD_CONFIG);
 
-    if (StringUtils.isNotBlank(statisticsContent.statisticsFilePath())) {
-      this.statisticsReader =
-          new FileStatisticsReader(Path.of(statisticsContent.statisticsFilePath()), defaultCatalog);
+    Preconditions.checkArgument(
+        !(StringUtils.isNotBlank(statisticsFilePath) && StringUtils.isNotBlank(statisticsPayload)),
+        "Only one of %s or %s can be provided",
+        STATISTICS_FILE_PATH_CONFIG,
+        STATISTICS_PAYLOAD_CONFIG);
+
+    if (StringUtils.isNotBlank(statisticsFilePath)) {
+      this.statisticsReader = new FileStatisticsReader(Path.of(statisticsFilePath), defaultCatalog);
       return;
     }
 
-    String payload = statisticsContent.statisticsPayload();
     Preconditions.checkArgument(
-        StringUtils.isNotBlank(payload), "Statistics payload must be provided");
-    this.statisticsReader = new PayloadStatisticsReader(payload, defaultCatalog);
+        StringUtils.isNotBlank(statisticsPayload),
+        "Statistics payload must be provided by config key %s",
+        STATISTICS_PAYLOAD_CONFIG);
+    this.statisticsReader = new PayloadStatisticsReader(statisticsPayload, defaultCatalog);
   }
 
   @Override

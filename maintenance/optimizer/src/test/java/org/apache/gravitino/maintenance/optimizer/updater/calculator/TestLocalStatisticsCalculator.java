@@ -29,7 +29,6 @@ import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.maintenance.optimizer.api.common.TableStatisticsBundle;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
-import org.apache.gravitino.maintenance.optimizer.common.StatisticsCalculatorContent;
 import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -51,8 +50,7 @@ class TestLocalStatisticsCalculator {
 
     LocalStatisticsCalculator calculator = new LocalStatisticsCalculator();
     OptimizerEnv env = OptimizerEnv.getInstance();
-    env.initialize(createConfig());
-    env.setContent(new StatisticsCalculatorContent(statsFile.toString(), null));
+    env.initialize(createConfig(statsFile.toString(), null));
     calculator.initialize(env);
 
     List<StatisticEntry<?>> stats =
@@ -76,8 +74,7 @@ class TestLocalStatisticsCalculator {
 
     LocalStatisticsCalculator calculator = new LocalStatisticsCalculator();
     OptimizerEnv env = OptimizerEnv.getInstance();
-    env.initialize(createConfig());
-    env.setContent(new StatisticsCalculatorContent(statsFile.toString(), null));
+    env.initialize(createConfig(statsFile.toString(), null));
     calculator.initialize(env);
 
     Map<NameIdentifier, TableStatisticsBundle> allStatistics =
@@ -108,8 +105,7 @@ class TestLocalStatisticsCalculator {
 
     LocalStatisticsCalculator calculator = new LocalStatisticsCalculator();
     OptimizerEnv env = OptimizerEnv.getInstance();
-    env.initialize(createConfig());
-    env.setContent(new StatisticsCalculatorContent(null, payload));
+    env.initialize(createConfig(null, payload));
     calculator.initialize(env);
 
     List<StatisticEntry<?>> stats =
@@ -134,8 +130,7 @@ class TestLocalStatisticsCalculator {
 
     LocalStatisticsCalculator calculator = new LocalStatisticsCalculator();
     OptimizerEnv env = OptimizerEnv.getInstance();
-    env.initialize(createConfig());
-    env.setContent(new StatisticsCalculatorContent(null, payload));
+    env.initialize(createConfig(null, payload));
     calculator.initialize(env);
 
     List<StatisticEntry<?>> stats =
@@ -156,8 +151,7 @@ class TestLocalStatisticsCalculator {
 
     LocalStatisticsCalculator calculator = new LocalStatisticsCalculator();
     OptimizerEnv env = OptimizerEnv.getInstance();
-    env.initialize(createConfig());
-    env.setContent(new StatisticsCalculatorContent(null, payload));
+    env.initialize(createConfig(null, payload));
     calculator.initialize(env);
 
     Map<NameIdentifier, List<StatisticEntry<?>>> allStatistics =
@@ -183,8 +177,7 @@ class TestLocalStatisticsCalculator {
 
     LocalStatisticsCalculator calculator = new LocalStatisticsCalculator();
     OptimizerEnv env = OptimizerEnv.getInstance();
-    env.initialize(createConfig());
-    env.setContent(new StatisticsCalculatorContent(null, payload));
+    env.initialize(createConfig(null, payload));
     calculator.initialize(env);
 
     List<StatisticEntry<?>> stats =
@@ -195,9 +188,15 @@ class TestLocalStatisticsCalculator {
         calculator.calculateJobStatistics(NameIdentifier.parse("catalog.job-1")).isEmpty());
   }
 
-  private OptimizerConfig createConfig() {
+  private OptimizerConfig createConfig(String statisticsFilePath, String statisticsPayload) {
     Map<String, String> configs = new HashMap<>();
     configs.put(OptimizerConfig.GRAVITINO_DEFAULT_CATALOG_CONFIG.getKey(), "catalog");
+    if (statisticsFilePath != null) {
+      configs.put(LocalStatisticsCalculator.STATISTICS_FILE_PATH_CONFIG, statisticsFilePath);
+    }
+    if (statisticsPayload != null) {
+      configs.put(LocalStatisticsCalculator.STATISTICS_PAYLOAD_CONFIG, statisticsPayload);
+    }
     return new OptimizerConfig(configs);
   }
 

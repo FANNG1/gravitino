@@ -18,5 +18,3 @@
 #
 
 org.apache.gravitino.maintenance.optimizer.updater.calculator.LocalStatisticsCalculator
-org.apache.gravitino.maintenance.optimizer.updater.calculator.SparkBatchStatisticsCalculator
-org.apache.gravitino.maintenance.optimizer.updater.calculator.CliStatisticsCalculator
