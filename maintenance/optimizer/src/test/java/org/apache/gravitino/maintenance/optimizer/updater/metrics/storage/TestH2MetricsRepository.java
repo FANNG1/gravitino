@@ -251,6 +251,14 @@ class TestH2MetricsRepository {
                 id, "metric", Optional.empty(), new MetricRecordImpl(-1, "v1")));
     Assertions.assertThrows(
         IllegalArgumentException.class,
+        () ->
+            storage.storeTableMetric(
+                id,
+                "metric",
+                Optional.empty(),
+                new MetricRecordImpl(System.currentTimeMillis(), "v1")));
+    Assertions.assertThrows(
+        IllegalArgumentException.class,
         () -> storage.storeJobMetric(id, "metric", new MetricRecordImpl(-1, "v1")));
     Assertions.assertThrows(
         IllegalArgumentException.class,

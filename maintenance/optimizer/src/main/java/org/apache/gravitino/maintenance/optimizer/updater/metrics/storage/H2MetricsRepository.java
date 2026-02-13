@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -45,12 +46,18 @@ import org.apache.gravitino.utils.MapUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** H2-backed implementation of {@link MetricsRepository}. */
+/**
+ * H2-backed implementation of {@link MetricsRepository}.
+ *
+ * <p>All timestamps are epoch seconds. Read APIs use a half-open time window
+ * [fromTimestamp, toTimestamp).
+ */
 public class H2MetricsRepository implements MetricsRepository {
 
   private static final Logger LOG = LoggerFactory.getLogger(H2MetricsRepository.class);
   private static final int DEFAULT_PARTITION_COLUMN_LENGTH = 1024;
   private static final int MAX_METRIC_VALUE_LENGTH = 1024;
+  private static final long MAX_REASONABLE_EPOCH_SECONDS = 9_999_999_999L;
 
   private static final String DEFAULT_USER = "sa";
   private static final String DEFAULT_PASSWORD = "";
@@ -117,9 +124,6 @@ public class H2MetricsRepository implements MetricsRepository {
         "CREATE INDEX IF NOT EXISTS idx_job_metrics_timestamp ON job_metrics(timestamp)";
     String createIndexSql3 =
         "CREATE INDEX IF NOT EXISTS idx_table_metrics_composite ON table_metrics(table_identifier, partition, timestamp)";
-    String alterTablePartitionSql =
-        "ALTER TABLE table_metrics ALTER COLUMN partition VARCHAR(" + partitionColumnLength + ")";
-
     try (Connection conn = DriverManager.getConnection(jdbcUrl, username, password);
         Statement stmt = conn.createStatement()) {
       stmt.execute(createTableMetricsSql);
@@ -127,11 +131,41 @@ public class H2MetricsRepository implements MetricsRepository {
       stmt.execute(createIndexSql1);
       stmt.execute(createIndexSql2);
       stmt.execute(createIndexSql3);
-      stmt.execute(alterTablePartitionSql);
+      int currentPartitionColumnLength = getCurrentPartitionColumnLength(conn);
+      if (currentPartitionColumnLength <= 0) {
+        String alterTablePartitionSql =
+            "ALTER TABLE table_metrics ALTER COLUMN partition VARCHAR(" + partitionColumnLength + ")";
+        stmt.execute(alterTablePartitionSql);
+      } else if (partitionColumnLength > currentPartitionColumnLength) {
+        String alterTablePartitionSql =
+            "ALTER TABLE table_metrics ALTER COLUMN partition VARCHAR(" + partitionColumnLength + ")";
+        stmt.execute(alterTablePartitionSql);
+      } else if (partitionColumnLength < currentPartitionColumnLength) {
+        LOG.warn(
+            "Skip shrinking table_metrics.partition length from {} to {} to avoid migration "
+                + "failure and data truncation risk.",
+            currentPartitionColumnLength,
+            partitionColumnLength);
+      }
     } catch (SQLException e) {
       throw new MetricsStorageException(
           "Failed to initialize H2 metrics storage with URL: " + jdbcUrl, e);
     }
+  }
+
+  private int getCurrentPartitionColumnLength(Connection connection) throws SQLException {
+    DatabaseMetaData metaData = connection.getMetaData();
+    try (ResultSet columns = metaData.getColumns(null, null, "TABLE_METRICS", "PARTITION")) {
+      if (columns.next()) {
+        return columns.getInt("COLUMN_SIZE");
+      }
+    }
+    try (ResultSet columns = metaData.getColumns(null, null, "table_metrics", "partition")) {
+      if (columns.next()) {
+        return columns.getInt("COLUMN_SIZE");
+      }
+    }
+    return -1;
   }
 
   @Override
@@ -419,6 +453,10 @@ public class H2MetricsRepository implements MetricsRepository {
     Preconditions.checkArgument(
         metric.getTimestamp() >= 0,
         "metric timestamp must be non-negative, but got %s",
+        metric.getTimestamp());
+    Preconditions.checkArgument(
+        metric.getTimestamp() <= MAX_REASONABLE_EPOCH_SECONDS,
+        "metric timestamp must be epoch seconds, but got suspiciously large value %s",
         metric.getTimestamp());
     Preconditions.checkArgument(metric.getValue() != null, "metric value must not be null");
     Preconditions.checkArgument(
