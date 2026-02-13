@@ -70,7 +70,8 @@ class TestGravitinoMetricsUpdater {
 
     List<Optional<String>> partitions = partitionCaptor.getAllValues();
     Assertions.assertEquals(Optional.empty(), partitions.get(0));
-    PartitionPath partitionPath = PartitionPath.of(List.of(new PartitionEntryImpl("dt", "2026-01-01")));
+    PartitionPath partitionPath =
+        PartitionPath.of(List.of(new PartitionEntryImpl("dt", "2026-01-01")));
     Assertions.assertEquals(
         Optional.of(PartitionUtils.encodePartitionPath(partitionPath)),
         partitions.get(1),

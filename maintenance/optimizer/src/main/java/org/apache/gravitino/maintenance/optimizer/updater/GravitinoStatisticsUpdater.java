@@ -121,10 +121,8 @@ public class GravitinoStatisticsUpdater implements StatisticsUpdater {
     Map<String, StatisticValue<?>> result = new LinkedHashMap<>();
     for (StatisticEntry<?> statistic : statistics) {
       Preconditions.checkArgument(statistic != null, "%s entry must not be null", context);
-      Preconditions.checkArgument(
-          statistic.name() != null, "%s name must not be null", context);
-      Preconditions.checkArgument(
-          statistic.value() != null, "%s value must not be null", context);
+      Preconditions.checkArgument(statistic.name() != null, "%s name must not be null", context);
+      Preconditions.checkArgument(statistic.value() != null, "%s value must not be null", context);
       result.put(statistic.name(), statistic.value());
     }
     return result;

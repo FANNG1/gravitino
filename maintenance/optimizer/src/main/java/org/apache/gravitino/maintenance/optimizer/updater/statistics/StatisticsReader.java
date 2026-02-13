@@ -56,5 +56,4 @@ public interface StatisticsReader {
    * @return map keyed by job identifier
    */
   Map<NameIdentifier, List<StatisticEntry<?>>> readBulkJobStatistics();
-
 }

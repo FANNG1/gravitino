@@ -143,17 +143,17 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
         new StatisticsNodeVisitor() {
           @Override
           public void onTable(JsonNode node) {
-          NameIdentifier identifier = parseIdentifier(node.get(IDENTIFIER_FIELD), true);
-          if (identifier == null) {
-            return;
-          }
-          if (targetIdentifier != null && !targetIdentifier.equals(identifier)) {
-            return;
-          }
+            NameIdentifier identifier = parseIdentifier(node.get(IDENTIFIER_FIELD), true);
+            if (identifier == null) {
+              return;
+            }
+            if (targetIdentifier != null && !targetIdentifier.equals(identifier)) {
+              return;
+            }
 
-          Map<String, StatisticValue<?>> statisticsByName =
-              aggregated.computeIfAbsent(identifier, k -> new LinkedHashMap<>());
-          populateStatistics(node, statisticsByName);
+            Map<String, StatisticValue<?>> statisticsByName =
+                aggregated.computeIfAbsent(identifier, k -> new LinkedHashMap<>());
+            populateStatistics(node, statisticsByName);
           }
         });
 
@@ -179,20 +179,21 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
 
           @Override
           public void onPartition(JsonNode node) {
-          NameIdentifier identifier = parseIdentifier(node.get(IDENTIFIER_FIELD), true);
-          if (!targetIdentifier.equals(identifier)) {
-            return;
-          }
+            NameIdentifier identifier = parseIdentifier(node.get(IDENTIFIER_FIELD), true);
+            if (!targetIdentifier.equals(identifier)) {
+              return;
+            }
 
-          Optional<PartitionPath> partitionPathOpt =
-              parsePartitionPath(node.get(PARTITION_PATH_FIELD));
-          if (partitionPathOpt.isEmpty()) {
-            return;
-          }
+            Optional<PartitionPath> partitionPathOpt =
+                parsePartitionPath(node.get(PARTITION_PATH_FIELD));
+            if (partitionPathOpt.isEmpty()) {
+              return;
+            }
 
-          Map<String, StatisticValue<?>> partitionStatsByName =
-              partitionStatistics.computeIfAbsent(partitionPathOpt.get(), k -> new LinkedHashMap<>());
-          populateStatistics(node, partitionStatsByName);
+            Map<String, StatisticValue<?>> partitionStatsByName =
+                partitionStatistics.computeIfAbsent(
+                    partitionPathOpt.get(), k -> new LinkedHashMap<>());
+            populateStatistics(node, partitionStatsByName);
           }
         });
 
@@ -220,24 +221,24 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
 
           @Override
           public void onPartition(JsonNode node) {
-          NameIdentifier identifier = parseIdentifier(node.get(IDENTIFIER_FIELD), true);
-          if (identifier == null) {
-            return;
-          }
+            NameIdentifier identifier = parseIdentifier(node.get(IDENTIFIER_FIELD), true);
+            if (identifier == null) {
+              return;
+            }
 
-          Optional<PartitionPath> partitionPathOpt =
-              parsePartitionPath(node.get(PARTITION_PATH_FIELD));
-          if (partitionPathOpt.isEmpty()) {
-            return;
-          }
+            Optional<PartitionPath> partitionPathOpt =
+                parsePartitionPath(node.get(PARTITION_PATH_FIELD));
+            if (partitionPathOpt.isEmpty()) {
+              return;
+            }
 
-          Map<PartitionPath, Map<String, StatisticValue<?>>> partitionStatsByPath =
-              partitionStatisticsByIdentifier.computeIfAbsent(
-                  identifier, k -> new LinkedHashMap<>());
-          Map<String, StatisticValue<?>> partitionStatsByName =
-              partitionStatsByPath.computeIfAbsent(
-                  partitionPathOpt.get(), k -> new LinkedHashMap<>());
-          populateStatistics(node, partitionStatsByName);
+            Map<PartitionPath, Map<String, StatisticValue<?>>> partitionStatsByPath =
+                partitionStatisticsByIdentifier.computeIfAbsent(
+                    identifier, k -> new LinkedHashMap<>());
+            Map<String, StatisticValue<?>> partitionStatsByName =
+                partitionStatsByPath.computeIfAbsent(
+                    partitionPathOpt.get(), k -> new LinkedHashMap<>());
+            populateStatistics(node, partitionStatsByName);
           }
         });
 
@@ -265,17 +266,17 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
         new StatisticsNodeVisitor() {
           @Override
           public void onJob(JsonNode node) {
-          NameIdentifier identifier = parseIdentifier(node.get(IDENTIFIER_FIELD), false);
-          if (identifier == null) {
-            return;
-          }
-          if (targetIdentifier != null && !targetIdentifier.equals(identifier)) {
-            return;
-          }
+            NameIdentifier identifier = parseIdentifier(node.get(IDENTIFIER_FIELD), false);
+            if (identifier == null) {
+              return;
+            }
+            if (targetIdentifier != null && !targetIdentifier.equals(identifier)) {
+              return;
+            }
 
-          Map<String, StatisticValue<?>> statisticsByName =
-              aggregated.computeIfAbsent(identifier, k -> new LinkedHashMap<>());
-          populateStatistics(node, statisticsByName);
+            Map<String, StatisticValue<?>> statisticsByName =
+                aggregated.computeIfAbsent(identifier, k -> new LinkedHashMap<>());
+            populateStatistics(node, statisticsByName);
           }
         });
 
@@ -440,10 +441,7 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
         double doubleValue = Double.parseDouble(text);
         return StatisticValues.doubleValue(doubleValue);
       } catch (NumberFormatException e) {
-        LOG.warn(
-            "Skip non-numeric textual statistic value for field '{}': {}",
-            fieldName,
-            text);
+        LOG.warn("Skip non-numeric textual statistic value for field '{}': {}", fieldName, text);
         return null;
       }
     }

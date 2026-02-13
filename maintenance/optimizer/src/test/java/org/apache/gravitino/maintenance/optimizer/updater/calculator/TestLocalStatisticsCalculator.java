@@ -29,8 +29,8 @@ import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
 import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.maintenance.optimizer.api.common.TableStatisticsBundle;
-import org.apache.gravitino.maintenance.optimizer.common.PartitionEntryImpl;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
+import org.apache.gravitino.maintenance.optimizer.common.PartitionEntryImpl;
 import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -222,7 +222,10 @@ class TestLocalStatisticsCalculator {
     Assertions.assertEquals(1, table1Partitions.size());
     Assertions.assertEquals(10L, toNameMap(table1Partitions.get(p1)).get("rows").value().value());
     Assertions.assertTrue(
-        allStatistics.get(NameIdentifier.parse("catalog.schema.table1")).tableStatistics().isEmpty());
+        allStatistics
+            .get(NameIdentifier.parse("catalog.schema.table1"))
+            .tableStatistics()
+            .isEmpty());
 
     PartitionPath p2 = PartitionPath.of(List.of(new PartitionEntryImpl("dt", "2024-01-02")));
     Map<PartitionPath, List<StatisticEntry<?>>> table2Partitions =
@@ -230,7 +233,10 @@ class TestLocalStatisticsCalculator {
     Assertions.assertEquals(1, table2Partitions.size());
     Assertions.assertEquals(30L, toNameMap(table2Partitions.get(p2)).get("rows").value().value());
     Assertions.assertTrue(
-        allStatistics.get(NameIdentifier.parse("catalog.schema.table2")).tableStatistics().isEmpty());
+        allStatistics
+            .get(NameIdentifier.parse("catalog.schema.table2"))
+            .tableStatistics()
+            .isEmpty());
   }
 
   @Test
@@ -284,8 +290,7 @@ class TestLocalStatisticsCalculator {
     Assertions.assertThrows(
         IllegalStateException.class,
         () -> calculator.calculateTableStatistics(NameIdentifier.parse("catalog.db.table")));
-    Assertions.assertThrows(
-        IllegalStateException.class, calculator::calculateBulkTableStatistics);
+    Assertions.assertThrows(IllegalStateException.class, calculator::calculateBulkTableStatistics);
     Assertions.assertThrows(
         IllegalStateException.class,
         () -> calculator.calculateJobStatistics(NameIdentifier.parse("catalog.db.job")));
@@ -312,8 +317,10 @@ class TestLocalStatisticsCalculator {
 
     IllegalArgumentException exception =
         Assertions.assertThrows(IllegalArgumentException.class, () -> calculator.initialize(env));
-    Assertions.assertTrue(exception.getMessage().contains(LocalStatisticsCalculator.STATISTICS_FILE_PATH_CONFIG));
-    Assertions.assertTrue(exception.getMessage().contains(LocalStatisticsCalculator.STATISTICS_PAYLOAD_CONFIG));
+    Assertions.assertTrue(
+        exception.getMessage().contains(LocalStatisticsCalculator.STATISTICS_FILE_PATH_CONFIG));
+    Assertions.assertTrue(
+        exception.getMessage().contains(LocalStatisticsCalculator.STATISTICS_PAYLOAD_CONFIG));
   }
 
   private OptimizerConfig createConfig(String statisticsFilePath, String statisticsPayload) {

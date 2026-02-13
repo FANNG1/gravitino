@@ -33,8 +33,7 @@ public class FileStatisticsReader extends AbstractStatisticsReader {
 
   public FileStatisticsReader(Path statisticsFilePath, String defaultCatalogName) {
     super(defaultCatalogName);
-    Preconditions.checkArgument(
-        statisticsFilePath != null, "statisticsFilePath must not be null");
+    Preconditions.checkArgument(statisticsFilePath != null, "statisticsFilePath must not be null");
     this.statisticsFilePath = statisticsFilePath;
   }
 

@@ -46,7 +46,9 @@ class TestGravitinoStatisticsUpdater {
     IllegalStateException exception =
         Assertions.assertThrows(
             IllegalStateException.class,
-            () -> updater.updateTableStatistics(NameIdentifier.of("catalog", "db", "table"), List.of()));
+            () ->
+                updater.updateTableStatistics(
+                    NameIdentifier.of("catalog", "db", "table"), List.of()));
     Assertions.assertTrue(exception.getMessage().contains("has not been initialized"));
   }
 
@@ -117,7 +119,8 @@ class TestGravitinoStatisticsUpdater {
         .updatePartitionStatistics(captor.capture());
     List<PartitionStatisticsUpdate> updates = captor.getValue();
     Assertions.assertEquals(1, updates.size());
-    Assertions.assertEquals(PartitionUtils.encodePartitionPath(partitionPath), updates.get(0).partitionName());
+    Assertions.assertEquals(
+        PartitionUtils.encodePartitionPath(partitionPath), updates.get(0).partitionName());
     Assertions.assertEquals(2L, updates.get(0).statistics().get("s1").value());
     Assertions.assertEquals(3L, updates.get(0).statistics().get("s2").value());
   }

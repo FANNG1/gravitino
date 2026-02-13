@@ -23,8 +23,8 @@ import com.google.common.base.Preconditions;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.DatabaseMetaData;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -49,8 +49,7 @@ import org.slf4j.LoggerFactory;
 /**
  * H2-backed implementation of {@link MetricsRepository}.
  *
- * <p>All timestamps are epoch seconds. Read APIs use a half-open time window
- * [fromSecs, toSecs).
+ * <p>All timestamps are epoch seconds. Read APIs use a half-open time window [fromSecs, toSecs).
  */
 public class H2MetricsRepository implements MetricsRepository {
 
@@ -63,7 +62,8 @@ public class H2MetricsRepository implements MetricsRepository {
 
   private static final String DEFAULT_USER = "sa";
   private static final String DEFAULT_PASSWORD = "";
-  private String jdbcUrl = "jdbc:h2:file:./metrics_db;DB_CLOSE_DELAY=-1;MODE=MYSQL;AUTO_SERVER=TRUE";
+  private String jdbcUrl =
+      "jdbc:h2:file:./metrics_db;DB_CLOSE_DELAY=-1;MODE=MYSQL;AUTO_SERVER=TRUE";
   private String username = DEFAULT_USER;
   private String password = DEFAULT_PASSWORD;
   private int partitionColumnLength = DEFAULT_PARTITION_COLUMN_LENGTH;
@@ -196,7 +196,9 @@ public class H2MetricsRepository implements MetricsRepository {
     try (Connection conn = getConnection();
         PreparedStatement updateStmt =
             conn.prepareStatement(
-                normalizedPartition.isPresent() ? updateSqlWithPartition : updateSqlWithoutPartition)) {
+                normalizedPartition.isPresent()
+                    ? updateSqlWithPartition
+                    : updateSqlWithoutPartition)) {
       updateStmt.setString(1, metricValue);
       updateStmt.setString(2, normalizedIdentifier);
       updateStmt.setString(3, normalizedMetricName);
@@ -412,9 +414,7 @@ public class H2MetricsRepository implements MetricsRepository {
   @Override
   public int cleanupTableMetricsBefore(long beforeTimestamp) {
     Preconditions.checkArgument(
-        beforeTimestamp >= 0,
-        "beforeTimestamp must be non-negative, but got %s",
-        beforeTimestamp);
+        beforeTimestamp >= 0, "beforeTimestamp must be non-negative, but got %s", beforeTimestamp);
     Preconditions.checkArgument(
         beforeTimestamp <= MAX_REASONABLE_EPOCH_SECONDS,
         "beforeTimestamp must be epoch seconds, but got suspiciously large value %s",
@@ -436,9 +436,7 @@ public class H2MetricsRepository implements MetricsRepository {
   @Override
   public int cleanupJobMetricsBefore(long beforeTimestamp) {
     Preconditions.checkArgument(
-        beforeTimestamp >= 0,
-        "beforeTimestamp must be non-negative, but got %s",
-        beforeTimestamp);
+        beforeTimestamp >= 0, "beforeTimestamp must be non-negative, but got %s", beforeTimestamp);
     Preconditions.checkArgument(
         beforeTimestamp <= MAX_REASONABLE_EPOCH_SECONDS,
         "beforeTimestamp must be epoch seconds, but got suspiciously large value %s",

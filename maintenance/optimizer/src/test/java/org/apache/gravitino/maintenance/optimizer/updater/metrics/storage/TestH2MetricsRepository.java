@@ -22,11 +22,11 @@ package org.apache.gravitino.maintenance.optimizer.updater.metrics.storage;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.time.Instant;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
 import org.junit.jupiter.api.AfterAll;
@@ -119,8 +119,7 @@ class TestH2MetricsRepository {
     Assertions.assertTrue(metrics.containsKey("metric"));
     Assertions.assertEquals(Arrays.asList("value1"), getMetricValues(metrics.get("metric")));
 
-    metrics =
-        storage.getPartitionMetrics(nameIdentifier, partition2, 0, Long.MAX_VALUE);
+    metrics = storage.getPartitionMetrics(nameIdentifier, partition2, 0, Long.MAX_VALUE);
     Assertions.assertEquals(2, metrics.size());
     Assertions.assertTrue(metrics.containsKey("metric"));
     Assertions.assertEquals(Arrays.asList("value1"), getMetricValues(metrics.get("metric")));
@@ -152,14 +151,12 @@ class TestH2MetricsRepository {
     Assertions.assertEquals(
         Arrays.asList("value1", "value2", "value3"), getMetricValues(metrics.get("metric1")));
 
-    metrics =
-        storage.getPartitionMetrics(nameIdentifier, partition1, 0, Long.MAX_VALUE);
+    metrics = storage.getPartitionMetrics(nameIdentifier, partition1, 0, Long.MAX_VALUE);
     Assertions.assertEquals(1, metrics.size());
     Assertions.assertTrue(metrics.containsKey("metric1"));
     Assertions.assertEquals(Arrays.asList("value1"), getMetricValues(metrics.get("metric1")));
 
-    metrics =
-        storage.getPartitionMetrics(nameIdentifier, partition2, 0, Long.MAX_VALUE);
+    metrics = storage.getPartitionMetrics(nameIdentifier, partition2, 0, Long.MAX_VALUE);
     Assertions.assertEquals(1, metrics.size());
     Assertions.assertTrue(metrics.containsKey("metric1"));
     Assertions.assertEquals(
@@ -182,8 +179,7 @@ class TestH2MetricsRepository {
     Assertions.assertTrue(partitionMetrics.containsKey("metric_upper"));
     Assertions.assertEquals(List.of("v1"), getMetricValues(partitionMetrics.get("metric_upper")));
 
-    Map<String, List<MetricRecord>> jobMetrics =
-        storage.getJobMetrics(queryId, 0, Long.MAX_VALUE);
+    Map<String, List<MetricRecord>> jobMetrics = storage.getJobMetrics(queryId, 0, Long.MAX_VALUE);
     Assertions.assertTrue(jobMetrics.containsKey("job_metric"));
     Assertions.assertEquals(List.of("v1"), getMetricValues(jobMetrics.get("job_metric")));
   }
@@ -308,7 +304,9 @@ class TestH2MetricsRepository {
                 new MetricRecordImpl(currentEpochSeconds(), "x".repeat(1025))));
     Assertions.assertThrows(
         IllegalArgumentException.class,
-        () -> storage.storeJobMetric(id, "metric", new MetricRecordImpl(currentEpochSeconds(), "x".repeat(1025))));
+        () ->
+            storage.storeJobMetric(
+                id, "metric", new MetricRecordImpl(currentEpochSeconds(), "x".repeat(1025))));
   }
 
   @Test
@@ -378,11 +376,15 @@ class TestH2MetricsRepository {
     long now = currentEpochSeconds();
 
     repository.storeTableMetric(
-        tableId, "metric_long_partition", Optional.of(longPartition), new MetricRecordImpl(now, "v1"));
+        tableId,
+        "metric_long_partition",
+        Optional.of(longPartition),
+        new MetricRecordImpl(now, "v1"));
     Map<String, List<MetricRecord>> partitionMetrics =
         repository.getPartitionMetrics(tableId, longPartition, 0, Long.MAX_VALUE);
     Assertions.assertTrue(partitionMetrics.containsKey("metric_long_partition"));
-    Assertions.assertEquals(List.of("v1"), getMetricValues(partitionMetrics.get("metric_long_partition")));
+    Assertions.assertEquals(
+        List.of("v1"), getMetricValues(partitionMetrics.get("metric_long_partition")));
     repository.cleanupTableMetricsBefore(MAX_REASONABLE_EPOCH_SECONDS);
     repository.cleanupJobMetricsBefore(MAX_REASONABLE_EPOCH_SECONDS);
     repository.close();
