@@ -32,6 +32,8 @@ gravitino.optimizer.recommender.strategyProvider = gravitino-strategy-provider
 gravitino.optimizer.recommender.tableMetaProvider = gravitino-table-metadata-provider
 # The job submitter for the recommender (noop-job-submitter keeps recommendations local).
 gravitino.optimizer.recommender.jobSubmitter = noop-job-submitter
+# Strategy type to StrategyHandler class mapping.
+gravitino.optimizer.strategyHandler.compaction.className = org.apache.gravitino.maintenance.optimizer.recommender.handler.compaction.CompactionStrategyHandler
 
 # Updater plugins (push statistics/metrics back into Gravitino)
 # The statistics updater for the recommender/update_statistics tool.

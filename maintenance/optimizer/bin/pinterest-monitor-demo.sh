@@ -27,6 +27,14 @@ OPTIMIZER_CONF="${OPTIMIZER_CONF:-./conf/gravitino-optimizer.conf}"
 MONITOR_SERVICE_URL="${MONITOR_SERVICE_URL:-http://localhost:8000}"
 RANGE_SECONDS="${RANGE_SECONDS:-3600}"
 ACTION_TIME="${ACTION_TIME:-}"
+MONITOR_SERVICE_HOST_PORT="${MONITOR_SERVICE_URL#*://}"
+MONITOR_SERVICE_HOST_PORT="${MONITOR_SERVICE_HOST_PORT%%/*}"
+MONITOR_SERVICE_PORT="${MONITOR_SERVICE_HOST_PORT##*:}"
+
+if ! [[ "${MONITOR_SERVICE_PORT}" =~ ^[0-9]+$ ]]; then
+  echo "Invalid MONITOR_SERVICE_URL (cannot parse numeric port): ${MONITOR_SERVICE_URL}" >&2
+  exit 1
+fi
 
 update_config_property() {
   local key="$1"
@@ -94,8 +102,9 @@ update_config_property "gravitino.optimizer.gravitinoUri" "${GRAVITINO_URI}" "${
 update_config_property "gravitino.optimizer.gravitinoMetalake" "${METALAKE}" "${OPTIMIZER_CONF}"
 update_config_property "gravitino.optimizer.gravitinoDefaultCatalog" "${CATALOG}" "${OPTIMIZER_CONF}"
 update_config_property "gravitino.optimizer.h2-metrics.h2-metrics-storage-path" "./data/metrics.db" "${OPTIMIZER_CONF}"
-update_config_property "gravitino.optimizer.monitor.service.port" "8000" "${OPTIMIZER_CONF}"
+update_config_property "gravitino.optimizer.monitor.service.port" "${MONITOR_SERVICE_PORT}" "${OPTIMIZER_CONF}"
 update_config_property "gravitino.optimizer.monitor.service.interval.seconds" "2" "${OPTIMIZER_CONF}"
+update_config_property "gravitino.optimizer.monitor.callbacks" "console" "${OPTIMIZER_CONF}"
 update_config_property "gravitino.optimizer.monitor.jobProvider" "file-job-provider" "${OPTIMIZER_CONF}"
 update_config_property "gravitino.optimizer.monitor.file-job-provider.file-path" "${JOB_MAPPINGS_PATH}" "${OPTIMIZER_CONF}"
 
