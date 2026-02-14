@@ -79,22 +79,19 @@ public class H2MetricsRepository implements MetricsRepository {
             optimizerProperties,
             OptimizerConfig.OPTIMIZER_PREFIX + H2MetricsRepositoryConfig.H2_METRICS_PREFIX);
     H2MetricsRepositoryConfig config = new H2MetricsRepositoryConfig(h2Properties);
-    username = config.get(H2MetricsRepositoryConfig.USERNAME_CONFIG);
-    password = config.get(H2MetricsRepositoryConfig.PASSWORD_CONFIG);
-    partitionColumnLength = config.get(H2MetricsRepositoryConfig.PARTITION_COLUMN_LENGTH_CONFIG);
-    Preconditions.checkArgument(
-        partitionColumnLength > 0,
-        "Partition column length must be positive, but got %s",
-        partitionColumnLength);
+    this.username = config.get(H2MetricsRepositoryConfig.USERNAME_CONFIG);
+    this.password = config.get(H2MetricsRepositoryConfig.PASSWORD_CONFIG);
+    this.partitionColumnLength =
+        config.get(H2MetricsRepositoryConfig.PARTITION_COLUMN_LENGTH_CONFIG);
     String configuredJdbcUrl = config.get(H2MetricsRepositoryConfig.JDBC_URL_CONFIG);
     if (StringUtils.isNotBlank(configuredJdbcUrl)) {
-      jdbcUrl = constructH2JdbcUrl(configuredJdbcUrl);
+      this.jdbcUrl = constructH2JdbcUrl(configuredJdbcUrl);
     } else {
       String path = resolveStoragePath(config.get(H2MetricsRepositoryConfig.STORAGE_PATH_CONFIG));
-      jdbcUrl = constructH2JdbcUrl("jdbc:h2:file:" + path);
+      this.jdbcUrl = constructH2JdbcUrl("jdbc:h2:file:" + path);
     }
     initializeDatabase();
-    initialized = true;
+    this.initialized = true;
   }
 
   private void initializeDatabase() {
@@ -180,12 +177,6 @@ public class H2MetricsRepository implements MetricsRepository {
     validateWriteArguments(nameIdentifier, metricName, partition, metric);
     String insertSql =
         "INSERT INTO table_metrics (table_identifier, metric_name, table_partition, metric_ts, metric_value) VALUES (?, ?, ?, ?, ?)";
-    String updateSqlWithPartition =
-        "UPDATE table_metrics SET metric_value = ? WHERE table_identifier = ? AND metric_name = ? "
-            + "AND table_partition = ? AND metric_ts = ?";
-    String updateSqlWithoutPartition =
-        "UPDATE table_metrics SET metric_value = ? WHERE table_identifier = ? AND metric_name = ? "
-            + "AND table_partition IS NULL AND metric_ts = ?";
 
     String normalizedIdentifier = normalizeIdentifier(nameIdentifier);
     String normalizedMetricName = normalizeMetricName(metricName);
@@ -194,34 +185,13 @@ public class H2MetricsRepository implements MetricsRepository {
     long metricTimestamp = metric.getTimestamp();
 
     try (Connection conn = getConnection();
-        PreparedStatement updateStmt =
-            conn.prepareStatement(
-                normalizedPartition.isPresent()
-                    ? updateSqlWithPartition
-                    : updateSqlWithoutPartition)) {
-      updateStmt.setString(1, metricValue);
-      updateStmt.setString(2, normalizedIdentifier);
-      updateStmt.setString(3, normalizedMetricName);
-      if (normalizedPartition.isPresent()) {
-        updateStmt.setString(4, normalizedPartition.get());
-        updateStmt.setLong(5, metricTimestamp);
-      } else {
-        updateStmt.setLong(4, metricTimestamp);
-      }
-
-      int updatedRows = updateStmt.executeUpdate();
-      if (updatedRows > 0) {
-        return;
-      }
-
-      try (PreparedStatement insertStmt = conn.prepareStatement(insertSql)) {
-        insertStmt.setString(1, normalizedIdentifier);
-        insertStmt.setString(2, normalizedMetricName);
-        insertStmt.setString(3, normalizedPartition.orElse(null));
-        insertStmt.setLong(4, metricTimestamp);
-        insertStmt.setString(5, metricValue);
-        insertStmt.executeUpdate();
-      }
+        PreparedStatement insertStmt = conn.prepareStatement(insertSql)) {
+      insertStmt.setString(1, normalizedIdentifier);
+      insertStmt.setString(2, normalizedMetricName);
+      insertStmt.setString(3, normalizedPartition.orElse(null));
+      insertStmt.setLong(4, metricTimestamp);
+      insertStmt.setString(5, metricValue);
+      insertStmt.executeUpdate();
     } catch (SQLException e) {
       throw new MetricsStorageException(
           "Failed to store table metric: identifier="
@@ -240,15 +210,13 @@ public class H2MetricsRepository implements MetricsRepository {
     Preconditions.checkArgument(nameIdentifier != null, "nameIdentifier must not be null");
     validateTimeWindow(fromSecs, toSecs);
     Map<String, List<MetricRecord>> resultMap = new HashMap<>();
-    StringBuilder sqlBuilder =
-        new StringBuilder(
-            "SELECT metric_name, metric_ts, metric_value FROM table_metrics "
-                + "WHERE table_identifier = ? AND metric_ts >= ? AND metric_ts < ?");
-
-    sqlBuilder.append(" AND table_partition IS NULL ORDER BY metric_ts ASC");
+    String sql =
+        "SELECT metric_name, metric_ts, metric_value FROM table_metrics "
+            + "WHERE table_identifier = ? AND metric_ts >= ? AND metric_ts < ? "
+            + "AND table_partition IS NULL";
 
     try (Connection conn = getConnection();
-        PreparedStatement pstmt = conn.prepareStatement(sqlBuilder.toString())) {
+        PreparedStatement pstmt = conn.prepareStatement(sql)) {
       pstmt.setString(1, normalizeIdentifier(nameIdentifier));
       pstmt.setLong(2, fromSecs);
       pstmt.setLong(3, toSecs);
@@ -282,15 +250,16 @@ public class H2MetricsRepository implements MetricsRepository {
     Preconditions.checkArgument(StringUtils.isNotBlank(partition), "partition must not be blank");
     validateTimeWindow(fromSecs, toSecs);
     Map<String, List<MetricRecord>> resultMap = new HashMap<>();
+    String normalizedPartition = normalizePartition(partition).orElse(null);
     String sql =
         "SELECT metric_name, metric_ts, metric_value FROM table_metrics "
-            + "WHERE table_identifier = ? AND table_partition = ? AND metric_ts >= ? AND metric_ts < ? "
-            + "ORDER BY metric_ts ASC";
+            + "WHERE table_identifier = ? AND table_partition = ? "
+            + "AND metric_ts >= ? AND metric_ts < ?";
 
     try (Connection conn = getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql)) {
       pstmt.setString(1, normalizeIdentifier(nameIdentifier));
-      pstmt.setString(2, normalizePartition(partition).orElse(null));
+      pstmt.setString(2, normalizedPartition);
       pstmt.setLong(3, fromSecs);
       pstmt.setLong(4, toSecs);
 
@@ -324,9 +293,6 @@ public class H2MetricsRepository implements MetricsRepository {
     validateWriteArguments(nameIdentifier, metricName, Optional.empty(), metric);
     String insertSql =
         "INSERT INTO job_metrics (job_identifier, metric_name, metric_ts, metric_value) VALUES (?, ?, ?, ?)";
-    String updateSql =
-        "UPDATE job_metrics SET metric_value = ? WHERE job_identifier = ? AND metric_name = ? "
-            + "AND metric_ts = ?";
 
     String normalizedIdentifier = normalizeIdentifier(nameIdentifier);
     String normalizedMetricName = normalizeMetricName(metricName);
@@ -334,23 +300,12 @@ public class H2MetricsRepository implements MetricsRepository {
     long metricTimestamp = metric.getTimestamp();
 
     try (Connection conn = getConnection();
-        PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
-      updateStmt.setString(1, metricValue);
-      updateStmt.setString(2, normalizedIdentifier);
-      updateStmt.setString(3, normalizedMetricName);
-      updateStmt.setLong(4, metricTimestamp);
-      int updatedRows = updateStmt.executeUpdate();
-      if (updatedRows > 0) {
-        return;
-      }
-
-      try (PreparedStatement insertStmt = conn.prepareStatement(insertSql)) {
-        insertStmt.setString(1, normalizedIdentifier);
-        insertStmt.setString(2, normalizedMetricName);
-        insertStmt.setLong(3, metricTimestamp);
-        insertStmt.setString(4, metricValue);
-        insertStmt.executeUpdate();
-      }
+        PreparedStatement insertStmt = conn.prepareStatement(insertSql)) {
+      insertStmt.setString(1, normalizedIdentifier);
+      insertStmt.setString(2, normalizedMetricName);
+      insertStmt.setLong(3, metricTimestamp);
+      insertStmt.setString(4, metricValue);
+      insertStmt.executeUpdate();
     } catch (SQLException e) {
       throw new MetricsStorageException(
           "Failed to store job metric: identifier=" + nameIdentifier + ", metric=" + metricName, e);
@@ -365,7 +320,7 @@ public class H2MetricsRepository implements MetricsRepository {
     Map<String, List<MetricRecord>> resultMap = new HashMap<>();
     String sql =
         "SELECT metric_name, metric_ts, metric_value FROM job_metrics "
-            + "WHERE job_identifier = ? AND metric_ts >= ? AND metric_ts < ? ORDER BY metric_ts ASC";
+            + "WHERE job_identifier = ? AND metric_ts >= ? AND metric_ts < ?";
 
     try (Connection conn = getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -602,6 +557,9 @@ public class H2MetricsRepository implements MetricsRepository {
             .doc("Length of table_metrics.table_partition column.")
             .version(ConfigConstants.VERSION_1_2_0)
             .intConf()
+            .checkValue(
+                value -> value != null && value > 0,
+                "partitionColumnLength must be a positive integer")
             .createWithDefault(DEFAULT_PARTITION_COLUMN_LENGTH);
 
     /**

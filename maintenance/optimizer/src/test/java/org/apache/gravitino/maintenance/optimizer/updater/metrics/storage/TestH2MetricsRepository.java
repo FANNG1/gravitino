@@ -92,8 +92,9 @@ class TestH2MetricsRepository {
     Assertions.assertEquals(Arrays.asList("value1"), getMetricValues(metrics.get("metric1")));
 
     Assertions.assertTrue(metrics.containsKey("metric2"));
-    Assertions.assertEquals(1, getMetricValues(metrics.get("metric2")).size());
-    Assertions.assertEquals(Arrays.asList("value2"), getMetricValues(metrics.get("metric2")));
+    Assertions.assertEquals(2, getMetricValues(metrics.get("metric2")).size());
+    Assertions.assertEquals(
+        Arrays.asList("value1", "value2"), getMetricValues(metrics.get("metric2")));
   }
 
   @Test
@@ -124,7 +125,8 @@ class TestH2MetricsRepository {
     Assertions.assertTrue(metrics.containsKey("metric"));
     Assertions.assertEquals(Arrays.asList("value1"), getMetricValues(metrics.get("metric")));
     Assertions.assertTrue(metrics.containsKey("metric2"));
-    Assertions.assertEquals(Arrays.asList("value3"), getMetricValues(metrics.get("metric2")));
+    Assertions.assertEquals(
+        Arrays.asList("value2", "value3"), getMetricValues(metrics.get("metric2")));
   }
 
   @Test
@@ -343,19 +345,6 @@ class TestH2MetricsRepository {
     Map<String, List<MetricRecord>> jobMetrics = storage.getJobMetrics(jobId, 0, Long.MAX_VALUE);
     Assertions.assertTrue(jobMetrics.containsKey("metric_long"));
     Assertions.assertEquals(longValue, jobMetrics.get("metric_long").get(0).getValue());
-  }
-
-  @Test
-  void testStoreAndRetrieveJobMetricsOverwriteOnDuplicateKey() {
-    NameIdentifier jobId = NameIdentifier.of("catalog", "db", "dup_job");
-    long ts = currentEpochSeconds();
-
-    storage.storeJobMetric(jobId, "duration", new MetricRecordImpl(ts, "10"));
-    storage.storeJobMetric(jobId, "duration", new MetricRecordImpl(ts, "20"));
-
-    Map<String, List<MetricRecord>> jobMetrics = storage.getJobMetrics(jobId, 0, Long.MAX_VALUE);
-    Assertions.assertTrue(jobMetrics.containsKey("duration"));
-    Assertions.assertEquals(List.of("20"), getMetricValues(jobMetrics.get("duration")));
   }
 
   @Test
