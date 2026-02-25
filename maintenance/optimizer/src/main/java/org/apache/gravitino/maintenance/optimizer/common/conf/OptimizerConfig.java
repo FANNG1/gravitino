@@ -29,8 +29,8 @@ import org.apache.gravitino.maintenance.optimizer.recommender.job.NoopJobSubmitt
 import org.apache.gravitino.maintenance.optimizer.recommender.statistics.GravitinoStatisticsProvider;
 import org.apache.gravitino.maintenance.optimizer.recommender.strategy.GravitinoStrategyProvider;
 import org.apache.gravitino.maintenance.optimizer.recommender.table.GravitinoTableMetadataProvider;
-import org.apache.gravitino.maintenance.optimizer.updater.GravitinoStatisticsUpdater;
 import org.apache.gravitino.maintenance.optimizer.updater.metrics.GravitinoMetricsUpdater;
+import org.apache.gravitino.maintenance.optimizer.updater.statistics.GravitinoStatisticsUpdater;
 
 /**
  * Central configuration holder for the optimizer/recommender runtime. Keys are grouped under the

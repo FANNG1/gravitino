@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.gravitino.maintenance.optimizer.updater;
+package org.apache.gravitino.maintenance.optimizer.updater.statistics;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
