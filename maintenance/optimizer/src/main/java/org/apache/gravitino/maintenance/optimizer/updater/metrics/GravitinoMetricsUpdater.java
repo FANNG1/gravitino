@@ -22,7 +22,7 @@ package org.apache.gravitino.maintenance.optimizer.updater.metrics;
 import java.util.List;
 import org.apache.gravitino.maintenance.optimizer.api.updater.MetricsUpdater;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
-import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.H2MetricsRepository;
+import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.GenericJdbcMetricsRepository;
 import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.JobMetricWriteRequest;
 import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.MetricsRepository;
 import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.TableMetricWriteRequest;
@@ -41,7 +41,7 @@ public class GravitinoMetricsUpdater implements MetricsUpdater {
 
   @Override
   public void initialize(OptimizerEnv optimizerEnv) {
-    this.metricsStorage = new H2MetricsRepository();
+    this.metricsStorage = new GenericJdbcMetricsRepository();
     this.metricsStorage.initialize(optimizerEnv.config().getAllConfig());
   }
 

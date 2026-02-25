@@ -20,6 +20,7 @@
 package org.apache.gravitino.maintenance.optimizer.updater.metrics.storage;
 
 import com.google.common.base.Preconditions;
+import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
@@ -49,21 +50,23 @@ public class GenericJdbcMetricsRepository extends JdbcMetricsRepository {
     Map<String, String> jdbcProperties =
         MapUtils.getPrefixMap(
             optimizerProperties, OptimizerConfig.OPTIMIZER_PREFIX + JDBC_METRICS_PREFIX);
+    Map<String, String> effectiveJdbcProperties = new HashMap<>(jdbcProperties);
 
-    String jdbcUrl = jdbcProperties.getOrDefault(JDBC_URL, DEFAULT_H2_JDBC_URL);
+    String jdbcUrl = effectiveJdbcProperties.getOrDefault(JDBC_URL, DEFAULT_H2_JDBC_URL);
     if (StringUtils.isBlank(jdbcUrl)) {
       jdbcUrl = DEFAULT_H2_JDBC_URL;
     }
-    String username = jdbcProperties.getOrDefault(JDBC_USER, DEFAULT_USER);
+    String username = effectiveJdbcProperties.getOrDefault(JDBC_USER, DEFAULT_USER);
     int partitionColumnLength =
-        parseInt(jdbcProperties.get(PARTITION_COLUMN_LENGTH), DEFAULT_PARTITION_COLUMN_LENGTH);
+        parseInt(
+            effectiveJdbcProperties.get(PARTITION_COLUMN_LENGTH), DEFAULT_PARTITION_COLUMN_LENGTH);
 
     Preconditions.checkArgument(
         StringUtils.isNotBlank(username), "Property %s must be non-empty", JDBC_USER);
 
-    jdbcProperties.put(JDBC_URL, jdbcUrl);
+    effectiveJdbcProperties.put(JDBC_URL, jdbcUrl);
     DataSourceJdbcConnectionProvider connectionProvider =
-        new DataSourceJdbcConnectionProvider(jdbcProperties);
+        new DataSourceJdbcConnectionProvider(effectiveJdbcProperties);
     initializeStorage(connectionProvider, partitionColumnLength);
   }
 

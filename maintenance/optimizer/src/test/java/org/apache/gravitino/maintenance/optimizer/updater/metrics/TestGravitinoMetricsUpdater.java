@@ -26,7 +26,7 @@ import java.util.Optional;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
-import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.H2MetricsRepository;
+import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.GenericJdbcMetricsRepository;
 import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.JobMetricWriteRequest;
 import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.MetricRecord;
 import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.MetricRecordImpl;
@@ -118,7 +118,7 @@ class TestGravitinoMetricsUpdater {
   }
 
   @Test
-  void testInitializeDefaultUsesH2Repository() throws Exception {
+  void testInitializeDefaultUsesGenericJdbcRepository() throws Exception {
     GravitinoMetricsUpdater updater = new GravitinoMetricsUpdater();
     String storagePath = "data/test-metrics-updater-default-" + System.nanoTime() + ".db";
     updater.initialize(
@@ -136,12 +136,12 @@ class TestGravitinoMetricsUpdater {
                     OptimizerConfig.OPTIMIZER_PREFIX + "jdbcMetrics." + "testOnBorrow",
                     "false"))));
     MetricsRepository repository = getMetricsRepository(updater);
-    Assertions.assertInstanceOf(H2MetricsRepository.class, repository);
+    Assertions.assertInstanceOf(GenericJdbcMetricsRepository.class, repository);
     updater.close();
   }
 
   @Test
-  void testInitializeWithJdbcConfigStillUsesH2Repository() throws Exception {
+  void testInitializeWithJdbcConfigStillUsesGenericJdbcRepository() throws Exception {
     GravitinoMetricsUpdater updater = new GravitinoMetricsUpdater();
     OptimizerConfig config =
         new OptimizerConfig(
@@ -154,7 +154,7 @@ class TestGravitinoMetricsUpdater {
                 ""));
     updater.initialize(new OptimizerEnv(config));
     MetricsRepository repository = getMetricsRepository(updater);
-    Assertions.assertInstanceOf(H2MetricsRepository.class, repository);
+    Assertions.assertInstanceOf(GenericJdbcMetricsRepository.class, repository);
     updater.close();
   }
 
