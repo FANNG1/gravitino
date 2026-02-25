@@ -62,8 +62,9 @@ public class H2MetricsRepository implements MetricsRepository {
 
   private static final String DEFAULT_USER = "sa";
   private static final String DEFAULT_PASSWORD = "";
-  private String jdbcUrl =
+  private static final String DEFAULT_JDBC_URL =
       "jdbc:h2:file:./metrics_db;DB_CLOSE_DELAY=-1;MODE=MYSQL;AUTO_SERVER=TRUE";
+  private String jdbcUrl = DEFAULT_JDBC_URL;
   private String username = DEFAULT_USER;
   private String password = DEFAULT_PASSWORD;
   private int partitionColumnLength = DEFAULT_PARTITION_COLUMN_LENGTH;
