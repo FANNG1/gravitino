@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
-import org.apache.gravitino.maintenance.optimizer.api.common.TableStatisticsBundle;
+import org.apache.gravitino.maintenance.optimizer.api.common.TableAndPartitionStatistics;
 
 /** Reader abstraction for table, partition, and job statistics. */
 public interface StatisticsReader {
@@ -33,14 +33,14 @@ public interface StatisticsReader {
    * @param tableIdentifier table identifier
    * @return table statistics bundle for the table, empty when absent
    */
-  TableStatisticsBundle bulkReadTableStatistics(NameIdentifier tableIdentifier);
+  TableAndPartitionStatistics bulkReadTableStatistics(NameIdentifier tableIdentifier);
 
   /**
    * Reads table-level and partition-level statistics for all tables in the source.
    *
    * @return map keyed by table identifier
    */
-  Map<NameIdentifier, TableStatisticsBundle> bulkReadAllTableStatistics();
+  Map<NameIdentifier, TableAndPartitionStatistics> bulkReadAllTableStatistics();
 
   /**
    * Reads job-level statistics for a single job.

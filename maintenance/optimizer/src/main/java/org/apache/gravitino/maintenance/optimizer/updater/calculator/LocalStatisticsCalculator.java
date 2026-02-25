@@ -26,7 +26,7 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
-import org.apache.gravitino.maintenance.optimizer.api.common.TableStatisticsBundle;
+import org.apache.gravitino.maintenance.optimizer.api.common.TableAndPartitionStatistics;
 import org.apache.gravitino.maintenance.optimizer.api.updater.SupportsCalculateBulkJobStatistics;
 import org.apache.gravitino.maintenance.optimizer.api.updater.SupportsCalculateBulkTableStatistics;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
@@ -84,14 +84,14 @@ public class LocalStatisticsCalculator
   }
 
   @Override
-  public TableStatisticsBundle calculateTableStatistics(NameIdentifier tableIdentifier) {
+  public TableAndPartitionStatistics calculateTableStatistics(NameIdentifier tableIdentifier) {
     ensureInitialized();
     Preconditions.checkArgument(tableIdentifier != null, "tableIdentifier must not be null");
     return statisticsReader.bulkReadTableStatistics(tableIdentifier);
   }
 
   @Override
-  public Map<NameIdentifier, TableStatisticsBundle> calculateBulkTableStatistics() {
+  public Map<NameIdentifier, TableAndPartitionStatistics> calculateBulkTableStatistics() {
     ensureInitialized();
     return statisticsReader.bulkReadAllTableStatistics();
   }

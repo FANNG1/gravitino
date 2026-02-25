@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
 import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
-import org.apache.gravitino.maintenance.optimizer.api.common.TableStatisticsBundle;
+import org.apache.gravitino.maintenance.optimizer.api.common.TableAndPartitionStatistics;
 import org.apache.gravitino.maintenance.optimizer.api.updater.MetricsUpdater;
 import org.apache.gravitino.maintenance.optimizer.api.updater.StatisticsCalculator;
 import org.apache.gravitino.maintenance.optimizer.api.updater.StatisticsUpdater;
@@ -111,7 +111,7 @@ public class Updater implements AutoCloseable {
       if (calculator instanceof SupportsCalculateTableStatistics) {
         SupportsCalculateTableStatistics supportTableStatistics =
             ((SupportsCalculateTableStatistics) calculator);
-        TableStatisticsBundle bundle =
+        TableAndPartitionStatistics bundle =
             supportTableStatistics.calculateTableStatistics(nameIdentifier);
         List<StatisticEntry<?>> statistics = bundle != null ? bundle.tableStatistics() : List.of();
         Map<PartitionPath, List<StatisticEntry<?>>> partitionStatistics =
@@ -178,7 +178,7 @@ public class Updater implements AutoCloseable {
     long jobRecords = 0;
 
     if (calculator instanceof SupportsCalculateBulkTableStatistics supportBulkTableStatistics) {
-      Map<NameIdentifier, TableStatisticsBundle> allTableStatistics =
+      Map<NameIdentifier, TableAndPartitionStatistics> allTableStatistics =
           supportBulkTableStatistics.calculateBulkTableStatistics();
       if (allTableStatistics == null) {
         allTableStatistics = Map.of();
@@ -443,7 +443,7 @@ public class Updater implements AutoCloseable {
   }
 
   private long countAllTableStatistics(
-      Map<NameIdentifier, TableStatisticsBundle> statisticsByTable) {
+      Map<NameIdentifier, TableAndPartitionStatistics> statisticsByTable) {
     if (statisticsByTable == null) {
       return 0;
     }
@@ -453,7 +453,7 @@ public class Updater implements AutoCloseable {
   }
 
   private long countAllPartitionStatistics(
-      Map<NameIdentifier, TableStatisticsBundle> partitionStatisticsByTable) {
+      Map<NameIdentifier, TableAndPartitionStatistics> partitionStatisticsByTable) {
     if (partitionStatisticsByTable == null) {
       return 0;
     }

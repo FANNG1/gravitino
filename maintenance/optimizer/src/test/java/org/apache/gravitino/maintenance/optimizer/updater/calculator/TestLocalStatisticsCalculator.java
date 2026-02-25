@@ -28,7 +28,7 @@ import java.util.Map;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
 import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
-import org.apache.gravitino.maintenance.optimizer.api.common.TableStatisticsBundle;
+import org.apache.gravitino.maintenance.optimizer.api.common.TableAndPartitionStatistics;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.maintenance.optimizer.common.PartitionEntryImpl;
 import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
@@ -77,7 +77,7 @@ class TestLocalStatisticsCalculator {
     OptimizerEnv env = new OptimizerEnv(createConfig(statsFile.toString(), null));
     calculator.initialize(env);
 
-    Map<NameIdentifier, TableStatisticsBundle> allStatistics =
+    Map<NameIdentifier, TableAndPartitionStatistics> allStatistics =
         calculator.calculateBulkTableStatistics();
     Assertions.assertEquals(2, allStatistics.size());
 
@@ -212,7 +212,7 @@ class TestLocalStatisticsCalculator {
     OptimizerEnv env = new OptimizerEnv(createConfig(null, payload));
     calculator.initialize(env);
 
-    Map<NameIdentifier, TableStatisticsBundle> allStatistics =
+    Map<NameIdentifier, TableAndPartitionStatistics> allStatistics =
         calculator.calculateBulkTableStatistics();
     Assertions.assertEquals(2, allStatistics.size());
 

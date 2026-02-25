@@ -37,7 +37,7 @@ import org.apache.gravitino.json.JsonUtils;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionEntry;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
 import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
-import org.apache.gravitino.maintenance.optimizer.api.common.TableStatisticsBundle;
+import org.apache.gravitino.maintenance.optimizer.api.common.TableAndPartitionStatistics;
 import org.apache.gravitino.maintenance.optimizer.common.PartitionEntryImpl;
 import org.apache.gravitino.maintenance.optimizer.common.StatisticEntryImpl;
 import org.apache.gravitino.stats.StatisticValue;
@@ -76,13 +76,13 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
   }
 
   @Override
-  public TableStatisticsBundle bulkReadTableStatistics(NameIdentifier tableIdentifier) {
-    return aggregateTableStatisticsBundle(tableIdentifier);
+  public TableAndPartitionStatistics bulkReadTableStatistics(NameIdentifier tableIdentifier) {
+    return aggregateTableAndPartitionStatistics(tableIdentifier);
   }
 
   @Override
-  public Map<NameIdentifier, TableStatisticsBundle> bulkReadAllTableStatistics() {
-    return aggregateAllTableStatisticsBundles();
+  public Map<NameIdentifier, TableAndPartitionStatistics> bulkReadAllTableStatistics() {
+    return aggregateAllTableAndPartitionStatistics();
   }
 
   @Override
@@ -153,9 +153,10 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
     return aggregated;
   }
 
-  private TableStatisticsBundle aggregateTableStatisticsBundle(NameIdentifier targetIdentifier) {
+  private TableAndPartitionStatistics aggregateTableAndPartitionStatistics(
+      NameIdentifier targetIdentifier) {
     if (targetIdentifier == null) {
-      return new TableStatisticsBundle(ImmutableList.of(), Map.of());
+      return new TableAndPartitionStatistics(ImmutableList.of(), Map.of());
     }
 
     Map<String, StatisticValue<?>> tableStatistics = new LinkedHashMap<>();
@@ -190,11 +191,12 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
           }
         });
 
-    return new TableStatisticsBundle(
+    return new TableAndPartitionStatistics(
         toStatisticEntries(tableStatistics), toPartitionStatisticEntries(partitionStatistics));
   }
 
-  private Map<NameIdentifier, TableStatisticsBundle> aggregateAllTableStatisticsBundles() {
+  private Map<NameIdentifier, TableAndPartitionStatistics>
+      aggregateAllTableAndPartitionStatistics() {
     Map<NameIdentifier, Map<String, StatisticValue<?>>> tableStatisticsByIdentifier =
         new LinkedHashMap<>();
     Map<NameIdentifier, Map<PartitionPath, Map<String, StatisticValue<?>>>>
@@ -235,19 +237,19 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
           }
         });
 
-    Map<NameIdentifier, TableStatisticsBundle> bundles = new LinkedHashMap<>();
+    Map<NameIdentifier, TableAndPartitionStatistics> bundles = new LinkedHashMap<>();
     tableStatisticsByIdentifier.forEach(
         (identifier, tableStats) ->
             bundles.put(
                 identifier,
-                new TableStatisticsBundle(
+                new TableAndPartitionStatistics(
                     toStatisticEntries(tableStats),
                     toPartitionStatisticEntries(partitionStatisticsByIdentifier.get(identifier)))));
     partitionStatisticsByIdentifier.forEach(
         (identifier, partitionStats) ->
             bundles.putIfAbsent(
                 identifier,
-                new TableStatisticsBundle(
+                new TableAndPartitionStatistics(
                     ImmutableList.of(), toPartitionStatisticEntries(partitionStats))));
     return bundles;
   }
