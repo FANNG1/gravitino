@@ -36,9 +36,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class TestH2MetricsRepository {
+class TestGenericJdbcMetricsRepository {
   private static final long MAX_REASONABLE_EPOCH_SECONDS = 9_999_999_999L;
-  private H2MetricsRepository storage;
+  private GenericJdbcMetricsRepository storage;
   private String jdbcUrl;
 
   @BeforeAll
@@ -46,7 +46,7 @@ class TestH2MetricsRepository {
     cleanupLegacyDataFiles();
     Path testDir = Files.createTempDirectory("optimizer-h2-metrics");
     jdbcUrl = "jdbc:h2:file:" + testDir.resolve("metrics.db");
-    storage = new H2MetricsRepository();
+    storage = new GenericJdbcMetricsRepository();
     storage.initialize(createJdbcConfigs(jdbcUrl));
     storage.cleanupTableMetricsBefore(MAX_REASONABLE_EPOCH_SECONDS);
     storage.cleanupJobMetricsBefore(MAX_REASONABLE_EPOCH_SECONDS);
@@ -191,7 +191,7 @@ class TestH2MetricsRepository {
 
   @Test
   void testInitializeTwiceFails() {
-    H2MetricsRepository repository = new H2MetricsRepository();
+    GenericJdbcMetricsRepository repository = new GenericJdbcMetricsRepository();
     repository.initialize(createJdbcConfigs(jdbcUrl + "_init_twice"));
 
     IllegalStateException e =
@@ -350,7 +350,7 @@ class TestH2MetricsRepository {
 
   @Test
   void testConfigurablePartitionColumnLength() {
-    H2MetricsRepository repository = new H2MetricsRepository();
+    GenericJdbcMetricsRepository repository = new GenericJdbcMetricsRepository();
     Map<String, String> configs =
         Map.of(
             OptimizerConfig.OPTIMIZER_PREFIX
@@ -412,7 +412,7 @@ class TestH2MetricsRepository {
   }
 
   private void storeTableMetricOn(
-      H2MetricsRepository repository,
+      GenericJdbcMetricsRepository repository,
       NameIdentifier nameIdentifier,
       String metricName,
       Optional<String> partition,
