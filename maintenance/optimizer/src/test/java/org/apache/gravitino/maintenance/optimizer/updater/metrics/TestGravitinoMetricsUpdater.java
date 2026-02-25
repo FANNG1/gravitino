@@ -21,8 +21,12 @@ package org.apache.gravitino.maintenance.optimizer.updater.metrics;
 
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
+import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
+import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.H2MetricsRepository;
 import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.JobMetricWriteRequest;
 import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.MetricRecord;
 import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.MetricRecordImpl;
@@ -113,10 +117,58 @@ class TestGravitinoMetricsUpdater {
     Mockito.verify(repository).close();
   }
 
+  @Test
+  void testInitializeDefaultUsesH2Repository() throws Exception {
+    GravitinoMetricsUpdater updater = new GravitinoMetricsUpdater();
+    String storagePath = "data/test-metrics-updater-default-" + System.nanoTime() + ".db";
+    updater.initialize(
+        new OptimizerEnv(
+            new OptimizerConfig(
+                Map.of(
+                    OptimizerConfig.OPTIMIZER_PREFIX + "jdbcMetrics." + "jdbcUrl",
+                    "jdbc:h2:file:./" + storagePath + ";DB_CLOSE_DELAY=-1;MODE=MYSQL",
+                    OptimizerConfig.OPTIMIZER_PREFIX + "jdbcMetrics." + "jdbcUser",
+                    "sa",
+                    OptimizerConfig.OPTIMIZER_PREFIX + "jdbcMetrics." + "jdbcPassword",
+                    "",
+                    OptimizerConfig.OPTIMIZER_PREFIX + "jdbcMetrics." + "jdbcDriver",
+                    "org.h2.Driver",
+                    OptimizerConfig.OPTIMIZER_PREFIX + "jdbcMetrics." + "testOnBorrow",
+                    "false"))));
+    MetricsRepository repository = getMetricsRepository(updater);
+    Assertions.assertInstanceOf(H2MetricsRepository.class, repository);
+    updater.close();
+  }
+
+  @Test
+  void testInitializeWithJdbcConfigStillUsesH2Repository() throws Exception {
+    GravitinoMetricsUpdater updater = new GravitinoMetricsUpdater();
+    OptimizerConfig config =
+        new OptimizerConfig(
+            Map.of(
+                "gravitino.optimizer.jdbcMetrics.jdbcUrl",
+                "jdbc:h2:mem:test_metrics_updater_repo_type;DB_CLOSE_DELAY=-1",
+                "gravitino.optimizer.jdbcMetrics.jdbcUser",
+                "sa",
+                "gravitino.optimizer.jdbcMetrics.jdbcPassword",
+                ""));
+    updater.initialize(new OptimizerEnv(config));
+    MetricsRepository repository = getMetricsRepository(updater);
+    Assertions.assertInstanceOf(H2MetricsRepository.class, repository);
+    updater.close();
+  }
+
   private void setMetricsRepository(GravitinoMetricsUpdater updater, MetricsRepository repository)
       throws ReflectiveOperationException {
     Field field = GravitinoMetricsUpdater.class.getDeclaredField("metricsStorage");
     field.setAccessible(true);
     field.set(updater, repository);
+  }
+
+  private MetricsRepository getMetricsRepository(GravitinoMetricsUpdater updater)
+      throws ReflectiveOperationException {
+    Field field = GravitinoMetricsUpdater.class.getDeclaredField("metricsStorage");
+    field.setAccessible(true);
+    return (MetricsRepository) field.get(updater);
   }
 }

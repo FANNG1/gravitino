@@ -39,12 +39,15 @@ import org.junit.jupiter.api.TestInstance;
 class TestH2MetricsRepository {
   private static final long MAX_REASONABLE_EPOCH_SECONDS = 9_999_999_999L;
   private H2MetricsRepository storage;
+  private String jdbcUrl;
 
   @BeforeAll
   void setUp() throws IOException {
     cleanupLegacyDataFiles();
+    Path testDir = Files.createTempDirectory("optimizer-h2-metrics");
+    jdbcUrl = "jdbc:h2:file:" + testDir.resolve("metrics.db");
     storage = new H2MetricsRepository();
-    storage.initialize(Map.of());
+    storage.initialize(createJdbcConfigs(jdbcUrl));
     storage.cleanupTableMetricsBefore(MAX_REASONABLE_EPOCH_SECONDS);
     storage.cleanupJobMetricsBefore(MAX_REASONABLE_EPOCH_SECONDS);
   }
@@ -189,10 +192,12 @@ class TestH2MetricsRepository {
   @Test
   void testInitializeTwiceFails() {
     H2MetricsRepository repository = new H2MetricsRepository();
-    repository.initialize(Map.of());
+    repository.initialize(createJdbcConfigs(jdbcUrl + "_init_twice"));
 
     IllegalStateException e =
-        Assertions.assertThrows(IllegalStateException.class, () -> repository.initialize(Map.of()));
+        Assertions.assertThrows(
+            IllegalStateException.class,
+            () -> repository.initialize(createJdbcConfigs(jdbcUrl + "_init_twice")));
     Assertions.assertTrue(e.getMessage().contains("already been initialized"));
   }
 
@@ -349,8 +354,20 @@ class TestH2MetricsRepository {
     Map<String, String> configs =
         Map.of(
             OptimizerConfig.OPTIMIZER_PREFIX
-                + H2MetricsRepository.H2MetricsRepositoryConfig.H2_METRICS_PREFIX
-                + H2MetricsRepository.H2MetricsRepositoryConfig.PARTITION_COLUMN_LENGTH,
+                + GenericJdbcMetricsRepository.JDBC_METRICS_PREFIX
+                + GenericJdbcMetricsRepository.JDBC_URL,
+            jdbcUrl + "_partition_length",
+            OptimizerConfig.OPTIMIZER_PREFIX
+                + GenericJdbcMetricsRepository.JDBC_METRICS_PREFIX
+                + GenericJdbcMetricsRepository.JDBC_USER,
+            "sa",
+            OptimizerConfig.OPTIMIZER_PREFIX
+                + GenericJdbcMetricsRepository.JDBC_METRICS_PREFIX
+                + GenericJdbcMetricsRepository.JDBC_PASSWORD,
+            "",
+            OptimizerConfig.OPTIMIZER_PREFIX
+                + GenericJdbcMetricsRepository.JDBC_METRICS_PREFIX
+                + GenericJdbcMetricsRepository.PARTITION_COLUMN_LENGTH,
             "2048");
     repository.initialize(configs);
     repository.cleanupTableMetricsBefore(MAX_REASONABLE_EPOCH_SECONDS);
@@ -421,5 +438,25 @@ class TestH2MetricsRepository {
 
   private void deleteIfExists(String filePath) throws IOException {
     Files.deleteIfExists(Path.of(filePath));
+  }
+
+  private Map<String, String> createJdbcConfigs(String jdbcUrl) {
+    return Map.of(
+        OptimizerConfig.OPTIMIZER_PREFIX
+            + GenericJdbcMetricsRepository.JDBC_METRICS_PREFIX
+            + GenericJdbcMetricsRepository.JDBC_URL,
+        jdbcUrl,
+        OptimizerConfig.OPTIMIZER_PREFIX
+            + GenericJdbcMetricsRepository.JDBC_METRICS_PREFIX
+            + GenericJdbcMetricsRepository.JDBC_USER,
+        "sa",
+        OptimizerConfig.OPTIMIZER_PREFIX
+            + GenericJdbcMetricsRepository.JDBC_METRICS_PREFIX
+            + GenericJdbcMetricsRepository.JDBC_PASSWORD,
+        "",
+        OptimizerConfig.OPTIMIZER_PREFIX
+            + GenericJdbcMetricsRepository.JDBC_METRICS_PREFIX
+            + GenericJdbcMetricsRepository.JDBC_DRIVER,
+        "org.h2.Driver");
   }
 }

@@ -42,7 +42,7 @@ public class GravitinoMetricsUpdater implements MetricsUpdater {
   @Override
   public void initialize(OptimizerEnv optimizerEnv) {
     this.metricsStorage = new H2MetricsRepository();
-    metricsStorage.initialize(optimizerEnv.config().getAllConfig());
+    this.metricsStorage.initialize(optimizerEnv.config().getAllConfig());
   }
 
   @Override
