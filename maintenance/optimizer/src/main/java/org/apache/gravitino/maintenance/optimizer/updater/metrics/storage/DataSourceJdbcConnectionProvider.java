@@ -37,7 +37,7 @@ public class DataSourceJdbcConnectionProvider {
   private final BasicDataSource dataSource;
 
   public DataSourceJdbcConnectionProvider(Map<String, String> jdbcProperties) {
-    JdbcConnectionConfig config = JdbcConnectionConfig.fromProperties(jdbcProperties);
+    JdbcConnectionConfig config = new JdbcConnectionConfig(jdbcProperties);
 
     BasicDataSource ds = new BasicDataSource();
     ds.setUrl(config.jdbcUrl());

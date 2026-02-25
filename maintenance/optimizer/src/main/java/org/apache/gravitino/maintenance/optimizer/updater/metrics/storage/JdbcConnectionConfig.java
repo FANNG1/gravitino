@@ -19,154 +19,113 @@
 
 package org.apache.gravitino.maintenance.optimizer.updater.metrics.storage;
 
-import com.google.common.base.Preconditions;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.gravitino.Config;
+import org.apache.gravitino.config.ConfigBuilder;
+import org.apache.gravitino.config.ConfigConstants;
+import org.apache.gravitino.config.ConfigEntry;
 
-/** Parsed and validated JDBC connection settings for metrics storage. */
-public class JdbcConnectionConfig {
+/** Typed JDBC connection config holder for metrics storage repositories. */
+public class JdbcConnectionConfig extends Config {
 
-  private final String jdbcUrl;
-  private final String username;
-  private final String password;
-  private final String driverClassName;
-  private final int maxTotal;
-  private final int minIdle;
-  private final long maxWaitMillis;
-  private final boolean testOnBorrow;
+  public static final ConfigEntry<String> JDBC_URL_CONFIG =
+      new ConfigBuilder(GenericJdbcMetricsRepository.JDBC_URL)
+          .doc("JDBC URL for metrics storage.")
+          .version(ConfigConstants.VERSION_1_2_0)
+          .stringConf()
+          .checkValue(StringUtils::isNotBlank, ConfigConstants.NOT_BLANK_ERROR_MSG)
+          .create();
 
-  private JdbcConnectionConfig(
-      String jdbcUrl,
-      String username,
-      String password,
-      String driverClassName,
-      int maxTotal,
-      int minIdle,
-      long maxWaitMillis,
-      boolean testOnBorrow) {
-    this.jdbcUrl = jdbcUrl;
-    this.username = username;
-    this.password = password;
-    this.driverClassName = driverClassName;
-    this.maxTotal = maxTotal;
-    this.minIdle = minIdle;
-    this.maxWaitMillis = maxWaitMillis;
-    this.testOnBorrow = testOnBorrow;
-  }
+  public static final ConfigEntry<String> JDBC_USER_CONFIG =
+      new ConfigBuilder(GenericJdbcMetricsRepository.JDBC_USER)
+          .doc("JDBC username for metrics storage.")
+          .version(ConfigConstants.VERSION_1_2_0)
+          .stringConf()
+          .checkValue(StringUtils::isNotBlank, ConfigConstants.NOT_BLANK_ERROR_MSG)
+          .createWithDefault(JdbcMetricsRepository.DEFAULT_USER);
 
-  public static JdbcConnectionConfig fromProperties(Map<String, String> jdbcProperties) {
-    Preconditions.checkArgument(jdbcProperties != null, "jdbcProperties must not be null");
-    String jdbcUrl = getString(jdbcProperties, GenericJdbcMetricsRepository.JDBC_URL, null);
-    String username =
-        getString(
-            jdbcProperties,
-            GenericJdbcMetricsRepository.JDBC_USER,
-            JdbcMetricsRepository.DEFAULT_USER);
-    String password =
-        getString(
-            jdbcProperties,
-            GenericJdbcMetricsRepository.JDBC_PASSWORD,
-            JdbcMetricsRepository.DEFAULT_PASSWORD);
-    String driverClassName =
-        getString(jdbcProperties, GenericJdbcMetricsRepository.JDBC_DRIVER, "");
-    int maxTotal =
-        getInt(
-            jdbcProperties,
-            GenericJdbcMetricsRepository.POOL_MAX_SIZE,
-            DataSourceJdbcConnectionProvider.DEFAULT_MAX_TOTAL);
-    int minIdle =
-        getInt(
-            jdbcProperties,
-            GenericJdbcMetricsRepository.POOL_MIN_IDLE,
-            DataSourceJdbcConnectionProvider.DEFAULT_MIN_IDLE);
-    long maxWaitMillis =
-        getLong(
-            jdbcProperties,
-            GenericJdbcMetricsRepository.CONNECTION_TIMEOUT_MS,
-            DataSourceJdbcConnectionProvider.DEFAULT_MAX_WAIT_MILLIS);
-    boolean testOnBorrow =
-        getBoolean(
-            jdbcProperties,
-            GenericJdbcMetricsRepository.TEST_ON_BORROW,
-            DataSourceJdbcConnectionProvider.DEFAULT_TEST_ON_BORROW);
+  public static final ConfigEntry<String> JDBC_PASSWORD_CONFIG =
+      new ConfigBuilder(GenericJdbcMetricsRepository.JDBC_PASSWORD)
+          .doc("JDBC password for metrics storage.")
+          .version(ConfigConstants.VERSION_1_2_0)
+          .stringConf()
+          .createWithDefault(JdbcMetricsRepository.DEFAULT_PASSWORD);
 
-    Preconditions.checkArgument(jdbcUrl != null && !jdbcUrl.isBlank(), "jdbcUrl must not be blank");
-    Preconditions.checkArgument(
-        username != null && !username.isBlank(), "username must not be blank");
-    Preconditions.checkArgument(maxTotal > 0, "maxTotal must be positive");
-    Preconditions.checkArgument(minIdle >= 0, "minIdle must be non-negative");
-    Preconditions.checkArgument(maxWaitMillis > 0, "maxWaitMillis must be positive");
+  public static final ConfigEntry<String> JDBC_DRIVER_CONFIG =
+      new ConfigBuilder(GenericJdbcMetricsRepository.JDBC_DRIVER)
+          .doc("Optional JDBC driver class name.")
+          .version(ConfigConstants.VERSION_1_2_0)
+          .stringConf()
+          .createWithDefault("");
 
-    return new JdbcConnectionConfig(
-        jdbcUrl,
-        username,
-        password,
-        driverClassName,
-        maxTotal,
-        minIdle,
-        maxWaitMillis,
-        testOnBorrow);
+  public static final ConfigEntry<Integer> POOL_MAX_SIZE_CONFIG =
+      new ConfigBuilder(GenericJdbcMetricsRepository.POOL_MAX_SIZE)
+          .doc("JDBC connection pool max total size.")
+          .version(ConfigConstants.VERSION_1_2_0)
+          .intConf()
+          .checkValue(v -> v > 0, ConfigConstants.POSITIVE_NUMBER_ERROR_MSG)
+          .createWithDefault(DataSourceJdbcConnectionProvider.DEFAULT_MAX_TOTAL);
+
+  public static final ConfigEntry<Integer> POOL_MIN_IDLE_CONFIG =
+      new ConfigBuilder(GenericJdbcMetricsRepository.POOL_MIN_IDLE)
+          .doc("JDBC connection pool min idle size.")
+          .version(ConfigConstants.VERSION_1_2_0)
+          .intConf()
+          .checkValue(v -> v >= 0, "The value must be non-negative")
+          .createWithDefault(DataSourceJdbcConnectionProvider.DEFAULT_MIN_IDLE);
+
+  public static final ConfigEntry<Long> CONNECTION_TIMEOUT_MS_CONFIG =
+      new ConfigBuilder(GenericJdbcMetricsRepository.CONNECTION_TIMEOUT_MS)
+          .doc("JDBC connection max wait timeout in milliseconds.")
+          .version(ConfigConstants.VERSION_1_2_0)
+          .longConf()
+          .checkValue(v -> v > 0, ConfigConstants.POSITIVE_NUMBER_ERROR_MSG)
+          .createWithDefault(DataSourceJdbcConnectionProvider.DEFAULT_MAX_WAIT_MILLIS);
+
+  public static final ConfigEntry<Boolean> TEST_ON_BORROW_CONFIG =
+      new ConfigBuilder(GenericJdbcMetricsRepository.TEST_ON_BORROW)
+          .doc("Whether to validate JDBC connections when borrowing.")
+          .version(ConfigConstants.VERSION_1_2_0)
+          .booleanConf()
+          .createWithDefault(DataSourceJdbcConnectionProvider.DEFAULT_TEST_ON_BORROW);
+
+  public JdbcConnectionConfig(Map<String, String> properties) {
+    super(false);
+    if (properties != null) {
+      configMap.putAll(properties);
+    }
   }
 
   public String jdbcUrl() {
-    return jdbcUrl;
+    return get(JDBC_URL_CONFIG);
   }
 
   public String username() {
-    return username;
+    return get(JDBC_USER_CONFIG);
   }
 
   public String password() {
-    return password;
+    return get(JDBC_PASSWORD_CONFIG);
   }
 
   public String driverClassName() {
-    return driverClassName;
+    return get(JDBC_DRIVER_CONFIG);
   }
 
   public int maxTotal() {
-    return maxTotal;
+    return get(POOL_MAX_SIZE_CONFIG);
   }
 
   public int minIdle() {
-    return minIdle;
+    return get(POOL_MIN_IDLE_CONFIG);
   }
 
   public long maxWaitMillis() {
-    return maxWaitMillis;
+    return get(CONNECTION_TIMEOUT_MS_CONFIG);
   }
 
   public boolean testOnBorrow() {
-    return testOnBorrow;
-  }
-
-  private static String getString(
-      Map<String, String> jdbcProperties, String key, String defaultValue) {
-    return jdbcProperties.getOrDefault(key, defaultValue);
-  }
-
-  private static int getInt(Map<String, String> jdbcProperties, String key, int defaultValue) {
-    return parseInt(jdbcProperties.get(key), defaultValue);
-  }
-
-  private static long getLong(Map<String, String> jdbcProperties, String key, long defaultValue) {
-    return parseLong(jdbcProperties.get(key), defaultValue);
-  }
-
-  private static boolean getBoolean(
-      Map<String, String> jdbcProperties, String key, boolean defaultValue) {
-    return parseBoolean(jdbcProperties.get(key), defaultValue);
-  }
-
-  private static int parseInt(String value, int defaultValue) {
-    return StringUtils.isBlank(value) ? defaultValue : Integer.parseInt(value);
-  }
-
-  private static long parseLong(String value, long defaultValue) {
-    return StringUtils.isBlank(value) ? defaultValue : Long.parseLong(value);
-  }
-
-  private static boolean parseBoolean(String value, boolean defaultValue) {
-    return StringUtils.isBlank(value) ? defaultValue : Boolean.parseBoolean(value);
+    return get(TEST_ON_BORROW_CONFIG);
   }
 }
