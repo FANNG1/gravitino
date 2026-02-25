@@ -76,22 +76,22 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
   }
 
   @Override
-  public TableStatisticsBundle readTableStatistics(NameIdentifier tableIdentifier) {
+  public TableStatisticsBundle bulkReadTableStatistics(NameIdentifier tableIdentifier) {
     return aggregateTableStatisticsBundle(tableIdentifier);
   }
 
   @Override
-  public Map<NameIdentifier, TableStatisticsBundle> readBulkTableStatistics() {
+  public Map<NameIdentifier, TableStatisticsBundle> bulkReadAllTableStatistics() {
     return aggregateAllTableStatisticsBundles();
   }
 
   @Override
-  public List<StatisticEntry<?>> readJobStatistics(NameIdentifier jobIdentifier) {
+  public List<StatisticEntry<?>> bulkReadJobStatistics(NameIdentifier jobIdentifier) {
     return toStatisticEntries(aggregateJobStatistics(jobIdentifier).get(jobIdentifier));
   }
 
   @Override
-  public Map<NameIdentifier, List<StatisticEntry<?>>> readBulkJobStatistics() {
+  public Map<NameIdentifier, List<StatisticEntry<?>>> bulkReadAllJobStatistics() {
     return toIdentifierStatisticEntries(aggregateJobStatistics(null));
   }
 

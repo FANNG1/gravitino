@@ -33,14 +33,14 @@ public interface StatisticsReader {
    * @param tableIdentifier table identifier
    * @return table statistics bundle for the table, empty when absent
    */
-  TableStatisticsBundle readTableStatistics(NameIdentifier tableIdentifier);
+  TableStatisticsBundle bulkReadTableStatistics(NameIdentifier tableIdentifier);
 
   /**
    * Reads table-level and partition-level statistics for all tables in the source.
    *
    * @return map keyed by table identifier
    */
-  Map<NameIdentifier, TableStatisticsBundle> readBulkTableStatistics();
+  Map<NameIdentifier, TableStatisticsBundle> bulkReadAllTableStatistics();
 
   /**
    * Reads job-level statistics for a single job.
@@ -48,12 +48,12 @@ public interface StatisticsReader {
    * @param jobIdentifier job identifier
    * @return job statistics for the job, empty when absent
    */
-  List<StatisticEntry<?>> readJobStatistics(NameIdentifier jobIdentifier);
+  List<StatisticEntry<?>> bulkReadJobStatistics(NameIdentifier jobIdentifier);
 
   /**
    * Reads job-level statistics for all jobs in the source.
    *
    * @return map keyed by job identifier
    */
-  Map<NameIdentifier, List<StatisticEntry<?>>> readBulkJobStatistics();
+  Map<NameIdentifier, List<StatisticEntry<?>>> bulkReadAllJobStatistics();
 }

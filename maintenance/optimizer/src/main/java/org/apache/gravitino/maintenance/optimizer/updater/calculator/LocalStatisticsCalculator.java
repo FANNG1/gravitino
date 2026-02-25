@@ -87,26 +87,26 @@ public class LocalStatisticsCalculator
   public TableStatisticsBundle calculateTableStatistics(NameIdentifier tableIdentifier) {
     ensureInitialized();
     Preconditions.checkArgument(tableIdentifier != null, "tableIdentifier must not be null");
-    return statisticsReader.readTableStatistics(tableIdentifier);
+    return statisticsReader.bulkReadTableStatistics(tableIdentifier);
   }
 
   @Override
   public Map<NameIdentifier, TableStatisticsBundle> calculateBulkTableStatistics() {
     ensureInitialized();
-    return statisticsReader.readBulkTableStatistics();
+    return statisticsReader.bulkReadAllTableStatistics();
   }
 
   @Override
   public List<StatisticEntry<?>> calculateJobStatistics(NameIdentifier jobIdentifier) {
     ensureInitialized();
     Preconditions.checkArgument(jobIdentifier != null, "jobIdentifier must not be null");
-    return statisticsReader.readJobStatistics(jobIdentifier);
+    return statisticsReader.bulkReadJobStatistics(jobIdentifier);
   }
 
   @Override
   public Map<NameIdentifier, List<StatisticEntry<?>>> calculateAllJobStatistics() {
     ensureInitialized();
-    return statisticsReader.readBulkJobStatistics();
+    return statisticsReader.bulkReadAllJobStatistics();
   }
 
   private void ensureInitialized() {
