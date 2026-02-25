@@ -63,21 +63,21 @@ class TestH2MetricsRepository {
     MetricRecord metric = new MetricRecordImpl(now, "value1");
     MetricRecord metric2 = new MetricRecordImpl(now, "value2");
 
-    storage.storeTableMetric(nameIdentifier, "metric1", Optional.empty(), metric);
-    storage.storeTableMetric(nameIdentifier, "metric2", Optional.empty(), metric);
-    storage.storeTableMetric(nameIdentifier, "metric2", Optional.empty(), metric2);
+    storeTableMetric(nameIdentifier, "metric1", Optional.empty(), metric);
+    storeTableMetric(nameIdentifier, "metric2", Optional.empty(), metric);
+    storeTableMetric(nameIdentifier, "metric2", Optional.empty(), metric2);
 
-    storage.storeTableMetric(
+    storeTableMetric(
         NameIdentifier.of("catalog2", "db", "test_null_partition"),
         "metric1",
         Optional.empty(),
         metric);
-    storage.storeTableMetric(
+    storeTableMetric(
         NameIdentifier.of("catalog", "db2", "test_null_partition"),
         "metric1",
         Optional.empty(),
         metric);
-    storage.storeTableMetric(
+    storeTableMetric(
         NameIdentifier.of("catalog", "db", "test_null_partition2"),
         "metric1",
         Optional.empty(),
@@ -108,10 +108,10 @@ class TestH2MetricsRepository {
     String partition1 = "a=1/b=2";
     String partition2 = "a=1/b=3";
 
-    storage.storeTableMetric(nameIdentifier, "metric", Optional.of(partition1), metric);
-    storage.storeTableMetric(nameIdentifier, "metric", Optional.of(partition2), metric);
-    storage.storeTableMetric(nameIdentifier, "metric2", Optional.of(partition2), metric2);
-    storage.storeTableMetric(nameIdentifier, "metric2", Optional.of(partition2), metric3);
+    storeTableMetric(nameIdentifier, "metric", Optional.of(partition1), metric);
+    storeTableMetric(nameIdentifier, "metric", Optional.of(partition2), metric);
+    storeTableMetric(nameIdentifier, "metric2", Optional.of(partition2), metric2);
+    storeTableMetric(nameIdentifier, "metric2", Optional.of(partition2), metric3);
 
     Map<String, List<MetricRecord>> metrics =
         storage.getPartitionMetrics(nameIdentifier, partition1, 0, Long.MAX_VALUE);
@@ -139,12 +139,12 @@ class TestH2MetricsRepository {
     String partition1 = "a=1/b=2";
     String partition2 = "a=1/b=3";
 
-    storage.storeTableMetric(nameIdentifier, "metric1", Optional.empty(), metric);
-    storage.storeTableMetric(nameIdentifier, "metric1", Optional.empty(), metric2);
-    storage.storeTableMetric(nameIdentifier, "metric1", Optional.empty(), metric3);
-    storage.storeTableMetric(nameIdentifier, "metric1", Optional.of(partition1), metric);
-    storage.storeTableMetric(nameIdentifier, "metric1", Optional.of(partition2), metric2);
-    storage.storeTableMetric(nameIdentifier, "metric1", Optional.of(partition2), metric3);
+    storeTableMetric(nameIdentifier, "metric1", Optional.empty(), metric);
+    storeTableMetric(nameIdentifier, "metric1", Optional.empty(), metric2);
+    storeTableMetric(nameIdentifier, "metric1", Optional.empty(), metric3);
+    storeTableMetric(nameIdentifier, "metric1", Optional.of(partition1), metric);
+    storeTableMetric(nameIdentifier, "metric1", Optional.of(partition2), metric2);
+    storeTableMetric(nameIdentifier, "metric1", Optional.of(partition2), metric3);
 
     Map<String, List<MetricRecord>> metrics =
         storage.getTableMetrics(nameIdentifier, 0, Long.MAX_VALUE);
@@ -173,8 +173,8 @@ class TestH2MetricsRepository {
     String storedPartition = "Region=US/Day=2025-01-01";
     String queryPartition = "region=us/day=2025-01-01";
 
-    storage.storeTableMetric(storedId, "METRIC_UPPER", Optional.of(storedPartition), metric);
-    storage.storeJobMetric(storedId, "JOB_METRIC", metric);
+    storeTableMetric(storedId, "METRIC_UPPER", Optional.of(storedPartition), metric);
+    storeJobMetric(storedId, "JOB_METRIC", metric);
 
     Map<String, List<MetricRecord>> partitionMetrics =
         storage.getPartitionMetrics(queryId, queryPartition, 0, Long.MAX_VALUE);
@@ -232,45 +232,41 @@ class TestH2MetricsRepository {
 
     Assertions.assertThrows(
         IllegalArgumentException.class,
-        () -> storage.storeTableMetric(null, "metric", Optional.empty(), metric));
+        () -> storeTableMetric(null, "metric", Optional.empty(), metric));
+    Assertions.assertThrows(
+        IllegalArgumentException.class, () -> storeTableMetric(id, " ", Optional.empty(), metric));
     Assertions.assertThrows(
         IllegalArgumentException.class,
-        () -> storage.storeTableMetric(id, " ", Optional.empty(), metric));
-    Assertions.assertThrows(
-        IllegalArgumentException.class,
-        () -> storage.storeTableMetric(id, "metric", Optional.empty(), null));
+        () -> storeTableMetric(id, "metric", Optional.empty(), null));
 
     Assertions.assertThrows(
-        IllegalArgumentException.class, () -> storage.storeJobMetric(null, "metric", metric));
+        IllegalArgumentException.class, () -> storeJobMetric(null, "metric", metric));
+    Assertions.assertThrows(IllegalArgumentException.class, () -> storeJobMetric(id, "", metric));
     Assertions.assertThrows(
-        IllegalArgumentException.class, () -> storage.storeJobMetric(id, "", metric));
+        IllegalArgumentException.class, () -> storeJobMetric(id, "metric", null));
     Assertions.assertThrows(
-        IllegalArgumentException.class, () -> storage.storeJobMetric(id, "metric", null));
+        IllegalArgumentException.class,
+        () -> storeTableMetric(id, "metric", Optional.empty(), new MetricRecordImpl(-1, "v1")));
     Assertions.assertThrows(
         IllegalArgumentException.class,
         () ->
-            storage.storeTableMetric(
-                id, "metric", Optional.empty(), new MetricRecordImpl(-1, "v1")));
-    Assertions.assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            storage.storeTableMetric(
+            storeTableMetric(
                 id,
                 "metric",
                 Optional.empty(),
                 new MetricRecordImpl(System.currentTimeMillis(), "v1")));
     Assertions.assertThrows(
         IllegalArgumentException.class,
-        () -> storage.storeJobMetric(id, "metric", new MetricRecordImpl(-1, "v1")));
+        () -> storeJobMetric(id, "metric", new MetricRecordImpl(-1, "v1")));
     Assertions.assertThrows(
         IllegalArgumentException.class,
         () ->
-            storage.storeTableMetric(
+            storeTableMetric(
                 id, "metric", Optional.of(" "), new MetricRecordImpl(currentEpochSeconds(), "v1")));
     Assertions.assertThrows(
         IllegalArgumentException.class,
         () ->
-            storage.storeTableMetric(
+            storeTableMetric(
                 id,
                 "metric",
                 Optional.of("p=" + "x".repeat(2000)),
@@ -278,12 +274,12 @@ class TestH2MetricsRepository {
     Assertions.assertThrows(
         IllegalArgumentException.class,
         () ->
-            storage.storeTableMetric(
+            storeTableMetric(
                 id, "metric", Optional.empty(), new MetricRecordImpl(currentEpochSeconds(), null)));
     Assertions.assertThrows(
         IllegalArgumentException.class,
         () ->
-            storage.storeTableMetric(
+            storeTableMetric(
                 NameIdentifier.of("catalog", "db", "t".repeat(1021)),
                 "metric",
                 Optional.empty(),
@@ -291,7 +287,7 @@ class TestH2MetricsRepository {
     Assertions.assertThrows(
         IllegalArgumentException.class,
         () ->
-            storage.storeTableMetric(
+            storeTableMetric(
                 id,
                 "m".repeat(1025),
                 Optional.empty(),
@@ -299,7 +295,7 @@ class TestH2MetricsRepository {
     Assertions.assertThrows(
         IllegalArgumentException.class,
         () ->
-            storage.storeTableMetric(
+            storeTableMetric(
                 id,
                 "metric",
                 Optional.empty(),
@@ -307,7 +303,7 @@ class TestH2MetricsRepository {
     Assertions.assertThrows(
         IllegalArgumentException.class,
         () ->
-            storage.storeJobMetric(
+            storeJobMetric(
                 id, "metric", new MetricRecordImpl(currentEpochSeconds(), "x".repeat(1025))));
   }
 
@@ -333,9 +329,9 @@ class TestH2MetricsRepository {
     String longValue = "v".repeat(1000);
     long now = currentEpochSeconds();
 
-    storage.storeTableMetric(
+    storeTableMetric(
         tableId, "metric_long", Optional.of(partition), new MetricRecordImpl(now, longValue));
-    storage.storeJobMetric(jobId, "metric_long", new MetricRecordImpl(now, longValue));
+    storeJobMetric(jobId, "metric_long", new MetricRecordImpl(now, longValue));
 
     Map<String, List<MetricRecord>> tableMetrics =
         storage.getPartitionMetrics(tableId, partition, 0, Long.MAX_VALUE);
@@ -364,7 +360,8 @@ class TestH2MetricsRepository {
     String longPartition = "p=" + "y".repeat(1500);
     long now = currentEpochSeconds();
 
-    repository.storeTableMetric(
+    storeTableMetricOn(
+        repository,
         tableId,
         "metric_long_partition",
         Optional.of(longPartition),
@@ -381,6 +378,30 @@ class TestH2MetricsRepository {
 
   private List<String> getMetricValues(List<MetricRecord> metrics) {
     return metrics.stream().map(MetricRecord::getValue).toList();
+  }
+
+  private void storeTableMetric(
+      NameIdentifier nameIdentifier,
+      String metricName,
+      Optional<String> partition,
+      MetricRecord metric) {
+    storage.storeTableMetrics(
+        List.of(new TableMetricWriteRequest(nameIdentifier, metricName, partition, metric)));
+  }
+
+  private void storeJobMetric(
+      NameIdentifier nameIdentifier, String metricName, MetricRecord metric) {
+    storage.storeJobMetrics(List.of(new JobMetricWriteRequest(nameIdentifier, metricName, metric)));
+  }
+
+  private void storeTableMetricOn(
+      H2MetricsRepository repository,
+      NameIdentifier nameIdentifier,
+      String metricName,
+      Optional<String> partition,
+      MetricRecord metric) {
+    repository.storeTableMetrics(
+        List.of(new TableMetricWriteRequest(nameIdentifier, metricName, partition, metric)));
   }
 
   private long currentEpochSeconds() {

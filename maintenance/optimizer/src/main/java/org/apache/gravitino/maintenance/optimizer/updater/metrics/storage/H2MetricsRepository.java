@@ -58,6 +58,7 @@ public class H2MetricsRepository implements MetricsRepository {
   private static final int MAX_METRIC_VALUE_LENGTH = 1024;
   private static final int MAX_IDENTIFIER_LENGTH = 1024;
   private static final int MAX_METRIC_NAME_LENGTH = 1024;
+  private static final int BATCH_UPDATE_SIZE = 10_000;
   private static final long MAX_REASONABLE_EPOCH_SECONDS = 9_999_999_999L;
 
   private static final String DEFAULT_USER = "sa";
@@ -170,38 +171,44 @@ public class H2MetricsRepository implements MetricsRepository {
   }
 
   @Override
-  public void storeTableMetric(
-      NameIdentifier nameIdentifier,
-      String metricName,
-      Optional<String> partition,
-      MetricRecord metric) {
-    validateWriteArguments(nameIdentifier, metricName, partition, metric);
+  public void storeTableMetrics(List<TableMetricWriteRequest> metrics) {
+    Preconditions.checkArgument(metrics != null, "metrics must not be null");
+    if (metrics.isEmpty()) {
+      return;
+    }
+
     String insertSql =
         "INSERT INTO table_metrics (table_identifier, metric_name, table_partition, metric_ts, metric_value) VALUES (?, ?, ?, ?, ?)";
 
-    String normalizedIdentifier = normalizeIdentifier(nameIdentifier);
-    String normalizedMetricName = normalizeMetricName(metricName);
-    Optional<String> normalizedPartition = normalizePartition(partition);
-    String metricValue = metric.getValue();
-    long metricTimestamp = metric.getTimestamp();
-
     try (Connection conn = getConnection();
         PreparedStatement insertStmt = conn.prepareStatement(insertSql)) {
-      insertStmt.setString(1, normalizedIdentifier);
-      insertStmt.setString(2, normalizedMetricName);
-      insertStmt.setString(3, normalizedPartition.orElse(null));
-      insertStmt.setLong(4, metricTimestamp);
-      insertStmt.setString(5, metricValue);
-      insertStmt.executeUpdate();
+      int batchCount = 0;
+      for (TableMetricWriteRequest request : metrics) {
+        Preconditions.checkArgument(request != null, "table metric request must not be null");
+        validateWriteArguments(
+            request.nameIdentifier(), request.metricName(), request.partition(), request.metric());
+        String normalizedIdentifier = normalizeIdentifier(request.nameIdentifier());
+        String normalizedMetricName = normalizeMetricName(request.metricName());
+        Optional<String> normalizedPartition = normalizePartition(request.partition());
+        MetricRecord metric = request.metric();
+        insertStmt.setString(1, normalizedIdentifier);
+        insertStmt.setString(2, normalizedMetricName);
+        insertStmt.setString(3, normalizedPartition.orElse(null));
+        insertStmt.setLong(4, metric.getTimestamp());
+        insertStmt.setString(5, metric.getValue());
+        insertStmt.addBatch();
+        batchCount++;
+        if (batchCount >= BATCH_UPDATE_SIZE) {
+          insertStmt.executeBatch();
+          batchCount = 0;
+        }
+      }
+      if (batchCount > 0) {
+        insertStmt.executeBatch();
+      }
     } catch (SQLException e) {
       throw new MetricsStorageException(
-          "Failed to store table metric: identifier="
-              + nameIdentifier
-              + ", metric="
-              + metricName
-              + ", partition="
-              + partition.orElse("<table-level>"),
-          e);
+          "Failed to batch store table metrics, size=" + metrics.size(), e);
     }
   }
 
@@ -289,27 +296,42 @@ public class H2MetricsRepository implements MetricsRepository {
   }
 
   @Override
-  public void storeJobMetric(
-      NameIdentifier nameIdentifier, String metricName, MetricRecord metric) {
-    validateWriteArguments(nameIdentifier, metricName, Optional.empty(), metric);
+  public void storeJobMetrics(List<JobMetricWriteRequest> metrics) {
+    Preconditions.checkArgument(metrics != null, "metrics must not be null");
+    if (metrics.isEmpty()) {
+      return;
+    }
+
     String insertSql =
         "INSERT INTO job_metrics (job_identifier, metric_name, metric_ts, metric_value) VALUES (?, ?, ?, ?)";
 
-    String normalizedIdentifier = normalizeIdentifier(nameIdentifier);
-    String normalizedMetricName = normalizeMetricName(metricName);
-    String metricValue = metric.getValue();
-    long metricTimestamp = metric.getTimestamp();
-
     try (Connection conn = getConnection();
         PreparedStatement insertStmt = conn.prepareStatement(insertSql)) {
-      insertStmt.setString(1, normalizedIdentifier);
-      insertStmt.setString(2, normalizedMetricName);
-      insertStmt.setLong(3, metricTimestamp);
-      insertStmt.setString(4, metricValue);
-      insertStmt.executeUpdate();
+      int batchCount = 0;
+      for (JobMetricWriteRequest request : metrics) {
+        Preconditions.checkArgument(request != null, "job metric request must not be null");
+        validateWriteArguments(
+            request.nameIdentifier(), request.metricName(), Optional.empty(), request.metric());
+        String normalizedIdentifier = normalizeIdentifier(request.nameIdentifier());
+        String normalizedMetricName = normalizeMetricName(request.metricName());
+        MetricRecord metric = request.metric();
+        insertStmt.setString(1, normalizedIdentifier);
+        insertStmt.setString(2, normalizedMetricName);
+        insertStmt.setLong(3, metric.getTimestamp());
+        insertStmt.setString(4, metric.getValue());
+        insertStmt.addBatch();
+        batchCount++;
+        if (batchCount >= BATCH_UPDATE_SIZE) {
+          insertStmt.executeBatch();
+          batchCount = 0;
+        }
+      }
+      if (batchCount > 0) {
+        insertStmt.executeBatch();
+      }
     } catch (SQLException e) {
       throw new MetricsStorageException(
-          "Failed to store job metric: identifier=" + nameIdentifier + ", metric=" + metricName, e);
+          "Failed to batch store job metrics, size=" + metrics.size(), e);
     }
   }
 

@@ -20,18 +20,12 @@
 package org.apache.gravitino.maintenance.optimizer.updater.metrics;
 
 import java.util.List;
-import java.util.Optional;
-import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.maintenance.optimizer.api.common.MetricSample;
-import org.apache.gravitino.maintenance.optimizer.api.common.PartitionMetricSample;
-import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.maintenance.optimizer.api.updater.MetricsUpdater;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
-import org.apache.gravitino.maintenance.optimizer.common.util.StatisticValueUtils;
-import org.apache.gravitino.maintenance.optimizer.recommender.util.PartitionUtils;
 import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.H2MetricsRepository;
-import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.MetricRecordImpl;
+import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.JobMetricWriteRequest;
 import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.MetricsRepository;
+import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.TableMetricWriteRequest;
 
 /** Metrics updater that persists table/job metrics into the configured metrics repository. */
 public class GravitinoMetricsUpdater implements MetricsUpdater {
@@ -52,42 +46,13 @@ public class GravitinoMetricsUpdater implements MetricsUpdater {
   }
 
   @Override
-  public void updateTableMetrics(NameIdentifier nameIdentifier, List<MetricSample> metrics) {
-    for (MetricSample metric : metrics) {
-      doUpdateTableMetrics(nameIdentifier, metric);
-    }
+  public void updateTableMetrics(List<TableMetricWriteRequest> metrics) {
+    metricsStorage.storeTableMetrics(metrics);
   }
 
   @Override
-  public void updateJobMetrics(NameIdentifier nameIdentifier, List<MetricSample> metrics) {
-    for (MetricSample metric : metrics) {
-      doUpdateJobMetrics(nameIdentifier, metric.timestamp(), metric.statistic());
-    }
-  }
-
-  private void doUpdateJobMetrics(
-      NameIdentifier nameIdentifier, long timestamp, StatisticEntry<?> statistic) {
-    metricsStorage.storeJobMetric(
-        nameIdentifier,
-        statistic.name(),
-        new MetricRecordImpl(timestamp, StatisticValueUtils.toString(statistic.value())));
-  }
-
-  private void doUpdateTableMetrics(NameIdentifier nameIdentifier, MetricSample metric) {
-    StatisticEntry<?> statistic = metric.statistic();
-    Optional<String> partition = getPartitionName(metric);
-    metricsStorage.storeTableMetric(
-        nameIdentifier,
-        statistic.name(),
-        partition,
-        new MetricRecordImpl(metric.timestamp(), StatisticValueUtils.toString(statistic.value())));
-  }
-
-  private Optional<String> getPartitionName(MetricSample metricSample) {
-    return metricSample instanceof PartitionMetricSample
-        ? Optional.of(
-            PartitionUtils.encodePartitionPath(((PartitionMetricSample) metricSample).partition()))
-        : Optional.empty();
+  public void updateJobMetrics(List<JobMetricWriteRequest> metrics) {
+    metricsStorage.storeJobMetrics(metrics);
   }
 
   @Override

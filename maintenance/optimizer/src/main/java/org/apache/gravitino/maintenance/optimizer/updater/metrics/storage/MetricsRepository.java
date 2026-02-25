@@ -21,7 +21,6 @@ package org.apache.gravitino.maintenance.optimizer.updater.metrics.storage;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import org.apache.gravitino.NameIdentifier;
 
 /** SPI for persisting metrics produced by the optimizer updater. */
@@ -30,12 +29,8 @@ public interface MetricsRepository extends AutoCloseable {
   /** Initialize the storage backend with configuration properties. */
   void initialize(Map<String, String> properties);
 
-  /** Persist a table metric (optionally scoped to a partition). */
-  void storeTableMetric(
-      NameIdentifier nameIdentifier,
-      String metricName,
-      Optional<String> partition,
-      MetricRecord metric);
+  /** Persist multiple table metrics in one call. */
+  void storeTableMetrics(List<TableMetricWriteRequest> metrics);
 
   /** Load table-level metrics within a time window [fromSecs, toSecs) in epoch seconds. */
   Map<String, List<MetricRecord>> getTableMetrics(
@@ -48,8 +43,8 @@ public interface MetricsRepository extends AutoCloseable {
   /** Delete table metrics older than the supplied timestamp (epoch seconds), exclusive. */
   int cleanupTableMetricsBefore(long timestamp);
 
-  /** Persist a job metric. */
-  void storeJobMetric(NameIdentifier nameIdentifier, String metricName, MetricRecord metric);
+  /** Persist multiple job metrics in one call. */
+  void storeJobMetrics(List<JobMetricWriteRequest> metrics);
 
   /** Load job metrics within a time window [fromSecs, toSecs) in epoch seconds. */
   Map<String, List<MetricRecord>> getJobMetrics(
