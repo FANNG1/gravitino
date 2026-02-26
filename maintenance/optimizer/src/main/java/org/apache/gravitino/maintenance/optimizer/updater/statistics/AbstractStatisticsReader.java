@@ -136,7 +136,7 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
         new StatisticsNodeVisitor() {
           @Override
           public void onTable(JsonNode node) {
-            NameIdentifier identifier = parseIdentifier(node.get(FieldName.IDENTIFIER.key()), true);
+            NameIdentifier identifier = parseTableIdentifier(node.get(FieldName.IDENTIFIER.key()));
             if (identifier == null) {
               return;
             }
@@ -165,7 +165,7 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
         new StatisticsNodeVisitor() {
           @Override
           public void onTable(JsonNode node) {
-            NameIdentifier identifier = parseIdentifier(node.get(FieldName.IDENTIFIER.key()), true);
+            NameIdentifier identifier = parseTableIdentifier(node.get(FieldName.IDENTIFIER.key()));
             if (targetIdentifier.equals(identifier)) {
               populateStatistics(node, tableStatistics);
             }
@@ -173,7 +173,7 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
 
           @Override
           public void onPartition(JsonNode node) {
-            NameIdentifier identifier = parseIdentifier(node.get(FieldName.IDENTIFIER.key()), true);
+            NameIdentifier identifier = parseTableIdentifier(node.get(FieldName.IDENTIFIER.key()));
             if (!targetIdentifier.equals(identifier)) {
               return;
             }
@@ -205,7 +205,7 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
         new StatisticsNodeVisitor() {
           @Override
           public void onTable(JsonNode node) {
-            NameIdentifier identifier = parseIdentifier(node.get(FieldName.IDENTIFIER.key()), true);
+            NameIdentifier identifier = parseTableIdentifier(node.get(FieldName.IDENTIFIER.key()));
             if (identifier == null) {
               return;
             }
@@ -216,7 +216,7 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
 
           @Override
           public void onPartition(JsonNode node) {
-            NameIdentifier identifier = parseIdentifier(node.get(FieldName.IDENTIFIER.key()), true);
+            NameIdentifier identifier = parseTableIdentifier(node.get(FieldName.IDENTIFIER.key()));
             if (identifier == null) {
               return;
             }
@@ -261,8 +261,7 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
         new StatisticsNodeVisitor() {
           @Override
           public void onJob(JsonNode node) {
-            NameIdentifier identifier =
-                parseIdentifier(node.get(FieldName.IDENTIFIER.key()), false);
+            NameIdentifier identifier = parseJobIdentifier(node.get(FieldName.IDENTIFIER.key()));
             if (identifier == null) {
               return;
             }
@@ -405,7 +404,7 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
     }
   }
 
-  private NameIdentifier parseIdentifier(JsonNode identifierNode, boolean applyDefaultCatalog) {
+  private NameIdentifier parseTableIdentifier(JsonNode identifierNode) {
     if (identifierNode == null || identifierNode.isNull() || !identifierNode.isTextual()) {
       return null;
     }
@@ -415,7 +414,7 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
       if (levels == 0) {
         return parsed;
       } else if (levels == 1) {
-        if (applyDefaultCatalog && StringUtils.isNotBlank(defaultCatalogName)) {
+        if (StringUtils.isNotBlank(defaultCatalogName)) {
           return NameIdentifier.of(
               defaultCatalogName, parsed.namespace().levels()[0], parsed.name());
         }
@@ -425,6 +424,18 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
       } else {
         return null;
       }
+    } catch (Exception e) {
+      LOG.warn("Skip line with invalid identifier: {}", identifierNode.asText());
+      return null;
+    }
+  }
+
+  private NameIdentifier parseJobIdentifier(JsonNode identifierNode) {
+    if (identifierNode == null || identifierNode.isNull() || !identifierNode.isTextual()) {
+      return null;
+    }
+    try {
+      return NameIdentifier.parse(identifierNode.asText());
     } catch (Exception e) {
       LOG.warn("Skip line with invalid identifier: {}", identifierNode.asText());
       return null;

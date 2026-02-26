@@ -164,6 +164,37 @@ class TestLocalStatisticsCalculator {
   }
 
   @Test
+  void testJobIdentifierWithMultipleDotsIsSupported() {
+    String payload =
+        "{\"identifier\":\"org.team.pipeline.stage.job42\",\"stats-type\":\"job\",\"duration\":10}";
+
+    LocalStatisticsCalculator calculator = new LocalStatisticsCalculator();
+    OptimizerEnv env = new OptimizerEnv(createConfig(null, payload));
+    calculator.initialize(env);
+
+    List<StatisticEntry<?>> stats =
+        calculator.calculateJobStatistics(NameIdentifier.parse("org.team.pipeline.stage.job42"));
+    Assertions.assertEquals(1, stats.size());
+    Assertions.assertEquals(10L, stats.get(0).value().value());
+  }
+
+  @Test
+  void testTableIdentifierWithMultipleDotsIsStillIgnored() {
+    String payload =
+        "{\"identifier\":\"catalog.db.schema.extra.table\",\"stats-type\":\"table\",\"rows\":10}";
+
+    LocalStatisticsCalculator calculator = new LocalStatisticsCalculator();
+    OptimizerEnv env = new OptimizerEnv(createConfig(null, payload));
+    calculator.initialize(env);
+
+    List<StatisticEntry<?>> stats =
+        calculator
+            .calculateTableStatistics(NameIdentifier.parse("catalog.db.schema.extra.table"))
+            .tableStatistics();
+    Assertions.assertTrue(stats.isEmpty());
+  }
+
+  @Test
   void testComputePartitionStatisticsFromPayload() {
     String payload =
         String.join(
