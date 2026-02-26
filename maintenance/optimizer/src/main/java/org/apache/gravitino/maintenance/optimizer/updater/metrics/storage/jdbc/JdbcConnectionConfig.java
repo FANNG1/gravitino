@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.gravitino.maintenance.optimizer.updater.metrics.storage;
+package org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.jdbc;
 
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;

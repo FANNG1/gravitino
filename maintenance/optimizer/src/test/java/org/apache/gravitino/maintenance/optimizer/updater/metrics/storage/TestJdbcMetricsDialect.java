@@ -20,6 +20,8 @@
 package org.apache.gravitino.maintenance.optimizer.updater.metrics.storage;
 
 import java.util.List;
+import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.jdbc.H2MetricsDialect;
+import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.jdbc.JdbcMetricsDialect;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

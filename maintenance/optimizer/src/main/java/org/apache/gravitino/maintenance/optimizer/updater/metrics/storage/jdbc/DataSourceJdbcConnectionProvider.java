@@ -17,13 +17,14 @@
  * under the License.
  */
 
-package org.apache.gravitino.maintenance.optimizer.updater.metrics.storage;
+package org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.jdbc;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.util.Map;
 import org.apache.commons.dbcp2.BasicDataSource;
+import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.MetricsStorageException;
 
 /** DataSource-backed JDBC connection provider with basic pooling defaults. */
 public class DataSourceJdbcConnectionProvider {

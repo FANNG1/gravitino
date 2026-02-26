@@ -26,18 +26,36 @@ import java.util.Optional;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
-import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.GenericJdbcMetricsRepository;
 import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.JobMetricWriteRequest;
 import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.MetricRecord;
 import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.MetricRecordImpl;
 import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.MetricsRepository;
 import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.TableMetricWriteRequest;
+import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.jdbc.GenericJdbcMetricsRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 class TestGravitinoMetricsUpdater {
+
+  @Test
+  void testUpdateTableMetricsWithoutInitializeFailsFast() {
+    GravitinoMetricsUpdater updater = new GravitinoMetricsUpdater();
+    IllegalStateException exception =
+        Assertions.assertThrows(
+            IllegalStateException.class, () -> updater.updateTableMetrics(List.of()));
+    Assertions.assertTrue(exception.getMessage().contains("has not been initialized"));
+  }
+
+  @Test
+  void testUpdateJobMetricsWithoutInitializeFailsFast() {
+    GravitinoMetricsUpdater updater = new GravitinoMetricsUpdater();
+    IllegalStateException exception =
+        Assertions.assertThrows(
+            IllegalStateException.class, () -> updater.updateJobMetrics(List.of()));
+    Assertions.assertTrue(exception.getMessage().contains("has not been initialized"));
+  }
 
   @Test
   void testUpdateTableMetricsPassThroughRequests() throws Exception {

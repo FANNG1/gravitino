@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.gravitino.maintenance.optimizer.updater.metrics.storage;
+package org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.jdbc;
 
 import com.google.common.base.Preconditions;
 import java.sql.Connection;
@@ -34,6 +34,12 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.JobMetricWriteRequest;
+import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.MetricRecord;
+import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.MetricRecordImpl;
+import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.MetricsRepository;
+import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.MetricsStorageException;
+import org.apache.gravitino.maintenance.optimizer.updater.metrics.storage.TableMetricWriteRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
