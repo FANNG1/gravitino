@@ -87,7 +87,7 @@ public class LocalStatisticsCalculator
   public TableAndPartitionStatistics calculateTableStatistics(NameIdentifier tableIdentifier) {
     ensureInitialized();
     Preconditions.checkArgument(tableIdentifier != null, "tableIdentifier must not be null");
-    return statisticsReader.bulkReadTableStatistics(tableIdentifier);
+    return statisticsReader.readTableStatistics(tableIdentifier);
   }
 
   @Override
@@ -100,7 +100,7 @@ public class LocalStatisticsCalculator
   public List<StatisticEntry<?>> calculateJobStatistics(NameIdentifier jobIdentifier) {
     ensureInitialized();
     Preconditions.checkArgument(jobIdentifier != null, "jobIdentifier must not be null");
-    return statisticsReader.bulkReadJobStatistics(jobIdentifier);
+    return statisticsReader.readJobStatistics(jobIdentifier);
   }
 
   @Override

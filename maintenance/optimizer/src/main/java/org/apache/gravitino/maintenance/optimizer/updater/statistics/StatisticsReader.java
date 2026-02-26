@@ -33,7 +33,7 @@ public interface StatisticsReader {
    * @param tableIdentifier table identifier
    * @return table statistics bundle for the table, empty when absent
    */
-  TableAndPartitionStatistics bulkReadTableStatistics(NameIdentifier tableIdentifier);
+  TableAndPartitionStatistics readTableStatistics(NameIdentifier tableIdentifier);
 
   /**
    * Reads table-level and partition-level statistics for all tables in the source.
@@ -48,7 +48,7 @@ public interface StatisticsReader {
    * @param jobIdentifier job identifier
    * @return job statistics for the job, empty when absent
    */
-  List<StatisticEntry<?>> bulkReadJobStatistics(NameIdentifier jobIdentifier);
+  List<StatisticEntry<?>> readJobStatistics(NameIdentifier jobIdentifier);
 
   /**
    * Reads job-level statistics for all jobs in the source.

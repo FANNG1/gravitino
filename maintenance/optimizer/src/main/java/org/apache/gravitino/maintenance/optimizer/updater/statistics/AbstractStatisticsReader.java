@@ -76,7 +76,7 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
   }
 
   @Override
-  public TableAndPartitionStatistics bulkReadTableStatistics(NameIdentifier tableIdentifier) {
+  public TableAndPartitionStatistics readTableStatistics(NameIdentifier tableIdentifier) {
     return aggregateTableAndPartitionStatistics(tableIdentifier);
   }
 
@@ -86,7 +86,7 @@ abstract class AbstractStatisticsReader implements StatisticsReader {
   }
 
   @Override
-  public List<StatisticEntry<?>> bulkReadJobStatistics(NameIdentifier jobIdentifier) {
+  public List<StatisticEntry<?>> readJobStatistics(NameIdentifier jobIdentifier) {
     return toStatisticEntries(aggregateJobStatistics(jobIdentifier).get(jobIdentifier));
   }
 
