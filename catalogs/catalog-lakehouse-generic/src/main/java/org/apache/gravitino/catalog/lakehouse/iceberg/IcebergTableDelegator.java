@@ -25,7 +25,6 @@ import org.apache.gravitino.catalog.ManagedSchemaOperations;
 import org.apache.gravitino.catalog.ManagedTableOperations;
 import org.apache.gravitino.catalog.lakehouse.generic.LakehouseTableDelegator;
 import org.apache.gravitino.connector.PropertyEntry;
-import org.apache.gravitino.rel.Table;
 import org.apache.gravitino.storage.IdGenerator;
 
 public class IcebergTableDelegator implements LakehouseTableDelegator {
@@ -39,17 +38,8 @@ public class IcebergTableDelegator implements LakehouseTableDelegator {
 
   @Override
   public List<PropertyEntry<?>> tablePropertyEntries() {
-    // Currently rely on generic table properties (location, format). Additional Iceberg-specific
-    // properties can be added here once they are supported end-to-end.
-    return ImmutableList.of(
-        PropertyEntry.booleanPropertyEntry(
-            Table.PROPERTY_EXTERNAL,
-            "Whether the Iceberg table is managed by Gravitino",
-            false,
-            false,
-            false,
-            false,
-            false));
+    // Reuse generic table properties to avoid duplicate keys in merged metadata.
+    return ImmutableList.of();
   }
 
   @Override

@@ -36,19 +36,23 @@ import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.apache.gravitino.Catalog;
 import org.apache.gravitino.Config;
 import org.apache.gravitino.Configs;
 import org.apache.gravitino.EntityStore;
 import org.apache.gravitino.EntityStoreFactory;
+import org.apache.gravitino.GravitinoEnv;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.Namespace;
 import org.apache.gravitino.Schema;
@@ -119,6 +123,7 @@ public class TestIcebergTableDelegator {
     store = EntityStoreFactory.createEntityStore(config);
     store.initialize(config);
     idGenerator = RandomIdGenerator.INSTANCE;
+    FieldUtils.writeField(GravitinoEnv.getInstance(), "config", config, true);
 
     AuditInfo auditInfo =
         AuditInfo.builder().withCreator("test").withCreateTime(Instant.now()).build();
@@ -143,9 +148,21 @@ public class TestIcebergTableDelegator {
             .build();
     store.put(catalog, false);
 
-    ops = new GenericCatalogOperations(store, idGenerator);
-    ops.initialize(
-        Collections.emptyMap(), Mockito.mock(CatalogInfo.class), new GenericPropertiesMetadata());
+    Constructor<GenericCatalogOperations> constructor =
+        GenericCatalogOperations.class.getDeclaredConstructor(EntityStore.class, IdGenerator.class);
+    constructor.setAccessible(true);
+    ops = constructor.newInstance(store, idGenerator);
+    CatalogInfo catalogInfo =
+        new CatalogInfo(
+            idGenerator.nextId(),
+            CATALOG_NAME,
+            Catalog.Type.RELATIONAL,
+            "lakehouse-generic",
+            "test catalog",
+            Collections.emptyMap(),
+            null,
+            Namespace.of(METALAKE_NAME));
+    ops.initialize(Collections.emptyMap(), catalogInfo, new GenericPropertiesMetadata());
   }
 
   @AfterAll
@@ -185,7 +202,9 @@ public class TestIcebergTableDelegator {
         NameIdentifierUtil.ofTable(METALAKE_NAME, CATALOG_NAME, schemaName, tableName);
 
     Map<String, String> tableProperties =
-        StringIdentifier.newPropertiesWithId(StringIdentifier.fromId(idGenerator.nextId()), null);
+        new HashMap<>(
+            StringIdentifier.newPropertiesWithId(
+                StringIdentifier.fromId(idGenerator.nextId()), null));
     Path tableLocation = Files.createTempDirectory("iceberg_generic_tbl");
     tableProperties.put(Table.PROPERTY_LOCATION, tableLocation.toString());
     tableProperties.put(Table.PROPERTY_TABLE_FORMAT, IcebergTableDelegator.ICEBERG_TABLE_FORMAT);
@@ -221,7 +240,7 @@ public class TestIcebergTableDelegator {
         loadedTable.properties().get(Table.PROPERTY_LOCATION));
 
     Assertions.assertTrue(ops.dropTable(tableIdent));
-    Assertions.assertFalse(ops.dropTable(tableIdent));
+    Assertions.assertThrows(NoSuchTableException.class, () -> ops.dropTable(tableIdent));
     FileUtils.deleteDirectory(tableLocation.toFile());
   }
 
@@ -247,6 +266,27 @@ public class TestIcebergTableDelegator {
     @Override
     public PropertiesMetadata tablePropertiesMetadata() throws UnsupportedOperationException {
       return tableProps;
+    }
+
+    @Override
+    public PropertiesMetadata filesetPropertiesMetadata() throws UnsupportedOperationException {
+      throw new UnsupportedOperationException("fileset properties are unsupported");
+    }
+
+    @Override
+    public PropertiesMetadata topicPropertiesMetadata() throws UnsupportedOperationException {
+      throw new UnsupportedOperationException("topic properties are unsupported");
+    }
+
+    @Override
+    public PropertiesMetadata modelPropertiesMetadata() throws UnsupportedOperationException {
+      throw new UnsupportedOperationException("model properties are unsupported");
+    }
+
+    @Override
+    public PropertiesMetadata modelVersionPropertiesMetadata()
+        throws UnsupportedOperationException {
+      throw new UnsupportedOperationException("model version properties are unsupported");
     }
   }
 }
