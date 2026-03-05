@@ -43,12 +43,6 @@ public class TestGravitinoCompactionJobAdapter {
         jobAdapter.jobConfig(mockCompactionJobContext()));
   }
 
-  @Test
-  void testSupportsBatchJob() {
-    GravitinoCompactionJobAdapter jobAdapter = new GravitinoCompactionJobAdapter();
-    Assertions.assertFalse(jobAdapter.supportsBatchJob());
-  }
-
   private CompactionJobContext mockCompactionJobContext() {
     String jobTemplateName = "compaction-job-template";
     Column[] columns = new Column[0];

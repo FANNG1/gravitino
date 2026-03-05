@@ -19,8 +19,6 @@
 
 package org.apache.gravitino.maintenance.optimizer.recommender.job;
 
-import java.util.List;
-import org.apache.gravitino.exceptions.NoSuchJobTemplateException;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.JobExecutionContext;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.JobSubmitter;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
@@ -48,19 +46,6 @@ public class NoopJobSubmitter implements JobSubmitter {
         jobExecutionContext.nameIdentifier(),
         jobExecutionContext);
     return "";
-  }
-
-  @Override
-  public boolean supportsBatchJob(String jobTemplateName) {
-    return false;
-  }
-
-  @Override
-  public String submitBatchJob(
-      String jobTemplateName, List<JobExecutionContext> jobExecutionContexts)
-      throws NoSuchJobTemplateException, UnsupportedOperationException {
-    throw new UnsupportedOperationException(
-        "NoopJobSubmitter does not support batch job submission");
   }
 
   /**

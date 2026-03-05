@@ -40,11 +40,4 @@ public interface GravitinoJobAdapter {
    * @return job configuration map
    */
   Map<String, String> jobConfig(JobExecutionContext jobExecutionContext);
-
-  /**
-   * Returns whether the adapter supports batch job submission.
-   *
-   * @return true if the adapter supports batch job submission, false otherwise
-   */
-  boolean supportsBatchJob();
 }

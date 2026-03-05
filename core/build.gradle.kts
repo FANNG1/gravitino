@@ -55,10 +55,6 @@ dependencies {
     exclude(group = "org.apache.httpcomponents.client5", module = "*") // provided by gravitino
   }
   implementation(libs.mybatis)
-  // TODO roma: not sure if we need to add httpclient dependency here
-  //  or need to move Pinterest job executor to a separate module (or to existing 'clients' module)
-  implementation(libs.httpclient5)
-  implementation(libs.httpcore5)
 
   annotationProcessor(libs.lombok)
 

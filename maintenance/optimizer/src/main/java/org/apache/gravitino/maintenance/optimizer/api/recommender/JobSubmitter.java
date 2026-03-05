@@ -19,7 +19,6 @@
 
 package org.apache.gravitino.maintenance.optimizer.api.recommender;
 
-import java.util.List;
 import org.apache.gravitino.annotation.DeveloperApi;
 import org.apache.gravitino.exceptions.NoSuchJobTemplateException;
 import org.apache.gravitino.maintenance.optimizer.api.common.Provider;
@@ -38,32 +37,4 @@ public interface JobSubmitter extends Provider {
    */
   String submitJob(String jobTemplateName, JobExecutionContext jobExecutionContext)
       throws NoSuchJobTemplateException;
-
-  /**
-   * Checks whether this job submitter supports batch job submission.
-   *
-   * <p>Batch job submission allows multiple job execution contexts to be submitted together as a
-   * single batch operation, which can improve efficiency and reduce overhead for certain execution
-   * backends.
-   *
-   * @param jobTemplateName the job template name (routes to the appropriate job template)
-   * @return true if batch job submission is supported, false otherwise
-   */
-  boolean supportsBatchJob(String jobTemplateName);
-
-  /**
-   * Submit multiple jobs as a batch for execution.
-   *
-   * <p>This method allows submitting multiple job execution contexts together, which can be more
-   * efficient than submitting them individually. Implementations should only provide this method if
-   * {@link #supportsBatchJob(String)} returns true.
-   *
-   * @param jobTemplateName the job template name (routes to the appropriate job template)
-   * @param jobExecutionContexts list of execution contexts to be submitted as a batch
-   * @return provider-specific batch job id
-   * @throws NoSuchJobTemplateException if the job template name does not exist
-   * @throws UnsupportedOperationException if batch job submission is not supported
-   */
-  String submitBatchJob(String jobTemplateName, List<JobExecutionContext> jobExecutionContexts)
-      throws NoSuchJobTemplateException, UnsupportedOperationException;
 }
