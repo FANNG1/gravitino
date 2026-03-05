@@ -20,11 +20,12 @@ package org.apache.gravitino.maintenance.optimizer.tool;
 
 import com.google.common.base.Preconditions;
 import java.io.PrintStream;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.gravitino.NameIdentifier;
-import org.apache.gravitino.maintenance.optimizer.api.common.MetricSample;
+import org.apache.gravitino.maintenance.optimizer.api.common.MetricPoint;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
 import org.apache.gravitino.maintenance.optimizer.api.monitor.MetricsProvider;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
@@ -70,8 +71,8 @@ public class MetricsLister {
 
   private void printTableMetrics(
       NameIdentifier identifier, long startTimeSeconds, long endTimeSeconds) {
-    Map<String, List<MetricSample>> metrics =
-        metricsProvider.getTableMetrics(identifier, startTimeSeconds, endTimeSeconds);
+    List<MetricPoint> metrics =
+        metricsProvider.tableMetrics(identifier, startTimeSeconds, endTimeSeconds);
     printMetrics(identifier, "table", metrics);
   }
 
@@ -80,8 +81,8 @@ public class MetricsLister {
       PartitionPath partitionPath,
       long startTimeSeconds,
       long endTimeSeconds) {
-    Map<String, List<MetricSample>> metrics =
-        metricsProvider.getPartitionMetrics(
+    List<MetricPoint> metrics =
+        metricsProvider.partitionMetrics(
             identifier, partitionPath, startTimeSeconds, endTimeSeconds);
     printMetrics(
         identifier, "partition:" + PartitionUtils.encodePartitionPath(partitionPath), metrics);
@@ -94,33 +95,31 @@ public class MetricsLister {
     Preconditions.checkArgument(endTimeSeconds >= startTimeSeconds, "Invalid time range");
 
     for (NameIdentifier identifier : identifiers) {
-      Map<String, List<MetricSample>> metrics =
-          metricsProvider.getJobMetrics(identifier, startTimeSeconds, endTimeSeconds);
+      List<MetricPoint> metrics =
+          metricsProvider.jobMetrics(identifier, startTimeSeconds, endTimeSeconds);
       printMetrics(identifier, "job", metrics);
     }
   }
 
-  private void printMetrics(
-      NameIdentifier identifier, String scope, Map<String, List<MetricSample>> metrics) {
+  private void printMetrics(NameIdentifier identifier, String scope, List<MetricPoint> metrics) {
     if (metrics == null || metrics.isEmpty()) {
       out.printf("OK %s [%s]: no metrics%n", identifier, scope);
       return;
     }
-    metrics.forEach(
-        (metricName, samples) -> {
-          if (samples == null || samples.isEmpty()) {
-            out.printf("OK %s [%s] %s: no samples%n", identifier, scope, metricName);
-            return;
-          }
-          for (MetricSample sample : samples) {
-            out.printf(
-                "OK %s [%s] %s ts=%d value=%s%n",
-                identifier,
-                scope,
-                metricName,
-                sample.timestamp(),
-                sample.statistic().value().value());
-          }
-        });
+    metrics.stream()
+        .collect(Collectors.groupingBy(MetricPoint::metricName))
+        .forEach(
+            (metricName, points) ->
+                points.stream()
+                    .sorted(Comparator.comparingLong(MetricPoint::timestampSeconds))
+                    .forEach(
+                        point ->
+                            out.printf(
+                                "OK %s [%s] %s ts=%d value=%s%n",
+                                identifier,
+                                scope,
+                                metricName,
+                                point.timestampSeconds(),
+                                String.valueOf(point.value().value()))));
   }
 }

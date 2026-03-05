@@ -173,6 +173,56 @@ public class Monitor implements AutoCloseable {
     }
   }
 
+  public List<EvaluationResult> runAndCollect(
+      NameIdentifier tableIdentifier,
+      long actionTimeSeconds,
+      long rangeSeconds,
+      Optional<PartitionPath> partitionPath) {
+    return evaluateMetrics(tableIdentifier, actionTimeSeconds, rangeSeconds, partitionPath);
+  }
+
+  public long latestMetricTimestampSeconds(
+      NameIdentifier tableIdentifier,
+      long actionTimeSeconds,
+      long rangeSeconds,
+      Optional<PartitionPath> partitionPath) {
+    Preconditions.checkArgument(tableIdentifier != null, "tableIdentifier must not be null");
+    Preconditions.checkArgument(partitionPath != null, "partitionPath must not be null");
+    Preconditions.checkArgument(actionTimeSeconds >= 0, "actionTimeSeconds must be >= 0");
+    Preconditions.checkArgument(rangeSeconds >= 0, "rangeSeconds must be >= 0");
+
+    Pair<Long, Long> timeRange = timeRange(actionTimeSeconds, rangeSeconds);
+    DataScope tableScope =
+        partitionPath
+            .map(path -> DataScope.forPartition(tableIdentifier, path))
+            .orElseGet(() -> DataScope.forTable(tableIdentifier));
+    List<MetricPoint> tableMetrics =
+        partitionPath
+            .map(
+                path ->
+                    metricsProvider.partitionMetrics(
+                        tableIdentifier, path, timeRange.getLeft(), timeRange.getRight()))
+            .orElseGet(
+                () ->
+                    metricsProvider.tableMetrics(
+                        tableIdentifier, timeRange.getLeft(), timeRange.getRight()));
+    long latestTimestamp = maxTimestamp(filterMetricsByScope(tableMetrics, tableScope));
+
+    List<NameIdentifier> jobs = tableJobRelationProvider.jobIdentifiers(tableIdentifier);
+    if (jobs == null) {
+      jobs = List.of();
+    }
+    for (NameIdentifier jobIdentifier : jobs) {
+      List<MetricPoint> jobMetrics =
+          metricsProvider.jobMetrics(jobIdentifier, timeRange.getLeft(), timeRange.getRight());
+      latestTimestamp =
+          Math.max(
+              latestTimestamp,
+              maxTimestamp(filterMetricsByScope(jobMetrics, DataScope.forJob(jobIdentifier))));
+    }
+    return latestTimestamp;
+  }
+
   private EvaluationResult evaluateTableMetrics(
       MetricsEvaluator evaluator,
       NameIdentifier tableIdentifier,
@@ -364,6 +414,17 @@ public class Monitor implements AutoCloseable {
       immutableGrouped.put(entry.getKey(), List.copyOf(entry.getValue()));
     }
     return Collections.unmodifiableMap(immutableGrouped);
+  }
+
+  private static long maxTimestamp(List<MetricPoint> points) {
+    if (points == null || points.isEmpty()) {
+      return 0L;
+    }
+    long max = 0L;
+    for (MetricPoint point : points) {
+      max = Math.max(max, point.timestampSeconds());
+    }
+    return max;
   }
 
   /** Close all initialized monitor providers and callbacks. */

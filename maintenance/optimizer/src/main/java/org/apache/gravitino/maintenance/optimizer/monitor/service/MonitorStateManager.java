@@ -27,9 +27,9 @@ import java.util.concurrent.ExecutorService;
 import javax.ws.rs.core.Response;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.maintenance.optimizer.api.common.DataScope;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
 import org.apache.gravitino.maintenance.optimizer.api.monitor.EvaluationResult;
-import org.apache.gravitino.maintenance.optimizer.api.monitor.MetricScope;
 import org.apache.gravitino.maintenance.optimizer.monitor.Monitor;
 import org.apache.gravitino.maintenance.optimizer.monitor.service.rest.MonitorServiceException;
 import org.apache.gravitino.maintenance.optimizer.recommender.util.PartitionUtils;
@@ -327,11 +327,11 @@ public class MonitorStateManager {
     List<JobMonitorDetailInfo> jobDetails = new java.util.ArrayList<>();
 
     for (EvaluationResult result : results) {
-      MetricScope scope = result.scope();
-      if (scope.type() == MetricScope.Type.TABLE || scope.type() == MetricScope.Type.PARTITION) {
+      DataScope scope = result.scope();
+      if (scope.type() == DataScope.Type.TABLE || scope.type() == DataScope.Type.PARTITION) {
         tableBefore = result.beforeMetrics();
         tableAfter = result.afterMetrics();
-      } else if (scope.type() == MetricScope.Type.JOB) {
+      } else if (scope.type() == DataScope.Type.JOB) {
         MonitorRequestState jobState =
             result.evaluation() ? MonitorRequestState.SUCCEEDED : MonitorRequestState.FAILED;
         jobDetails.add(
@@ -373,8 +373,8 @@ public class MonitorStateManager {
       boolean expired, List<EvaluationResult> results) {
     Boolean evaluation = null;
     for (EvaluationResult result : results) {
-      MetricScope scope = result.scope();
-      if (scope.type() == MetricScope.Type.TABLE || scope.type() == MetricScope.Type.PARTITION) {
+      DataScope scope = result.scope();
+      if (scope.type() == DataScope.Type.TABLE || scope.type() == DataScope.Type.PARTITION) {
         if (evaluation != null) {
           LOG.warn("Multiple table/partition evaluation results found; using the first value");
           break;
@@ -408,7 +408,8 @@ public class MonitorStateManager {
     }
     return metrics.values().stream()
         .flatMap(List::stream)
-        .mapToLong(org.apache.gravitino.maintenance.optimizer.api.common.MetricSample::timestamp)
+        .mapToLong(
+            org.apache.gravitino.maintenance.optimizer.api.common.MetricSample::timestampSeconds)
         .max()
         .orElse(0L);
   }

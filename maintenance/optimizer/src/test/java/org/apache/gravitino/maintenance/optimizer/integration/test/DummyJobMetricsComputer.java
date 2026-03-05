@@ -25,7 +25,7 @@ import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.maintenance.optimizer.api.updater.SupportsCalculateJobStatistics;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
-import org.apache.gravitino.maintenance.optimizer.updater.StatisticEntryImpl;
+import org.apache.gravitino.maintenance.optimizer.common.StatisticEntryImpl;
 import org.apache.gravitino.stats.StatisticValues;
 
 public class DummyJobMetricsComputer implements SupportsCalculateJobStatistics {

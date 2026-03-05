@@ -32,8 +32,10 @@ val icebergVersion: String = libs.versions.iceberg4connector.get()
 
 dependencies {
   implementation(project(":api"))
+  implementation(project(":catalogs:catalog-lakehouse-iceberg"))
   implementation(project(":catalogs:catalog-common"))
   implementation(project(":clients:client-java"))
+  implementation(project(":server-common"))
   implementation(project(":core")) {
     exclude("*")
   }
@@ -49,6 +51,10 @@ dependencies {
   implementation(libs.commons.dbcp2)
   implementation(libs.ql.expression)
   implementation(libs.h2db)
+  implementation(libs.bundles.iceberg)
+  implementation(libs.aws.s3)
+  implementation(libs.javax.ws.rs.api)
+  implementation(libs.bundles.jersey)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)
@@ -99,6 +105,10 @@ dependencies {
 }
 
 tasks {
+  compileJava {
+    dependsOn(":catalogs:catalog-lakehouse-iceberg:runtimeJars")
+  }
+
   val copyDepends by registering(Copy::class) {
     from(configurations.runtimeClasspath)
     into("build/libs")

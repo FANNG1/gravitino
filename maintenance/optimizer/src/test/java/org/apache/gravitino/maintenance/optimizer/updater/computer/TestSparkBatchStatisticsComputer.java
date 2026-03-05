@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
-import org.apache.gravitino.maintenance.optimizer.api.common.TableStatisticsBundle;
+import org.apache.gravitino.maintenance.optimizer.api.common.TableAndPartitionStatistics;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
 import org.junit.jupiter.api.Assertions;
@@ -66,11 +66,10 @@ class TestSparkBatchStatisticsComputer {
                 + "\"small_files\":2,\"data_size_mse\":10.5,\"avg_size\":100.0,\"total_size\":500}' > \"${OUTPUT}\""));
 
     SparkBatchStatisticsComputer computer = new SparkBatchStatisticsComputer();
-    OptimizerEnv env = OptimizerEnv.getInstance();
-    env.initialize(createConfig(script, output));
+    OptimizerEnv env = new OptimizerEnv(createConfig(script, output));
     computer.initialize(env);
 
-    TableStatisticsBundle bundle =
+    TableAndPartitionStatistics bundle =
         computer.calculateTableStatistics(NameIdentifier.parse("catalog.schema.table"));
     List<StatisticEntry<?>> stats = bundle.tableStatistics();
     Map<String, StatisticEntry<?>> statsByName = toMap(stats);

@@ -21,7 +21,9 @@ package org.apache.gravitino.maintenance.optimizer;
 
 import com.google.common.collect.ImmutableMap;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
+import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,9 +38,11 @@ class TestOptimizerMonitorCli {
   @Test
   void testMonitorCommands() throws Exception {
     OptimizerConfig config =
-        new OptimizerConfig(ImmutableMap.of(OptimizerConfig.MONITOR_SERVICE_PORT, "0"));
-    OptimizerEnv env = OptimizerEnv.getInstance();
-    env.initialize(config);
+        new OptimizerConfig(
+            ImmutableMap.of(
+                OptimizerConfig.MONITOR_SERVICE_PORT_CONFIG.getKey(),
+                String.valueOf(findAvailablePort())));
+    OptimizerEnv env = new OptimizerEnv(config);
 
     MonitorServiceServer server = new MonitorServiceServer(env);
     server.start();
@@ -86,8 +90,11 @@ class TestOptimizerMonitorCli {
               confPath.toString(),
               "--monitor-service-url",
               monitorServiceUrl);
-      Assertions.assertTrue(statusOutput.contains("monitorId=" + monitorId));
-      Assertions.assertTrue(statusOutput.contains("identifier=db.table.cli"));
+      Assertions.assertTrue(
+          statusOutput.contains("monitorId=" + monitorId), () -> "status output: " + statusOutput);
+      Assertions.assertTrue(
+          statusOutput.contains("tableIdentifier=db.table.cli"),
+          () -> "status output: " + statusOutput);
 
       String cancelOutput =
           runCommand(
@@ -103,6 +110,12 @@ class TestOptimizerMonitorCli {
       Assertions.assertTrue(cancelOutput.contains("state=CANCELED"));
     } finally {
       server.stop();
+    }
+  }
+
+  private int findAvailablePort() throws IOException {
+    try (ServerSocket socket = new ServerSocket(0)) {
+      return socket.getLocalPort();
     }
   }
 

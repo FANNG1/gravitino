@@ -54,8 +54,7 @@ class TestFileStatisticsProvider {
             "malformed json"));
 
     FileStatisticsProvider provider = new FileStatisticsProvider();
-    OptimizerEnv optimizerEnv = OptimizerEnv.getInstance();
-    optimizerEnv.initialize(createConfig(statsFile));
+    OptimizerEnv optimizerEnv = new OptimizerEnv(createConfig(statsFile));
     provider.initialize(optimizerEnv);
 
     List<StatisticEntry<?>> stats =
@@ -72,8 +71,7 @@ class TestFileStatisticsProvider {
   @Test
   void testInitializeRequiresFilePath() {
     FileStatisticsProvider provider = new FileStatisticsProvider();
-    OptimizerEnv optimizerEnv = OptimizerEnv.getInstance();
-    optimizerEnv.initialize(new OptimizerConfig());
+    OptimizerEnv optimizerEnv = new OptimizerEnv(new OptimizerConfig());
 
     Assertions.assertThrows(
         IllegalArgumentException.class, () -> provider.initialize(optimizerEnv));

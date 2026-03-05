@@ -50,8 +50,7 @@ class TestFileJobProvider {
             "malformed json"));
 
     FileJobProvider provider = new FileJobProvider();
-    OptimizerEnv optimizerEnv = OptimizerEnv.getInstance();
-    optimizerEnv.initialize(createConfig(jobFile));
+    OptimizerEnv optimizerEnv = new OptimizerEnv(createConfig(jobFile));
     provider.initialize(optimizerEnv);
 
     List<NameIdentifier> jobs = provider.getJobNames(NameIdentifier.parse("catalog.schema.table"));
@@ -68,8 +67,7 @@ class TestFileJobProvider {
   @Test
   void testInitializeRequiresFilePath() {
     FileJobProvider provider = new FileJobProvider();
-    OptimizerEnv optimizerEnv = OptimizerEnv.getInstance();
-    optimizerEnv.initialize(new OptimizerConfig());
+    OptimizerEnv optimizerEnv = new OptimizerEnv(new OptimizerConfig());
 
     Assertions.assertThrows(
         IllegalArgumentException.class, () -> provider.initialize(optimizerEnv));

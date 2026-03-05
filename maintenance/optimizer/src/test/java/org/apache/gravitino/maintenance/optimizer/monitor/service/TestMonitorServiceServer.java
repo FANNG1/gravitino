@@ -22,9 +22,11 @@ package org.apache.gravitino.maintenance.optimizer.monitor.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.ServerSocket;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -39,9 +41,11 @@ public class TestMonitorServiceServer {
   @Test
   void testHealthEndpoint() throws Exception {
     OptimizerConfig config =
-        new OptimizerConfig(ImmutableMap.of(OptimizerConfig.MONITOR_SERVICE_PORT, "0"));
-    OptimizerEnv env = OptimizerEnv.getInstance();
-    env.initialize(config);
+        new OptimizerConfig(
+            ImmutableMap.of(
+                OptimizerConfig.MONITOR_SERVICE_PORT_CONFIG.getKey(),
+                String.valueOf(findAvailablePort())));
+    OptimizerEnv env = new OptimizerEnv(config);
 
     MonitorServiceServer server = new MonitorServiceServer(env);
     server.start();
@@ -66,9 +70,11 @@ public class TestMonitorServiceServer {
   @Test
   void testSubmitAndStatus() throws Exception {
     OptimizerConfig config =
-        new OptimizerConfig(ImmutableMap.of(OptimizerConfig.MONITOR_SERVICE_PORT, "0"));
-    OptimizerEnv env = OptimizerEnv.getInstance();
-    env.initialize(config);
+        new OptimizerConfig(
+            ImmutableMap.of(
+                OptimizerConfig.MONITOR_SERVICE_PORT_CONFIG.getKey(),
+                String.valueOf(findAvailablePort())));
+    OptimizerEnv env = new OptimizerEnv(config);
 
     MonitorServiceServer server = new MonitorServiceServer(env);
     server.start();
@@ -108,9 +114,11 @@ public class TestMonitorServiceServer {
   @Test
   void testListMonitors() throws Exception {
     OptimizerConfig config =
-        new OptimizerConfig(ImmutableMap.of(OptimizerConfig.MONITOR_SERVICE_PORT, "0"));
-    OptimizerEnv env = OptimizerEnv.getInstance();
-    env.initialize(config);
+        new OptimizerConfig(
+            ImmutableMap.of(
+                OptimizerConfig.MONITOR_SERVICE_PORT_CONFIG.getKey(),
+                String.valueOf(findAvailablePort())));
+    OptimizerEnv env = new OptimizerEnv(config);
 
     MonitorServiceServer server = new MonitorServiceServer(env);
     server.start();
@@ -144,9 +152,11 @@ public class TestMonitorServiceServer {
   @Test
   void testCancelMonitor() throws Exception {
     OptimizerConfig config =
-        new OptimizerConfig(ImmutableMap.of(OptimizerConfig.MONITOR_SERVICE_PORT, "0"));
-    OptimizerEnv env = OptimizerEnv.getInstance();
-    env.initialize(config);
+        new OptimizerConfig(
+            ImmutableMap.of(
+                OptimizerConfig.MONITOR_SERVICE_PORT_CONFIG.getKey(),
+                String.valueOf(findAvailablePort())));
+    OptimizerEnv env = new OptimizerEnv(config);
 
     MonitorServiceServer server = new MonitorServiceServer(env);
     server.start();
@@ -185,5 +195,11 @@ public class TestMonitorServiceServer {
     String monitorId = String.valueOf(submitResponse.get("monitorId"));
     Assertions.assertFalse(monitorId.isEmpty());
     return monitorId;
+  }
+
+  private int findAvailablePort() throws IOException {
+    try (ServerSocket socket = new ServerSocket(0)) {
+      return socket.getLocalPort();
+    }
   }
 }

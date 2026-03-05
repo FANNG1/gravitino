@@ -49,8 +49,7 @@ public class TestGravitinoJobSubmitter {
                 OptimizerConfig.JOB_ADAPTER_PREFIX + jobTemplateName + ".className",
                 GravitinoCompactionJobAdapter.class.getName()));
     GravitinoJobSubmitter submitter = new GravitinoJobSubmitter();
-    OptimizerEnv optimizerEnv = OptimizerEnv.getInstance();
-    optimizerEnv.initialize(config);
+    OptimizerEnv optimizerEnv = new OptimizerEnv(config);
     submitter.initialize(optimizerEnv);
 
     GravitinoJobAdapter adapter = submitter.loadJobAdapter(jobTemplateName);
@@ -65,8 +64,7 @@ public class TestGravitinoJobSubmitter {
                 OptimizerConfig.JOB_SUBMITTER_CONFIG_PREFIX + "custom", "optimizer",
                 OptimizerConfig.JOB_SUBMITTER_CONFIG_PREFIX + "override", "optimizer"));
     GravitinoJobSubmitter submitter = new GravitinoJobSubmitter();
-    OptimizerEnv optimizerEnv = OptimizerEnv.getInstance();
-    optimizerEnv.initialize(config);
+    OptimizerEnv optimizerEnv = new OptimizerEnv(config);
     submitter.initialize(optimizerEnv);
 
     JobExecutionContext context =

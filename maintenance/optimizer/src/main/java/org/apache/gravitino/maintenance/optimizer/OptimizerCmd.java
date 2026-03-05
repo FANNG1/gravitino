@@ -47,11 +47,15 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.gravitino.maintenance.optimizer.command.AppendMetricsCommand;
+import org.apache.gravitino.maintenance.optimizer.command.CancelMonitorCommand;
+import org.apache.gravitino.maintenance.optimizer.command.GetMonitorCommand;
 import org.apache.gravitino.maintenance.optimizer.command.ListJobMetricsCommand;
+import org.apache.gravitino.maintenance.optimizer.command.ListMonitorsCommand;
 import org.apache.gravitino.maintenance.optimizer.command.ListTableMetricsCommand;
 import org.apache.gravitino.maintenance.optimizer.command.MonitorMetricsCommand;
 import org.apache.gravitino.maintenance.optimizer.command.OptimizerCommandContext;
 import org.apache.gravitino.maintenance.optimizer.command.OptimizerCommandExecutor;
+import org.apache.gravitino.maintenance.optimizer.command.SubmitMonitorCommand;
 import org.apache.gravitino.maintenance.optimizer.command.SubmitStrategyJobsCommand;
 import org.apache.gravitino.maintenance.optimizer.command.UpdateStatisticsCommand;
 import org.apache.gravitino.maintenance.optimizer.command.rule.CommandRules;
@@ -103,6 +107,38 @@ public class OptimizerCmd {
               "Evaluate monitor rules for metrics at the given action time.",
               "./bin/gravitino-optimizer.sh --type monitor-metrics --identifiers c.db.t "
                   + "--action-time 1735689600"),
+          OptimizerCommandType.SUBMIT_MONITOR,
+          CommandOptionSpec.of(
+              EnumSet.of(
+                  CliOption.IDENTIFIER,
+                  CliOption.ACTION_TIME_SECONDS,
+                  CliOption.MONITOR_SERVICE_URL),
+              EnumSet.of(CliOption.RANGE_SECONDS, CliOption.PARTITION_PATH),
+              "Submit a monitor request to monitor service.",
+              "./bin/gravitino-optimizer.sh --type submit-monitor --identifier c.db.t "
+                  + "--action-time-seconds 1735689600 --range-seconds 3600 "
+                  + "--monitor-service-url http://localhost:8000"),
+          OptimizerCommandType.LIST_MONITORS,
+          CommandOptionSpec.of(
+              EnumSet.of(CliOption.MONITOR_SERVICE_URL),
+              EnumSet.noneOf(CliOption.class),
+              "List monitor requests from monitor service.",
+              "./bin/gravitino-optimizer.sh --type list-monitors "
+                  + "--monitor-service-url http://localhost:8000"),
+          OptimizerCommandType.GET_MONITOR,
+          CommandOptionSpec.of(
+              EnumSet.of(CliOption.MONITOR_ID, CliOption.MONITOR_SERVICE_URL),
+              EnumSet.noneOf(CliOption.class),
+              "Get monitor status by monitor ID from monitor service.",
+              "./bin/gravitino-optimizer.sh --type get-monitor --monitor-id <id> "
+                  + "--monitor-service-url http://localhost:8000"),
+          OptimizerCommandType.CANCEL_MONITOR,
+          CommandOptionSpec.of(
+              EnumSet.of(CliOption.MONITOR_ID, CliOption.MONITOR_SERVICE_URL),
+              EnumSet.noneOf(CliOption.class),
+              "Cancel a monitor request by monitor ID from monitor service.",
+              "./bin/gravitino-optimizer.sh --type cancel-monitor --monitor-id <id> "
+                  + "--monitor-service-url http://localhost:8000"),
           OptimizerCommandType.LIST_TABLE_METRICS,
           CommandOptionSpec.of(
               EnumSet.of(CliOption.IDENTIFIERS),
@@ -121,6 +157,10 @@ public class OptimizerCmd {
           OptimizerCommandType.UPDATE_STATISTICS, new UpdateStatisticsCommand(),
           OptimizerCommandType.APPEND_METRICS, new AppendMetricsCommand(),
           OptimizerCommandType.MONITOR_METRICS, new MonitorMetricsCommand(),
+          OptimizerCommandType.SUBMIT_MONITOR, new SubmitMonitorCommand(),
+          OptimizerCommandType.LIST_MONITORS, new ListMonitorsCommand(),
+          OptimizerCommandType.GET_MONITOR, new GetMonitorCommand(),
+          OptimizerCommandType.CANCEL_MONITOR, new CancelMonitorCommand(),
           OptimizerCommandType.LIST_TABLE_METRICS, new ListTableMetricsCommand(),
           OptimizerCommandType.LIST_JOB_METRICS, new ListJobMetricsCommand());
   private static final String LOCAL_STATS_CALCULATOR_NAME = "local-stats-calculator";
@@ -159,10 +199,14 @@ public class OptimizerCmd {
       boolean dryRun = cmd.hasOption(CliOption.DRY_RUN.longOpt());
       String limit = cmd.getOptionValue(CliOption.LIMIT.longOpt());
       String calculatorName = cmd.getOptionValue(CliOption.CALCULATOR_NAME.longOpt());
+      String identifier = cmd.getOptionValue(CliOption.IDENTIFIER.longOpt());
       String actionTime = cmd.getOptionValue(CliOption.ACTION_TIME.longOpt());
+      String actionTimeSeconds = cmd.getOptionValue(CliOption.ACTION_TIME_SECONDS.longOpt());
       String rangeSeconds =
           cmd.getOptionValue(
               CliOption.RANGE_SECONDS.longOpt(), Long.toString(DEFAULT_RANGE_SECONDS));
+      String monitorId = cmd.getOptionValue(CliOption.MONITOR_ID.longOpt());
+      String monitorServiceUrl = cmd.getOptionValue(CliOption.MONITOR_SERVICE_URL.longOpt());
       String partitionPathRaw = cmd.getOptionValue(CliOption.PARTITION_PATH.longOpt());
       String statisticsPayload = cmd.getOptionValue(CliOption.STATISTICS_PAYLOAD.longOpt());
       String filePath = cmd.getOptionValue(CliOption.FILE_PATH.longOpt());
@@ -176,8 +220,12 @@ public class OptimizerCmd {
               dryRun,
               limit,
               calculatorName,
+              identifier,
               actionTime,
+              actionTimeSeconds,
               rangeSeconds,
+              monitorId,
+              monitorServiceUrl,
               partitionPathRaw,
               statisticsInputContent,
               out);
@@ -453,9 +501,19 @@ public class OptimizerCmd {
         CliOptionArgType.SINGLE,
         null,
         "Path to statistics input file for local-stats-calculator"),
+    IDENTIFIER(
+        "identifier", CliOptionArgType.SINGLE, null, "Single identifier for monitor request"),
     ACTION_TIME("action-time", CliOptionArgType.SINGLE, null, "Action time in epoch seconds"),
+    ACTION_TIME_SECONDS(
+        "action-time-seconds", CliOptionArgType.SINGLE, null, "Action time in epoch seconds"),
     RANGE_SECONDS(
         "range-seconds", CliOptionArgType.SINGLE, null, "Range seconds for monitor evaluation"),
+    MONITOR_ID("monitor-id", CliOptionArgType.SINGLE, null, "Monitor request ID"),
+    MONITOR_SERVICE_URL(
+        "monitor-service-url",
+        CliOptionArgType.SINGLE,
+        null,
+        "Monitor service base URL, for example: http://localhost:8000"),
     PARTITION_PATH(
         "partition-path",
         CliOptionArgType.SINGLE,
@@ -508,6 +566,10 @@ public class OptimizerCmd {
     UPDATE_STATISTICS,
     APPEND_METRICS,
     MONITOR_METRICS,
+    SUBMIT_MONITOR,
+    LIST_MONITORS,
+    GET_MONITOR,
+    CANCEL_MONITOR,
     LIST_TABLE_METRICS,
     LIST_JOB_METRICS;
 

@@ -49,6 +49,7 @@ public class OptimizerConfig extends Config {
   public static final String GRAVITINO_METALAKE = OPTIMIZER_PREFIX + "gravitinoMetalake";
   public static final String GRAVITINO_DEFAULT_CATALOG =
       OPTIMIZER_PREFIX + "gravitinoDefaultCatalog";
+  public static final String S3_REGION = OPTIMIZER_PREFIX + "s3Region";
   public static final String JOB_ADAPTER_PREFIX = OPTIMIZER_PREFIX + "jobAdapter.";
   public static final String JOB_SUBMITTER_CONFIG_PREFIX = OPTIMIZER_PREFIX + "jobSubmitterConfig.";
 
@@ -62,11 +63,15 @@ public class OptimizerConfig extends Config {
   private static final String STATISTICS_UPDATER = UPDATER_PREFIX + "statisticsUpdater";
   private static final String METRICS_UPDATER = UPDATER_PREFIX + "metricsUpdater";
   public static final String MONITOR_PREFIX = OPTIMIZER_PREFIX + "monitor.";
+  private static final String MONITOR_SERVICE_PREFIX = MONITOR_PREFIX + "service.";
   private static final String METRICS_PROVIDER = MONITOR_PREFIX + "metricsProvider";
   private static final String TABLE_JOB_RELATION_PROVIDER =
       MONITOR_PREFIX + "tableJobRelationProvider";
   private static final String METRICS_EVALUATOR = MONITOR_PREFIX + "metricsEvaluator";
   private static final String MONITOR_CALLBACKS = MONITOR_PREFIX + "callbacks";
+  private static final String MONITOR_SERVICE_PORT = MONITOR_SERVICE_PREFIX + "port";
+  private static final String MONITOR_SERVICE_INTERVAL_SECONDS =
+      MONITOR_SERVICE_PREFIX + "intervalSeconds";
 
   public static final ConfigEntry<String> STATISTICS_PROVIDER_CONFIG =
       new ConfigBuilder(STATISTICS_PROVIDER)
@@ -165,6 +170,22 @@ public class OptimizerConfig extends Config {
           .toSequence()
           .createWithDefault(List.of());
 
+  public static final ConfigEntry<Integer> MONITOR_SERVICE_PORT_CONFIG =
+      new ConfigBuilder(MONITOR_SERVICE_PORT)
+          .doc("Monitor service HTTP port.")
+          .version(ConfigConstants.VERSION_1_2_0)
+          .intConf()
+          .checkValue(v -> v > 0, ConfigConstants.POSITIVE_NUMBER_ERROR_MSG)
+          .createWithDefault(8000);
+
+  public static final ConfigEntry<Integer> MONITOR_SERVICE_INTERVAL_SECONDS_CONFIG =
+      new ConfigBuilder(MONITOR_SERVICE_INTERVAL_SECONDS)
+          .doc("Monitor scheduler polling interval in seconds.")
+          .version(ConfigConstants.VERSION_1_2_0)
+          .intConf()
+          .checkValue(v -> v > 0, ConfigConstants.POSITIVE_NUMBER_ERROR_MSG)
+          .createWithDefault(30);
+
   public static final ConfigEntry<String> GRAVITINO_URI_CONFIG =
       new ConfigBuilder(GRAVITINO_URI)
           .doc("The URI of the Gravitino server.")
@@ -186,6 +207,14 @@ public class OptimizerConfig extends Config {
           .version(ConfigConstants.VERSION_1_2_0)
           .stringConf()
           .create();
+
+  public static final ConfigEntry<String> S3_REGION_CONFIG =
+      new ConfigBuilder(S3_REGION)
+          .doc("AWS region for optimizer tools that access S3.")
+          .version(ConfigConstants.VERSION_1_2_0)
+          .stringConf()
+          .checkValue(StringUtils::isNotBlank, ConfigConstants.NOT_BLANK_ERROR_MSG)
+          .createWithDefault("us-east-1");
 
   /** Create an empty optimizer config to populate programmatically. */
   public OptimizerConfig() {

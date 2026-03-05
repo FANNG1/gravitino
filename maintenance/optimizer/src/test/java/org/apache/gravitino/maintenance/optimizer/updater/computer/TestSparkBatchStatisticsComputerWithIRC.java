@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
-import org.apache.gravitino.maintenance.optimizer.api.common.TableStatisticsBundle;
+import org.apache.gravitino.maintenance.optimizer.api.common.TableAndPartitionStatistics;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
 import org.junit.jupiter.api.Assertions;
@@ -58,11 +58,11 @@ public class TestSparkBatchStatisticsComputerWithIRC {
     Path output = tempDir.resolve("stats.json");
 
     SparkBatchStatisticsComputer computer = new SparkBatchStatisticsComputer();
-    OptimizerEnv env = OptimizerEnv.getInstance();
-    env.initialize(createConfig(script, output, sparkSubmit, sparkArgs));
+    OptimizerEnv env = new OptimizerEnv(createConfig(script, output, sparkSubmit, sparkArgs));
     computer.initialize(env);
 
-    TableStatisticsBundle bundle = computer.calculateTableStatistics(NameIdentifier.parse(table));
+    TableAndPartitionStatistics bundle =
+        computer.calculateTableStatistics(NameIdentifier.parse(table));
     List<StatisticEntry<?>> stats = bundle.tableStatistics();
     // Ensure we got at least the core metrics
     Map<String, StatisticEntry<?>> statsByName = toMap(stats);
