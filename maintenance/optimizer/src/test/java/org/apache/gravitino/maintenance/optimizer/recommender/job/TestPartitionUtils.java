@@ -201,9 +201,11 @@ public class TestPartitionUtils {
     Column[] columns = new Column[] {column("a", Types.StringType.get())};
     Transform[] partitioning = new Transform[] {Transforms.identity("a")};
 
-    Assertions.assertThrows(
-        IllegalArgumentException.class,
-        () -> PartitionUtils.getWhereClauseForPartitions(null, columns, partitioning));
+    IllegalArgumentException exception =
+        Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> PartitionUtils.getWhereClauseForPartitions(null, columns, partitioning));
+    Assertions.assertTrue(exception.getMessage().contains("partitions cannot be null or empty"));
   }
 
   @Test
@@ -213,8 +215,100 @@ public class TestPartitionUtils {
     Column[] columns = new Column[0];
     Transform[] partitioning = new Transform[] {Transforms.identity("p")};
 
-    Assertions.assertThrows(
-        IllegalArgumentException.class,
-        () -> PartitionUtils.getWhereClauseForPartitions(partitions, columns, partitioning));
+    IllegalArgumentException exception =
+        Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> PartitionUtils.getWhereClauseForPartitions(partitions, columns, partitioning));
+    Assertions.assertTrue(exception.getMessage().contains("columns cannot be null or empty"));
+  }
+
+  @Test
+  void testGetWhereClauseForPartitionWithNullPartition() {
+    Column[] columns = new Column[] {column("a", Types.StringType.get())};
+    Transform[] partitioning = new Transform[] {Transforms.identity("a")};
+
+    IllegalArgumentException exception =
+        Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> PartitionUtils.getWhereClauseForPartition(null, columns, partitioning));
+    Assertions.assertTrue(exception.getMessage().contains("partition cannot be null or empty"));
+  }
+
+  @Test
+  void testGetWhereClauseForPartitionWithEmptyPartition() {
+    List<PartitionEntry> partition = List.of();
+    Column[] columns = new Column[] {column("a", Types.StringType.get())};
+    Transform[] partitioning = new Transform[] {Transforms.identity("a")};
+
+    IllegalArgumentException exception =
+        Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> PartitionUtils.getWhereClauseForPartition(partition, columns, partitioning));
+    Assertions.assertTrue(exception.getMessage().contains("partition cannot be null or empty"));
+  }
+
+  @Test
+  void testGetWhereClauseForPartitionWithNullColumns() {
+    List<PartitionEntry> partition = List.of(new PartitionEntryImpl("a", "value"));
+    Transform[] partitioning = new Transform[] {Transforms.identity("a")};
+
+    IllegalArgumentException exception =
+        Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> PartitionUtils.getWhereClauseForPartition(partition, null, partitioning));
+    Assertions.assertTrue(exception.getMessage().contains("columns cannot be null or empty"));
+  }
+
+  @Test
+  void testGetWhereClauseForPartitionWithEmptyColumns() {
+    List<PartitionEntry> partition = List.of(new PartitionEntryImpl("a", "value"));
+    Column[] columns = new Column[0];
+    Transform[] partitioning = new Transform[] {Transforms.identity("a")};
+
+    IllegalArgumentException exception =
+        Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> PartitionUtils.getWhereClauseForPartition(partition, columns, partitioning));
+    Assertions.assertTrue(exception.getMessage().contains("columns cannot be null or empty"));
+  }
+
+  @Test
+  void testGetWhereClauseForPartitionWithNullPartitioning() {
+    List<PartitionEntry> partition = List.of(new PartitionEntryImpl("a", "value"));
+    Column[] columns = new Column[] {column("a", Types.StringType.get())};
+
+    IllegalArgumentException exception =
+        Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> PartitionUtils.getWhereClauseForPartition(partition, columns, null));
+    Assertions.assertTrue(
+        exception.getMessage().contains("partitioning must match the size of partition entries"));
+  }
+
+  @Test
+  void testGetWhereClauseForPartitionWithEmptyPartitioning() {
+    List<PartitionEntry> partition = List.of(new PartitionEntryImpl("a", "value"));
+    Column[] columns = new Column[] {column("a", Types.StringType.get())};
+
+    IllegalArgumentException exception =
+        Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> PartitionUtils.getWhereClauseForPartition(partition, columns, new Transform[0]));
+    Assertions.assertTrue(
+        exception.getMessage().contains("partitioning must match the size of partition entries"));
+  }
+
+  @Test
+  void testGetWhereClauseForPartitionWithPartitioningSizeNotMatchPartitionSize() {
+    List<PartitionEntry> partition = List.of(new PartitionEntryImpl("a", "value"));
+    Column[] columns = new Column[] {column("a", Types.StringType.get())};
+    Transform[] partitioning = new Transform[] {Transforms.identity("a"), Transforms.identity("b")};
+
+    IllegalArgumentException exception =
+        Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> PartitionUtils.getWhereClauseForPartition(partition, columns, partitioning));
+    Assertions.assertTrue(
+        exception.getMessage().contains("partitioning must match the size of partition entries"));
   }
 }

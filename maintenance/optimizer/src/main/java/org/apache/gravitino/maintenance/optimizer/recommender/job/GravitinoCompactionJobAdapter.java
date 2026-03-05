@@ -49,6 +49,11 @@ public class GravitinoCompactionJobAdapter implements GravitinoJobAdapter {
         "options", getOptions(jobContext));
   }
 
+  @Override
+  public boolean supportsBatchJob() {
+    return false;
+  }
+
   private String getTableName(CompactionJobContext jobContext) {
     return IdentifierUtils.removeCatalogFromIdentifier(jobContext.nameIdentifier()).toString();
   }

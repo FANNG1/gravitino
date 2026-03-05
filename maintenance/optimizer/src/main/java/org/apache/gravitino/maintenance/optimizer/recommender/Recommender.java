@@ -24,6 +24,7 @@ import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,7 @@ import java.util.PriorityQueue;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.exceptions.NoSuchTableException;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
 import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.maintenance.optimizer.api.common.Strategy;
@@ -137,13 +139,37 @@ public class Recommender implements AutoCloseable {
     Preconditions.checkArgument(
         StringUtils.isNotBlank(strategyType), "strategyType must not be blank");
 
+    // Filter out non-existing tables
+    List<NameIdentifier> existingTables = new ArrayList<>();
+    for (NameIdentifier nameIdentifier : nameIdentifiers) {
+      try {
+        tableMetadataProvider.tableMetadata(nameIdentifier);
+        existingTables.add(nameIdentifier);
+      } catch (NoSuchTableException e) {
+        LOG.warn("Skipping table {} because it does not exist", nameIdentifier);
+      }
+    }
+
+    if (existingTables.isEmpty()) {
+      LOG.info("No existing tables found for strategy type {}", strategyType);
+      return;
+    }
+
     Map<String, List<NameIdentifier>> identifiersByStrategyName =
-        getIdentifiersByStrategyName(nameIdentifiers, strategyType);
+        getIdentifiersByStrategyName(existingTables, strategyType);
 
     for (Map.Entry<String, List<NameIdentifier>> entry : identifiersByStrategyName.entrySet()) {
       String strategyName = entry.getKey();
       List<StrategyEvaluation> evaluations =
           recommendForOneStrategy(entry.getValue(), strategyName);
+
+      if (evaluations.isEmpty()) {
+        LOG.info("No evaluations for strategy {}", strategyName);
+        continue;
+      }
+
+      Map<String, Map<JobExecutionContext, Long>> templateNameToBatchJobContexts = new HashMap<>();
+
       for (StrategyEvaluation evaluation : evaluations) {
         JobExecutionContext jobExecutionContext =
             evaluation
@@ -154,13 +180,41 @@ public class Recommender implements AutoCloseable {
                             "Job execution context is missing for evaluation of strategy "
                                 + strategyName));
         String templateName = jobExecutionContext.jobTemplateName();
+
+        if (jobSubmitter.supportsBatchJob(templateName)) {
+          templateNameToBatchJobContexts
+              .computeIfAbsent(templateName, k -> new HashMap<>())
+              .put(jobExecutionContext, evaluation.score());
+          continue;
+        }
+
+        // submit single job
         String jobId = jobSubmitter.submitJob(templateName, jobExecutionContext);
         LOG.info(
             "Submit job {} for strategy {} with context {}",
             jobId,
             strategyName,
             jobExecutionContext);
-        logRecommendation(strategyName, evaluation);
+        logRecommendation(strategyName, jobExecutionContext, evaluation.score());
+      }
+
+      // submit batch jobs per template
+      for (Map.Entry<String, Map<JobExecutionContext, Long>> templateNameToBatchEntry :
+          templateNameToBatchJobContexts.entrySet()) {
+        String templateName = templateNameToBatchEntry.getKey();
+        Map<JobExecutionContext, Long> batchJobContexts = templateNameToBatchEntry.getValue();
+        String jobId =
+            jobSubmitter.submitBatchJob(templateName, new ArrayList<>(batchJobContexts.keySet()));
+        LOG.info(
+            "Submit batch job {} for strategy {} with contexts {}",
+            jobId,
+            strategyName,
+            new ArrayList<>(batchJobContexts.keySet()));
+        for (Map.Entry<JobExecutionContext, Long> jobContextToScoreEntry :
+            batchJobContexts.entrySet()) {
+          logRecommendation(
+              strategyName, jobContextToScoreEntry.getKey(), jobContextToScoreEntry.getValue());
+        }
       }
     }
   }
@@ -188,6 +242,10 @@ public class Recommender implements AutoCloseable {
     for (NameIdentifier identifier : identifiers) {
       StrategyHandler strategyHandler = loadStrategyHandler(strategy, identifier);
       if (!strategyHandler.shouldTrigger()) {
+        LOG.info(
+            "Skip strategy {} for identifier {} because strategy handler trigger condition is not met",
+            strategyName,
+            identifier);
         continue;
       }
       StrategyEvaluation evaluation = strategyHandler.evaluate();
@@ -332,22 +390,14 @@ public class Recommender implements AutoCloseable {
             statisticsProvider.name()));
   }
 
-  private void logRecommendation(String strategyName, StrategyEvaluation evaluation) {
-    JobExecutionContext jobExecutionContext =
-        evaluation
-            .jobExecutionContext()
-            .orElseThrow(
-                () ->
-                    new IllegalStateException(
-                        "Job execution context is missing for evaluation of strategy "
-                            + strategyName));
-    System.out.println(
-        String.format(
-            "RECOMMEND: strategy=%s identifier=%s score=%d jobTemplate=%s jobOptions=%s",
-            strategyName,
-            jobExecutionContext.nameIdentifier(),
-            evaluation.score(),
-            jobExecutionContext.jobTemplateName(),
-            jobExecutionContext.jobOptions()));
+  private void logRecommendation(
+      String strategyName, JobExecutionContext jobExecutionContext, long score) {
+    System.out.printf(
+        "RECOMMEND: strategy=%s identifier=%s score=%d jobTemplate=%s jobOptions=%s%n",
+        strategyName,
+        jobExecutionContext.nameIdentifier(),
+        score,
+        jobExecutionContext.jobTemplateName(),
+        jobExecutionContext.jobOptions());
   }
 }
