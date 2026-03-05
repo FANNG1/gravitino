@@ -19,6 +19,7 @@
 
 package org.apache.gravitino.maintenance.optimizer.integration.test;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,7 +43,6 @@ import org.apache.gravitino.rel.expressions.transforms.Transform;
 import org.apache.gravitino.rel.expressions.transforms.Transforms;
 import org.apache.gravitino.rel.types.Types;
 import org.junit.jupiter.api.BeforeAll;
-import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
 // Set up the Gravitino server, metalake, Iceberg catalogs
 public class GravitinoOptimizerEnvIT extends BaseIT {
@@ -58,7 +58,7 @@ public class GravitinoOptimizerEnvIT extends BaseIT {
   @BeforeAll
   @Override
   public void startIntegrationTest() throws Exception {
-    containerSuite.startPostgreSQLContainer(TestDatabaseName.GRAVITINO_STATS_IT);
+    containerSuite.startPostgreSQLContainer(TestDatabaseName.PG_TEST_PARTITION_STATS);
     super.startIntegrationTest();
     initMetalakeAndCatalog();
     this.optimizerEnv = initOptimizerEnv();
@@ -130,9 +130,7 @@ public class GravitinoOptimizerEnvIT extends BaseIT {
     configs.putAll(getSpecifyConfigs());
 
     OptimizerConfig config = new OptimizerConfig(configs);
-    OptimizerEnv env = OptimizerEnv.getInstance();
-    env.initialize(config);
-    return env;
+    return new OptimizerEnv(config);
   }
 
   private Map<String, String> getGravitinoConfigs() {
@@ -188,7 +186,9 @@ public class GravitinoOptimizerEnvIT extends BaseIT {
   }
 
   private String getPGUri() {
-    return containerSuite.getPostgreSQLContainer().getJdbcUrl(TestDatabaseName.GRAVITINO_STATS_IT);
+    return containerSuite
+        .getPostgreSQLContainer()
+        .getJdbcUrl(TestDatabaseName.PG_TEST_PARTITION_STATS);
   }
 
   private String getPGUser() {

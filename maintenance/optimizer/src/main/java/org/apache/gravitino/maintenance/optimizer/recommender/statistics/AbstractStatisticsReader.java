@@ -36,7 +36,7 @@ import org.apache.gravitino.maintenance.optimizer.api.common.PartitionEntry;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
 import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.maintenance.optimizer.common.PartitionEntryImpl;
-import org.apache.gravitino.maintenance.optimizer.updater.StatisticEntryImpl;
+import org.apache.gravitino.maintenance.optimizer.common.StatisticEntryImpl;
 import org.apache.gravitino.stats.StatisticValue;
 import org.apache.gravitino.stats.StatisticValues;
 import org.slf4j.Logger;

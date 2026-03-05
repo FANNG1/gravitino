@@ -35,7 +35,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
 import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
-import org.apache.gravitino.maintenance.optimizer.api.common.TableStatisticsBundle;
+import org.apache.gravitino.maintenance.optimizer.api.common.TableAndPartitionStatistics;
 import org.apache.gravitino.maintenance.optimizer.api.updater.SupportsCalculateTableStatistics;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
@@ -113,7 +113,7 @@ public class SparkBatchStatisticsComputer implements SupportsCalculateTableStati
   }
 
   @Override
-  public TableStatisticsBundle calculateTableStatistics(NameIdentifier tableIdentifier) {
+  public TableAndPartitionStatistics calculateTableStatistics(NameIdentifier tableIdentifier) {
     ensureOutputParentExists();
     deleteExistingOutput();
 
@@ -127,7 +127,7 @@ public class SparkBatchStatisticsComputer implements SupportsCalculateTableStati
         fileStatisticsReader.readTableStatistics(tableIdentifier);
     Map<PartitionPath, List<StatisticEntry<?>>> partitionStatistics =
         fileStatisticsReader.readPartitionStatistics(tableIdentifier);
-    return new TableStatisticsBundle(tableStatistics, partitionStatistics);
+    return new TableAndPartitionStatistics(tableStatistics, partitionStatistics);
   }
 
   private List<String> buildCommand(NameIdentifier tableIdentifier) {

@@ -34,8 +34,12 @@ public final class OptimizerCommandContext {
   private final boolean dryRun;
   private final String limit;
   private final String calculatorName;
+  private final String identifier;
   private final String actionTime;
+  private final String actionTimeSeconds;
   private final String rangeSeconds;
+  private final String monitorId;
+  private final String monitorServiceUrl;
   private final String partitionPathRaw;
   private final Optional<StatisticsInputContent> statisticsInputContent;
   private final PrintStream output;
@@ -47,8 +51,12 @@ public final class OptimizerCommandContext {
       boolean dryRun,
       String limit,
       String calculatorName,
+      String identifier,
       String actionTime,
+      String actionTimeSeconds,
       String rangeSeconds,
+      String monitorId,
+      String monitorServiceUrl,
       String partitionPathRaw,
       Optional<StatisticsInputContent> statisticsInputContent,
       PrintStream output) {
@@ -58,8 +66,12 @@ public final class OptimizerCommandContext {
     this.dryRun = dryRun;
     this.limit = limit;
     this.calculatorName = calculatorName;
+    this.identifier = identifier;
     this.actionTime = actionTime;
+    this.actionTimeSeconds = actionTimeSeconds;
     this.rangeSeconds = rangeSeconds;
+    this.monitorId = monitorId;
+    this.monitorServiceUrl = monitorServiceUrl;
     this.partitionPathRaw = partitionPathRaw;
     this.statisticsInputContent = statisticsInputContent;
     this.output = output;
@@ -97,12 +109,28 @@ public final class OptimizerCommandContext {
     return calculatorName;
   }
 
+  public String identifier() {
+    return identifier;
+  }
+
   public String actionTime() {
     return actionTime;
   }
 
+  public String actionTimeSeconds() {
+    return actionTimeSeconds;
+  }
+
   public String rangeSeconds() {
     return rangeSeconds;
+  }
+
+  public String monitorId() {
+    return monitorId;
+  }
+
+  public String monitorServiceUrl() {
+    return monitorServiceUrl;
   }
 
   public String partitionPathRaw() {
