@@ -101,7 +101,7 @@ public class GravitinoOptimizerEnvIT extends BaseIT {
             rules,
             ImmutableSet.of(MetadataObject.Type.TABLE),
             Map.of(
-                GravitinoStrategy.STRATEGY_TYPE_KEY,
+                GravitinoStrategy.POLICY_STRATEGY_TYPE_KEY,
                 policyType,
                 GravitinoStrategy.JOB_TEMPLATE_NAME_KEY,
                 "template-name"));
