@@ -35,7 +35,6 @@ public class GravitinoStrategy implements PartitionStrategy {
 
   private static final Logger LOG = LoggerFactory.getLogger(GravitinoStrategy.class);
 
-  @VisibleForTesting public static final String STRATEGY_TYPE_KEY = "strategy.type";
   @VisibleForTesting public static final String POLICY_STRATEGY_TYPE_KEY = "gravitino.policy.type";
 
   @VisibleForTesting public static final String JOB_TEMPLATE_NAME_KEY = "job.template-name";
@@ -76,12 +75,7 @@ public class GravitinoStrategy implements PartitionStrategy {
    */
   @Override
   public String strategyType() {
-    Map<String, String> properties = policy.content().properties();
-    String strategyType = properties.get(POLICY_STRATEGY_TYPE_KEY);
-    if (strategyType != null) {
-      return strategyType;
-    }
-    return properties.get(STRATEGY_TYPE_KEY);
+    return policy.content().properties().get(POLICY_STRATEGY_TYPE_KEY);
   }
 
   /**

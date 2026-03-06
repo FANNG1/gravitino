@@ -173,14 +173,6 @@ public class Monitor implements AutoCloseable {
     }
   }
 
-  public List<EvaluationResult> runAndCollect(
-      NameIdentifier tableIdentifier,
-      long actionTimeSeconds,
-      long rangeSeconds,
-      Optional<PartitionPath> partitionPath) {
-    return evaluateMetrics(tableIdentifier, actionTimeSeconds, rangeSeconds, partitionPath);
-  }
-
   public long latestMetricTimestampSeconds(
       NameIdentifier tableIdentifier,
       long actionTimeSeconds,
