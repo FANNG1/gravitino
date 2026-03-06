@@ -19,25 +19,35 @@
 
 set -euo pipefail
 
-GRAVITINO_URI="${GRAVITINO_URI:-http://localhost:8090}"
-METALAKE="${METALAKE:-test}"
-CATALOG="${CATALOG:-generic}"
 OPTIMIZER_BIN="${OPTIMIZER_BIN:-./bin/gravitino-optimizer.sh}"
 OPTIMIZER_CONF="${OPTIMIZER_CONF:-./conf/gravitino-optimizer.conf}"
 MONITOR_SERVICE_URL="${MONITOR_SERVICE_URL:-http://localhost:8000}"
-RANGE_SECONDS="${RANGE_SECONDS:-3600}"
+GRAVITINO_URI="${GRAVITINO_URI:-http://localhost:8090}"
+METALAKE="${METALAKE:-test}"
+CATALOG="${CATALOG:-generic}"
+SCHEMA="${SCHEMA:-db}"
+TABLE1="${TABLE1:-table1}"
+TABLE2="${TABLE2:-table2}"
 ACTION_TIME="${ACTION_TIME:-}"
+RANGE_SECONDS="${RANGE_SECONDS:-3600}"
+MAX_POLL_TIMES="${MAX_POLL_TIMES:-30}"
+POLL_INTERVAL_SECONDS="${POLL_INTERVAL_SECONDS:-2}"
+
+if [[ ! -x "${OPTIMIZER_BIN}" ]]; then
+  echo "Optimizer CLI not found or not executable: ${OPTIMIZER_BIN}" >&2
+  exit 1
+fi
+
+if [[ ! -f "${OPTIMIZER_CONF}" ]]; then
+  echo "Optimizer config file not found: ${OPTIMIZER_CONF}" >&2
+  exit 1
+fi
 
 update_config_property() {
   local key="$1"
   local value="$2"
   local file="$3"
   local tmp_file
-
-  if [ ! -f "$file" ]; then
-    echo "Optimizer config not found: ${file}" >&2
-    return 1
-  fi
 
   tmp_file="$(mktemp)"
   awk -v key="$key" -v value="$value" '
@@ -53,123 +63,124 @@ update_config_property() {
   mv "$tmp_file" "$file"
 }
 
-kill_monitor_service() {
-  local port="${MONITOR_SERVICE_URL##*:}"
-  local matched
-  if command -v pgrep >/dev/null 2>&1; then
-    matched="$(pgrep -f "run-monitor-service" || true)"
-    if [ -n "${matched}" ]; then
-      echo "Stopping monitor service process(es) by name: ${matched}"
-      kill ${matched} || true
-      sleep 1
-      return
-    fi
-  fi
-  if command -v lsof >/dev/null 2>&1; then
-    local pids
-    pids="$(lsof -ti tcp:"${port}" || true)"
-    if [ -n "${pids}" ]; then
-      echo "Stopping monitor service on port ${port} (pid: ${pids})"
-      kill ${pids} || true
-      sleep 1
-    fi
+check_monitor_service() {
+  local url="$1"
+  if ! curl -sS "${url}/v1/health" >/dev/null; then
+    echo "Monitor service is not reachable at ${url}" >&2
+    echo "Please start monitor service first, then retry." >&2
+    exit 1
   fi
 }
 
-if [ ! -x "$OPTIMIZER_BIN" ]; then
-  echo "Optimizer CLI not found or not executable: ${OPTIMIZER_BIN}" >&2
-  exit 1
-fi
+poll_monitor_state() {
+  local monitor_id="$1"
+  local label="$2"
+  local i
 
-echo "Step 1: Prepare job mappings (job provider input)"
-cat > job-mappings.jsonl <<'EOF'
-{"identifier":"generic.db.table1","job-identifiers":["job-1"]}
-{"identifier":"generic.db.table2","job-identifiers":["job-2"]}
-EOF
+  for ((i=1; i<=MAX_POLL_TIMES; i++)); do
+    local output
+    output="$(${OPTIMIZER_BIN} \
+      --type get-monitor \
+      --monitor-id "${monitor_id}" \
+      --monitor-service-url "${MONITOR_SERVICE_URL}" \
+      --conf-path "${OPTIMIZER_CONF}")"
 
-JOB_MAPPINGS_PATH="$(pwd)/job-mappings.jsonl"
+    echo "[${label}] poll ${i}: ${output}"
 
-echo "Step 2: Update optimizer configuration"
+    if echo "${output}" | grep -Eq 'state=(SUCCEEDED|FAILED|PARTIAL_FAILED|CANCELED)'; then
+      return 0
+    fi
+
+    sleep "${POLL_INTERVAL_SECONDS}"
+  done
+
+  echo "[${label}] monitor did not reach terminal state in time: ${monitor_id}" >&2
+  return 1
+}
+
+echo "Update optimizer conf for CLI-side commands: ${OPTIMIZER_CONF}"
 update_config_property "gravitino.optimizer.gravitinoUri" "${GRAVITINO_URI}" "${OPTIMIZER_CONF}"
 update_config_property "gravitino.optimizer.gravitinoMetalake" "${METALAKE}" "${OPTIMIZER_CONF}"
 update_config_property "gravitino.optimizer.gravitinoDefaultCatalog" "${CATALOG}" "${OPTIMIZER_CONF}"
-update_config_property "gravitino.optimizer.h2-metrics.h2-metrics-storage-path" "./data/metrics.db" "${OPTIMIZER_CONF}"
-update_config_property "gravitino.optimizer.monitor.service.port" "8000" "${OPTIMIZER_CONF}"
-update_config_property "gravitino.optimizer.monitor.service.interval.seconds" "2" "${OPTIMIZER_CONF}"
-update_config_property "gravitino.optimizer.monitor.jobProvider" "file-job-provider" "${OPTIMIZER_CONF}"
-update_config_property "gravitino.optimizer.monitor.file-job-provider.file-path" "${JOB_MAPPINGS_PATH}" "${OPTIMIZER_CONF}"
+update_config_property "gravitino.optimizer.monitor.gravitinoMetricsEvaluator.rules" "table:row_count:latest:le,job:job_status:latest:le" "${OPTIMIZER_CONF}"
 
-echo "Step 3: Start the monitor service"
-kill_monitor_service
-"${OPTIMIZER_BIN}" --type run-monitor-service > monitor-server.out 2>&1 &
-MONITOR_PID=$!
-trap 'kill ${MONITOR_PID} 2>/dev/null || true' EXIT
-sleep 2
+echo "Check monitor service health: ${MONITOR_SERVICE_URL}"
+check_monitor_service "${MONITOR_SERVICE_URL}"
 
-echo "Step 4: Append table and job metrics before compaction"
-"${OPTIMIZER_BIN}" --type append-metrics \
-  --computer-name local-stats-computer \
-  --statistics-payload '{"identifier":"generic.db.table1","stats-type":"table","row_count":100}'
+echo "Append metrics before action"
+"${OPTIMIZER_BIN}" \
+  --type append-metrics \
+  --calculator-name local-stats-calculator \
+  --statistics-payload "{\"identifier\":\"${CATALOG}.${SCHEMA}.${TABLE1}\",\"stats-type\":\"table\",\"row_count\":100}" \
+  --conf-path "${OPTIMIZER_CONF}"
 
-"${OPTIMIZER_BIN}" --type append-metrics \
-  --computer-name local-stats-computer \
-  --statistics-payload '{"identifier":"generic.db.table2","stats-type":"partition","partition-path":{"bucket_col_bucket_8":"3"},"row_count":50}'
+"${OPTIMIZER_BIN}" \
+  --type append-metrics \
+  --calculator-name local-stats-calculator \
+  --statistics-payload "{\"identifier\":\"${CATALOG}.${SCHEMA}.${TABLE2}\",\"stats-type\":\"partition\",\"partition-path\":{\"bucket_col_bucket_8\":\"3\"},\"row_count\":50}" \
+  --conf-path "${OPTIMIZER_CONF}"
 
-"${OPTIMIZER_BIN}" --type append-metrics \
-  --computer-name local-stats-computer \
-  --statistics-payload '{"identifier":"job-1","stats-type":"job","job_status":0}'
+"${OPTIMIZER_BIN}" \
+  --type append-metrics \
+  --calculator-name local-stats-calculator \
+  --statistics-payload '{"identifier":"job-1","stats-type":"job","job_status":0}' \
+  --conf-path "${OPTIMIZER_CONF}"
 
-"${OPTIMIZER_BIN}" --type append-metrics \
-  --computer-name local-stats-computer \
-  --statistics-payload '{"identifier":"job-2","stats-type":"job","job_status":0}'
-
-if [ -z "${ACTION_TIME}" ]; then
+if [[ -z "${ACTION_TIME}" ]]; then
   sleep 2
   ACTION_TIME="$(date +%s)"
 fi
 
-echo "Step 5: Submit monitors"
-MONITOR_ID_TABLE1="$("${OPTIMIZER_BIN}" --type submit-monitor \
-  --identifier generic.db.table1 \
+echo "Submit monitors"
+MONITOR_ID_TABLE1="$(${OPTIMIZER_BIN} \
+  --type submit-monitor \
+  --identifier "${CATALOG}.${SCHEMA}.${TABLE1}" \
   --action-time-seconds "${ACTION_TIME}" \
   --range-seconds "${RANGE_SECONDS}" \
-  --monitor-service-url "${MONITOR_SERVICE_URL}" | tr -d '\r\n')"
-echo "Submitted monitorId (table1): ${MONITOR_ID_TABLE1}"
+  --monitor-service-url "${MONITOR_SERVICE_URL}" \
+  --conf-path "${OPTIMIZER_CONF}" | tr -d '\r\n')"
 
-MONITOR_ID_TABLE2="$("${OPTIMIZER_BIN}" --type submit-monitor \
-  --identifier generic.db.table2 \
-  --partition-path bucket_col_bucket_8=3 \
+echo "Monitor ID (table1): ${MONITOR_ID_TABLE1}"
+
+MONITOR_ID_TABLE2="$(${OPTIMIZER_BIN} \
+  --type submit-monitor \
+  --identifier "${CATALOG}.${SCHEMA}.${TABLE2}" \
+  --partition-path 'bucket_col_bucket_8=3' \
   --action-time-seconds "${ACTION_TIME}" \
   --range-seconds "${RANGE_SECONDS}" \
-  --monitor-service-url "${MONITOR_SERVICE_URL}" | tr -d '\r\n')"
-echo "Submitted monitorId (table2 partition): ${MONITOR_ID_TABLE2}"
+  --monitor-service-url "${MONITOR_SERVICE_URL}" \
+  --conf-path "${OPTIMIZER_CONF}" | tr -d '\r\n')"
 
-echo "Step 6: Append table and job metrics after compaction"
+echo "Monitor ID (table2 partition): ${MONITOR_ID_TABLE2}"
+
+echo "Append metrics after action"
 sleep 2
-"${OPTIMIZER_BIN}" --type append-metrics \
-  --computer-name local-stats-computer \
-  --statistics-payload '{"identifier":"generic.db.table1","stats-type":"table","row_count":120}'
+"${OPTIMIZER_BIN}" \
+  --type append-metrics \
+  --calculator-name local-stats-calculator \
+  --statistics-payload "{\"identifier\":\"${CATALOG}.${SCHEMA}.${TABLE1}\",\"stats-type\":\"table\",\"row_count\":90}" \
+  --conf-path "${OPTIMIZER_CONF}"
 
-"${OPTIMIZER_BIN}" --type append-metrics \
-  --computer-name local-stats-computer \
-  --statistics-payload '{"identifier":"generic.db.table2","stats-type":"partition","partition-path":{"bucket_col_bucket_8":"3"},"row_count":45}'
+"${OPTIMIZER_BIN}" \
+  --type append-metrics \
+  --calculator-name local-stats-calculator \
+  --statistics-payload "{\"identifier\":\"${CATALOG}.${SCHEMA}.${TABLE2}\",\"stats-type\":\"partition\",\"partition-path\":{\"bucket_col_bucket_8\":\"3\"},\"row_count\":40}" \
+  --conf-path "${OPTIMIZER_CONF}"
 
-"${OPTIMIZER_BIN}" --type append-metrics \
-  --computer-name local-stats-computer \
-  --statistics-payload '{"identifier":"job-1","stats-type":"job","job_status":-1}'
+"${OPTIMIZER_BIN}" \
+  --type append-metrics \
+  --calculator-name local-stats-calculator \
+  --statistics-payload '{"identifier":"job-1","stats-type":"job","job_status":-1}' \
+  --conf-path "${OPTIMIZER_CONF}"
 
-"${OPTIMIZER_BIN}" --type append-metrics \
-  --computer-name local-stats-computer \
-  --statistics-payload '{"identifier":"job-2","stats-type":"job","job_status":-1}'
+echo "Poll monitor status"
+poll_monitor_state "${MONITOR_ID_TABLE1}" "table1"
+poll_monitor_state "${MONITOR_ID_TABLE2}" "table2-partition"
 
-echo "Step 7: Get monitor status"
-"${OPTIMIZER_BIN}" --type get-monitor \
-  --monitor-id "${MONITOR_ID_TABLE1}" \
-  --monitor-service-url "${MONITOR_SERVICE_URL}"
-"${OPTIMIZER_BIN}" --type get-monitor \
-  --monitor-id "${MONITOR_ID_TABLE2}" \
-  --monitor-service-url "${MONITOR_SERVICE_URL}"
+echo "List monitors"
+"${OPTIMIZER_BIN}" \
+  --type list-monitors \
+  --monitor-service-url "${MONITOR_SERVICE_URL}" \
+  --conf-path "${OPTIMIZER_CONF}"
 
-echo "Step 8: List monitors"
-"${OPTIMIZER_BIN}" --type list-monitors \
-  --monitor-service-url "${MONITOR_SERVICE_URL}"
+echo "Done."
