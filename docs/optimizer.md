@@ -7,29 +7,87 @@ license: This software is licensed under the Apache License version 2.
 
 ## What is this service
 
-The Table Maintenance Service (Optimizer) is a CLI service that helps you automate routine
-maintenance tasks:
+The Table Maintenance Service (Optimizer) automates table maintenance by connecting:
 
-- Update table and partition statistics
-- Append table and job metrics
-- Evaluate maintenance rules from metrics
-- Recommend and submit maintenance jobs
+- Statistics and metrics collection
+- Rule evaluation and strategy recommendation
+- Job template based execution
 
 The CLI command and configuration keys keep using the `optimizer` name for compatibility.
 
+## Who should read this page
+
+- Platform administrators: deploy and configure server-side job execution and templates.
+- Data platform engineers: define policies and run built-in maintenance workflows.
+- CLI users: run local calculators and submit/observe jobs from scripts.
+
+## Architecture overview
+
+The optimizer workflow is based on six parts:
+
+1. Metadata objects: catalog/schema/table in a metalake.
+2. Statistics and metrics: table/partition signals used for decision making.
+3. Policies: strategy intent, for example `system_iceberg_compaction`.
+4. Job templates: executable contracts, for example built-in Spark templates.
+5. Job executor: local or custom backend that runs submitted jobs.
+6. Status and logs: REST job state plus local staging logs.
+
+Typical data flow:
+
+1. Collect statistics/metrics for target tables.
+2. Evaluate rules and produce candidate actions.
+3. Submit jobs using a concrete template and `jobConf`.
+4. Track status and verify result on table metadata.
+
+## Execution modes
+
+| Mode | Main entry | Best for | Output |
+| --- | --- | --- | --- |
+| Built-in maintenance workflow | Gravitino REST + built-in templates | Server-side operational runs | Submitted Spark jobs and updated metadata |
+| Optimizer CLI local calculator | `gravitino-optimizer.sh` | Local file-driven testing and batch scripts | Statistics/metrics updates and optional submissions |
+
+Use built-in maintenance workflow when you want policy-driven server execution.
+Use CLI local calculator when you want to feed JSONL input directly.
+
+## Lifecycle
+
+### 1. Collect
+
+Generate or ingest table and partition statistics/metrics.
+
+### 2. Evaluate
+
+Apply policies/rules to decide if maintenance should run.
+
+### 3. Submit
+
+Pick a job template and submit job with concrete `jobConf`.
+
+### 4. Observe
+
+Check REST job status and validate resulting statistics, metrics, or rewritten data files.
+
+## Configuration model
+
+| Layer | Scope | Typical keys |
+| --- | --- | --- |
+| Gravitino server config | Runtime for job manager and executor | `gravitino.job.executor`, `gravitino.job.statusPullIntervalInMs`, `gravitino.jobExecutor.local.sparkHome` |
+| Job submission `jobConf` | Per job run | `catalog_name`, `table_identifier`, `spark_*`, template-specific args |
+| Optimizer CLI config | CLI commands | `gravitino.optimizer.*` in `conf/gravitino-optimizer.conf` |
+
 ## Before you start
 
-- Prepare a running Gravitino server
-- Configure `conf/gravitino-optimizer.conf`
-- Use fully qualified identifiers where possible, for example `catalog.schema.table`
-
-You can start from the template file `conf/gravitino-optimizer.conf.template` in the project root.
+- Prepare a running Gravitino server.
+- Ensure target metalake exists (examples use `test`).
+- Configure `SPARK_HOME` or `gravitino.jobExecutor.local.sparkHome` for Spark templates.
+- For CLI mode, prepare `conf/gravitino-optimizer.conf` from template.
+- Use fully qualified identifiers where possible, for example `catalog.schema.table`.
 
 ## Quick start
 
-### Quick start A: Built-in table maintenance workflow
+### Quick start A: built-in table maintenance workflow
 
-This workflow is based on:
+This workflow uses:
 
 - Built-in policy type: `system_iceberg_compaction`
 - Built-in update stats job template: `builtin-iceberg-update-stats`
@@ -37,32 +95,27 @@ This workflow is based on:
 
 #### 1. Preflight checks
 
-Check built-in job templates:
-
 ```bash
-curl -sS "http://localhost:8090/api/metalakes/test/jobs/templates?details=true" | jq
+# Check metalake
+curl -sS "http://localhost:8090/api/metalakes/test" | jq
+
+# Check built-in templates
+curl -sS "http://localhost:8090/api/metalakes/test/jobs/templates?details=true" | jq '.jobTemplates[].name'
 ```
 
-Expected names include both:
+Expected names include:
 
 - `builtin-iceberg-update-stats`
 - `builtin-iceberg-rewrite-data-files`
 
-If a template is missing, verify your deployment packages include the latest `gravitino-jobs` JAR in `auxlib`, then restart the Gravitino server.
-
-For Spark job templates, set one of the following before starting Gravitino server:
-
-- `gravitino.jobExecutor.local.sparkHome` in `gravitino.conf`
-- `SPARK_HOME`
-
-Without this, Spark jobs may stay in queued state or fail to start.
+If missing, verify `gravitino-jobs` JAR in `auxlib`, then restart Gravitino.
 
 #### 2. Prepare demo metadata objects
 
 Create a REST Iceberg catalog, schema, and table:
 
 ```bash
-# Create catalog (ignore if already exists)
+# Create catalog (ignore "already exists" errors)
 curl -X POST -H "Accept: application/vnd.gravitino.v1+json" \
   -H "Content-Type: application/json" \
   -d '{
@@ -132,12 +185,10 @@ Verify association:
 curl -sS "http://localhost:8090/api/metalakes/test/objects/table/rest_catalog.db.t1/policies?details=true" | jq
 ```
 
-The returned policy list should include a policy whose `policyType` is `system_iceberg_compaction`.
-
 #### 4. Submit built-in update stats job
 
 ```bash
-curl -X POST -H "Accept: application/vnd.gravitino.v1+json" \
+job_id=$(curl -sS -X POST -H "Accept: application/vnd.gravitino.v1+json" \
   -H "Content-Type: application/json" \
   -d '{
     "jobTemplateName": "builtin-iceberg-update-stats",
@@ -157,19 +208,15 @@ curl -X POST -H "Accept: application/vnd.gravitino.v1+json" \
       "warehouse_location": ""
     }
   }' \
-  http://localhost:8090/api/metalakes/test/jobs/runs
-```
+  http://localhost:8090/api/metalakes/test/jobs/runs | jq -r '.job.jobId')
 
-After the job finishes, verify table statistics:
-
-```bash
-curl -sS "http://localhost:8090/api/metalakes/test/objects/table/rest_catalog.db.t1/statistics" | jq
+echo "update-stats job id: ${job_id}"
 ```
 
 #### 5. Submit built-in rewrite data files job
 
 ```bash
-curl -X POST -H "Accept: application/vnd.gravitino.v1+json" \
+rewrite_job_id=$(curl -sS -X POST -H "Accept: application/vnd.gravitino.v1+json" \
   -H "Content-Type: application/json" \
   -d '{
     "jobTemplateName": "builtin-iceberg-rewrite-data-files",
@@ -191,31 +238,35 @@ curl -X POST -H "Accept: application/vnd.gravitino.v1+json" \
       "spark_conf": "{\"spark.master\":\"local[2]\"}"
     }
   }' \
-  http://localhost:8090/api/metalakes/test/jobs/runs
+  http://localhost:8090/api/metalakes/test/jobs/runs | jq -r '.job.jobId')
+
+echo "rewrite job id: ${rewrite_job_id}"
 ```
 
-#### 6. Track job status and logs
+#### 6. Track status and verify results
 
 ```bash
-curl -sS "http://localhost:8090/api/metalakes/test/jobs/runs/<job-id>" | jq
+# Check job status by id
+curl -sS "http://localhost:8090/api/metalakes/test/jobs/runs/${job_id}" | jq
+curl -sS "http://localhost:8090/api/metalakes/test/jobs/runs/${rewrite_job_id}" | jq
+
+# Verify table statistics after update-stats
+curl -sS "http://localhost:8090/api/metalakes/test/objects/table/rest_catalog.db.t1/statistics" | jq
 ```
 
-By default, job status in Gravitino is pulled periodically from the local executor every `300000`
-ms (`gravitino.job.statusPullIntervalInMs`), so the REST status may lag behind the real Spark
-process status for up to about 5 minutes.
+By default, Gravitino pulls job status every `300000` ms (`gravitino.job.statusPullIntervalInMs`).
+REST status may lag real Spark process state by up to about 5 minutes.
 
-For quick local verification:
+For quick verification:
 
-- Set a smaller `gravitino.job.statusPullIntervalInMs` (for example `5000`) in `gravitino.conf`
-  and restart Gravitino.
-- Or check per-job local Spark logs directly under:
-  `/tmp/gravitino/jobs/staging/<metalake>/<job-template-name>/<job-id>/error.log`.
+- Reduce `gravitino.job.statusPullIntervalInMs` in `gravitino.conf` (for example `5000`) and restart Gravitino.
+- Check local Spark logs under `/tmp/gravitino/jobs/staging/<metalake>/<job-template-name>/<job-id>/error.log`.
 
-### Quick start B: Optimizer CLI (local calculator)
+### Quick start B: optimizer CLI (local calculator)
 
 #### 1. Minimal configuration
 
-At minimum, set these in `conf/gravitino-optimizer.conf`:
+Set these in `conf/gravitino-optimizer.conf`:
 
 ```properties
 gravitino.optimizer.gravitinoUri = http://localhost:8090
@@ -289,7 +340,7 @@ Both forms are supported:
 - If `gravitino.optimizer.gravitinoDefaultCatalog` is set, `schema.table` is also accepted
 - Job records: parsed as a regular Gravitino `NameIdentifier`
 
-## Typical workflows
+## CLI workflow examples
 
 ### Update statistics in batch
 
@@ -376,6 +427,19 @@ Use a JSON array format, for example:
 [{"dt":"2026-01-01"}]
 ```
 
+### Job status appears stale (`queued` or `started` for a long time)
+
+Check `gravitino.job.statusPullIntervalInMs` and local staging logs under:
+
+`/tmp/gravitino/jobs/staging/<metalake>/<job-template-name>/<job-id>/error.log`.
+
 ### `Specified optimizer config file does not exist`
 
 Check your `--conf-path` and file permissions.
+
+## Related docs
+
+- [Manage policies in Gravitino](./manage-policies-in-gravitino.md)
+- [Iceberg compaction policy](./iceberg-compaction-policy.md)
+- [Manage jobs in Gravitino](./manage-jobs-in-gravitino.md)
+- [Manage statistics in Gravitino](./manage-statistics-in-gravitino.md)
