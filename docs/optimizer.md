@@ -40,7 +40,7 @@ This workflow is based on:
 Check built-in job templates:
 
 ```bash
-curl -sS "http://localhost:8090/api/metalakes/test/jobs/templates" | jq
+curl -sS "http://localhost:8090/api/metalakes/test/jobs/templates?details=true" | jq
 ```
 
 Expected names include both:
@@ -52,12 +52,89 @@ If a template is missing, verify your deployment packages include the latest `gr
 
 For Spark job templates, set one of the following before starting Gravitino server:
 
-- `gravitino.jobExecutor.local.sparkHome`
+- `gravitino.jobExecutor.local.sparkHome` in `gravitino.conf`
 - `SPARK_HOME`
 
 Without this, Spark jobs may stay in queued state or fail to start.
 
-#### 2. Submit built-in update stats job
+#### 2. Prepare demo metadata objects
+
+Create a REST Iceberg catalog, schema, and table:
+
+```bash
+# Create catalog (ignore if already exists)
+curl -X POST -H "Accept: application/vnd.gravitino.v1+json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "rest_catalog",
+    "type": "RELATIONAL",
+    "comment": "Iceberg REST catalog",
+    "provider": "lakehouse-iceberg",
+    "properties": {
+      "catalog-backend": "rest",
+      "uri": "http://localhost:9001/iceberg"
+    }
+  }' \
+  http://localhost:8090/api/metalakes/test/catalogs
+
+# Create schema
+curl -X POST -H "Accept: application/vnd.gravitino.v1+json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "db",
+    "comment": "optimizer demo schema",
+    "properties": {}
+  }' \
+  http://localhost:8090/api/metalakes/test/catalogs/rest_catalog/schemas
+
+# Create table
+curl -X POST -H "Accept: application/vnd.gravitino.v1+json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "t1",
+    "comment": "optimizer demo table",
+    "columns": [
+      {"name": "id", "type": "integer", "nullable": true},
+      {"name": "name", "type": "string", "nullable": true}
+    ],
+    "properties": {}
+  }' \
+  http://localhost:8090/api/metalakes/test/catalogs/rest_catalog/schemas/db/tables
+```
+
+#### 3. Create and attach built-in compaction policy
+
+```bash
+# Create policy
+curl -X POST -H "Accept: application/vnd.gravitino.v1+json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "iceberg_compaction_default",
+    "comment": "Built-in iceberg compaction policy",
+    "policyType": "system_iceberg_compaction",
+    "enabled": true,
+    "content": {}
+  }' \
+  http://localhost:8090/api/metalakes/test/policies
+
+# Attach policy to table
+curl -X POST -H "Accept: application/vnd.gravitino.v1+json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "policiesToAdd": ["iceberg_compaction_default"]
+  }' \
+  http://localhost:8090/api/metalakes/test/objects/table/rest_catalog.db.t1/policies
+```
+
+Verify association:
+
+```bash
+curl -sS "http://localhost:8090/api/metalakes/test/objects/table/rest_catalog.db.t1/policies?details=true" | jq
+```
+
+The returned policy list should include a policy whose `policyType` is `system_iceberg_compaction`.
+
+#### 4. Submit built-in update stats job
 
 ```bash
 curl -X POST -H "Accept: application/vnd.gravitino.v1+json" \
@@ -65,13 +142,11 @@ curl -X POST -H "Accept: application/vnd.gravitino.v1+json" \
   -d '{
     "jobTemplateName": "builtin-iceberg-update-stats",
     "jobConf": {
-      "table_identifier": "db.t1",
       "catalog_name": "rest_catalog",
-      "gravitino_uri": "http://localhost:8090",
-      "metalake": "test",
+      "table_identifier": "db.t1",
       "update_mode": "all",
-      "statistics_updater": "gravitino-statistics-updater",
-      "metrics_updater": "gravitino-metrics-updater",
+      "updater_options": "{\"gravitino_uri\":\"http://localhost:8090\",\"metalake\":\"test\",\"statistics_updater\":\"gravitino-statistics-updater\",\"metrics_updater\":\"gravitino-metrics-updater\"}",
+      "spark_conf": "{}",
       "spark_master": "local[2]",
       "spark_executor_instances": "1",
       "spark_executor_cores": "1",
@@ -85,15 +160,13 @@ curl -X POST -H "Accept: application/vnd.gravitino.v1+json" \
   http://localhost:8090/api/metalakes/test/jobs/runs
 ```
 
-#### 3. Ensure built-in compaction policy is attached to the target table
+After the job finishes, verify table statistics:
 
 ```bash
-curl -sS "http://localhost:8090/api/metalakes/test/objects/table/rest_catalog.db.t1/policies?details=true" | jq
+curl -sS "http://localhost:8090/api/metalakes/test/objects/table/rest_catalog.db.t1/statistics" | jq
 ```
 
-The returned policy list should include a policy whose `policyType` is `system_iceberg_compaction`.
-
-#### 4. Submit built-in rewrite data files job
+#### 5. Submit built-in rewrite data files job
 
 ```bash
 curl -X POST -H "Accept: application/vnd.gravitino.v1+json" \
@@ -121,11 +194,22 @@ curl -X POST -H "Accept: application/vnd.gravitino.v1+json" \
   http://localhost:8090/api/metalakes/test/jobs/runs
 ```
 
-#### 5. Verify job status
+#### 6. Track job status and logs
 
 ```bash
 curl -sS "http://localhost:8090/api/metalakes/test/jobs/runs/<job-id>" | jq
 ```
+
+By default, job status in Gravitino is pulled periodically from the local executor every `300000`
+ms (`gravitino.job.statusPullIntervalInMs`), so the REST status may lag behind the real Spark
+process status for up to about 5 minutes.
+
+For quick local verification:
+
+- Set a smaller `gravitino.job.statusPullIntervalInMs` (for example `5000`) in `gravitino.conf`
+  and restart Gravitino.
+- Or check per-job local Spark logs directly under:
+  `/tmp/gravitino/jobs/staging/<metalake>/<job-template-name>/<job-id>/error.log`.
 
 ### Quick start B: Optimizer CLI (local calculator)
 
