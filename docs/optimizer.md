@@ -27,7 +27,109 @@ You can start from the template file `conf/gravitino-optimizer.conf.template` in
 
 ## Quick start
 
-### 1. Minimal configuration
+### Quick start A: Built-in table maintenance workflow
+
+This workflow is based on:
+
+- Built-in policy type: `system_iceberg_compaction`
+- Built-in update stats job template: `builtin-iceberg-update-stats`
+- Built-in rewrite data files job template: `builtin-iceberg-rewrite-data-files`
+
+#### 1. Preflight checks
+
+Check built-in job templates:
+
+```bash
+curl -sS "http://localhost:8090/api/metalakes/test/jobs/templates" | jq
+```
+
+Expected names include both:
+
+- `builtin-iceberg-update-stats`
+- `builtin-iceberg-rewrite-data-files`
+
+If a template is missing, verify your deployment packages include the latest `gravitino-jobs` JAR in `auxlib`, then restart the Gravitino server.
+
+For Spark job templates, set one of the following before starting Gravitino server:
+
+- `gravitino.jobExecutor.local.sparkHome`
+- `SPARK_HOME`
+
+Without this, Spark jobs may stay in queued state or fail to start.
+
+#### 2. Submit built-in update stats job
+
+```bash
+curl -X POST -H "Accept: application/vnd.gravitino.v1+json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jobTemplateName": "builtin-iceberg-update-stats",
+    "jobConf": {
+      "table_identifier": "db.t1",
+      "catalog_name": "rest_catalog",
+      "gravitino_uri": "http://localhost:8090",
+      "metalake": "test",
+      "update_mode": "all",
+      "statistics_updater": "gravitino-statistics-updater",
+      "metrics_updater": "gravitino-metrics-updater",
+      "spark_master": "local[2]",
+      "spark_executor_instances": "1",
+      "spark_executor_cores": "1",
+      "spark_executor_memory": "1g",
+      "spark_driver_memory": "1g",
+      "catalog_type": "rest",
+      "catalog_uri": "http://localhost:9001/iceberg",
+      "warehouse_location": ""
+    }
+  }' \
+  http://localhost:8090/api/metalakes/test/jobs/runs
+```
+
+#### 3. Ensure built-in compaction policy is attached to the target table
+
+```bash
+curl -sS "http://localhost:8090/api/metalakes/test/objects/table/rest_catalog.db.t1/policies?details=true" | jq
+```
+
+The returned policy list should include a policy whose `policyType` is `system_iceberg_compaction`.
+
+#### 4. Submit built-in rewrite data files job
+
+```bash
+curl -X POST -H "Accept: application/vnd.gravitino.v1+json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jobTemplateName": "builtin-iceberg-rewrite-data-files",
+    "jobConf": {
+      "catalog_name": "rest_catalog",
+      "table_identifier": "db.t1",
+      "strategy": "binpack",
+      "sort_order": "",
+      "where_clause": "",
+      "options": "",
+      "spark_master": "local[2]",
+      "spark_executor_instances": "1",
+      "spark_executor_cores": "1",
+      "spark_executor_memory": "1g",
+      "spark_driver_memory": "1g",
+      "catalog_type": "rest",
+      "catalog_uri": "http://localhost:9001/iceberg",
+      "warehouse_location": "",
+      "spark_conf": "{\"spark.master\":\"local[2]\"}"
+    }
+  }' \
+  http://localhost:8090/api/metalakes/test/jobs/runs
+```
+
+#### 5. Verify job status
+
+```bash
+curl -sS "http://localhost:8090/api/metalakes/test/jobs/runs/<job-id>" | jq
+```
+
+### Quick start B: Optimizer CLI (local calculator)
+
+#### 1. Minimal configuration
 
 At minimum, set these in `conf/gravitino-optimizer.conf`:
 
@@ -37,7 +139,7 @@ gravitino.optimizer.gravitinoMetalake = test
 gravitino.optimizer.gravitinoDefaultCatalog = generic
 ```
 
-### 2. Prepare a local JSONL file
+#### 2. Prepare a local JSONL file
 
 Create `table-stats.jsonl`:
 
@@ -46,7 +148,7 @@ Create `table-stats.jsonl`:
 {"stats-type":"partition","identifier":"catalog.db.sales","partition-path":{"dt":"2026-01-01"},"row_count":12000,"data_size":1048576,"timestamp":1735689600}
 ```
 
-### 3. Update statistics
+#### 3. Update statistics
 
 ```bash
 ./bin/gravitino-optimizer.sh \
