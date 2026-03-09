@@ -10,10 +10,13 @@ license: This software is licensed under the Apache License version 2.
 - Prepare a running Gravitino server.
 - Ensure target metalake exists (examples use `test`).
 - Configure `SPARK_HOME` or `gravitino.jobExecutor.local.sparkHome` for Spark templates.
-- If your Iceberg REST backend is in-memory, avoid restarting it during this quick start because
-  restart resets metadata and data files.
 
 For full config details, see [Optimizer Configuration](./optimizer-configuration.md).
+
+:::note
+If your Iceberg REST backend is in-memory, avoid restarting it during this quick start because
+restart resets metadata and data files.
+:::
 
 ## Success criteria
 
