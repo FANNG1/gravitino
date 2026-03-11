@@ -56,6 +56,8 @@ dependencies {
     exclude(group = "com.lancedb", module = "lance-namespace-core") // This is unnecessary in the core module
   }
   implementation(libs.mybatis)
+  implementation(libs.httpclient5)
+  implementation(libs.httpcore5)
 
   annotationProcessor(libs.lombok)
 
