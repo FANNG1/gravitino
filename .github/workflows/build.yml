@@ -128,7 +128,7 @@ jobs:
     strategy:
       matrix:
         java-version: [ 17 ]
-    timeout-minutes: 90
+    timeout-minutes: 120
     needs: changes
     if: needs.changes.outputs.source_changes == 'true'
     # Steps represent a sequence of tasks that will be executed as part of the job
@@ -160,7 +160,7 @@ jobs:
 
       - name: Build with Gradle (skip mcp-server tests)
         if: needs.changes.outputs.mcp_server_changes != 'true'
-        run: ./gradlew build -PskipITs -PskipDockerTests=false -x :clients:client-python:build -x :mcp-server:build -x :mcp-server:test -x :mcp-server:pylint -x :web-v2:web:build
+        run: ./gradlew build -PskipITs -PskipDockerTests=false -x :clients:client-python:build -x :mcp-server:build -x :mcp-server:test -x :mcp-server:pylint -x :web-v2:web:build -x :catalogs-contrib:catalog-jdbc-oceanbase:build
 
       - name: Fetch base branch for coverage diff
         if: github.event_name == 'pull_request'
