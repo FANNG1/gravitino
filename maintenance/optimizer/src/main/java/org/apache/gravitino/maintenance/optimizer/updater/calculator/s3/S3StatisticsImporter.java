@@ -17,36 +17,43 @@
  * under the License.
  */
 
-package org.apache.gravitino.maintenance.optimizer.updater.calculator.local;
+package org.apache.gravitino.maintenance.optimizer.updater.calculator.s3;
 
 import com.google.common.base.Preconditions;
 import java.io.BufferedReader;
-import java.nio.file.Path;
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.List;
-import org.apache.gravitino.maintenance.optimizer.common.reader.LocalFileReader;
+import java.util.Objects;
+import org.apache.gravitino.maintenance.optimizer.common.reader.S3FileReader;
+import org.apache.gravitino.maintenance.optimizer.common.util.S3Utils;
 import org.apache.gravitino.maintenance.optimizer.updater.calculator.AbstractStatisticsImporter;
 
-/** Shared importer for file-based table statistics. */
-public class FileStatisticsImporter
-    extends AbstractStatisticsImporter<LocalFileReader.LocalSource> {
+public class S3StatisticsImporter extends AbstractStatisticsImporter<S3FileReader.S3Source>
+    implements Closeable {
 
-  private final Path statisticsFilePath;
-  private final LocalFileReader fileReader;
+  private final String s3Path;
+  private final S3FileReader fileReader;
 
-  public FileStatisticsImporter(Path statisticsFilePath, String defaultCatalogName) {
+  public S3StatisticsImporter(String s3Path, String s3Region, String defaultCatalogName) {
     super(defaultCatalogName);
-    Preconditions.checkArgument(statisticsFilePath != null, "statisticsFilePath must not be null");
-    this.statisticsFilePath = statisticsFilePath;
-    this.fileReader = new LocalFileReader();
+    this.s3Path = Objects.requireNonNull(s3Path, "s3Path cannot be null");
+    Preconditions.checkArgument(S3Utils.isS3Path(s3Path), "Path must be an S3 path: %s", s3Path);
+    this.fileReader = new S3FileReader(s3Region);
   }
 
   @Override
-  protected List<LocalFileReader.LocalSource> listSources() {
-    return fileReader.listSources(statisticsFilePath.toString());
+  protected List<S3FileReader.S3Source> listSources() {
+    return fileReader.listSources(s3Path);
   }
 
   @Override
-  protected BufferedReader openReader(LocalFileReader.LocalSource source) {
+  protected BufferedReader openReader(S3FileReader.S3Source source) {
     return fileReader.getReader(source);
+  }
+
+  @Override
+  public void close() throws IOException {
+    fileReader.close();
   }
 }

@@ -49,6 +49,7 @@ public class OptimizerConfig extends Config {
   public static final String GRAVITINO_METALAKE = OPTIMIZER_PREFIX + "gravitinoMetalake";
   public static final String GRAVITINO_DEFAULT_CATALOG =
       OPTIMIZER_PREFIX + "gravitinoDefaultCatalog";
+  public static final String S3_REGION = OPTIMIZER_PREFIX + "s3Region";
   public static final String JOB_ADAPTER_PREFIX = OPTIMIZER_PREFIX + "jobAdapter.";
   public static final String JOB_SUBMITTER_CONFIG_PREFIX = OPTIMIZER_PREFIX + "jobSubmitterConfig.";
 
@@ -186,6 +187,14 @@ public class OptimizerConfig extends Config {
           .version(ConfigConstants.VERSION_1_2_0)
           .stringConf()
           .create();
+
+  public static final ConfigEntry<String> S3_REGION_CONFIG =
+      new ConfigBuilder(S3_REGION)
+          .doc("AWS region for optimizer tools that access S3.")
+          .version(ConfigConstants.VERSION_1_2_0)
+          .stringConf()
+          .checkValue(StringUtils::isNotBlank, ConfigConstants.NOT_BLANK_ERROR_MSG)
+          .createWithDefault("us-east-1");
 
   /** Create an empty optimizer config to populate programmatically. */
   public OptimizerConfig() {

@@ -18,3 +18,4 @@
 #
 
 org.apache.gravitino.maintenance.optimizer.updater.calculator.local.LocalStatisticsCalculator
+org.apache.gravitino.maintenance.optimizer.updater.calculator.s3.S3StatisticsCalculator

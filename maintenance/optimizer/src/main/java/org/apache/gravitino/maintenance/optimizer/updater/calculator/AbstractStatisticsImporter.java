@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.gravitino.maintenance.optimizer.updater.calculator.local;
+package org.apache.gravitino.maintenance.optimizer.updater.calculator;
 
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -45,6 +45,7 @@ import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.maintenance.optimizer.api.common.TableAndPartitionStatistics;
 import org.apache.gravitino.maintenance.optimizer.common.PartitionEntryImpl;
 import org.apache.gravitino.maintenance.optimizer.common.StatisticEntryImpl;
+import org.apache.gravitino.maintenance.optimizer.common.reader.FileContentReader;
 import org.apache.gravitino.maintenance.optimizer.common.util.IdentifierUtils;
 import org.apache.gravitino.stats.StatisticValue;
 import org.apache.gravitino.stats.StatisticValues;
@@ -72,14 +73,15 @@ import org.slf4j.LoggerFactory;
  *   <li>truncate(W, col) -> col_trunc
  * </ul>
  */
-abstract class AbstractStatisticsImporter implements StatisticsImporter {
+public abstract class AbstractStatisticsImporter<S extends FileContentReader.Source>
+    implements StatisticsImporter {
   private static final Logger LOG = LoggerFactory.getLogger(AbstractStatisticsImporter.class);
   private static final ObjectReader RECORD_READER =
       JsonUtils.anyFieldMapper().readerFor(StatisticsRecord.class);
 
   private final String defaultCatalogName;
 
-  AbstractStatisticsImporter(String defaultCatalogName) {
+  public AbstractStatisticsImporter(String defaultCatalogName) {
     this.defaultCatalogName = defaultCatalogName;
   }
 
@@ -369,24 +371,28 @@ abstract class AbstractStatisticsImporter implements StatisticsImporter {
     return ImmutableList.copyOf(metrics);
   }
 
-  protected abstract BufferedReader openReader() throws IOException;
+  protected abstract List<S> listSources();
+
+  protected abstract BufferedReader openReader(S source);
 
   private void forEachParsedRecord(Consumer<StatisticsRecord> recordConsumer) {
-    try (BufferedReader reader = openReader()) {
-      String line;
-      while ((line = reader.readLine()) != null) {
-        if (StringUtils.isBlank(line)) {
-          continue;
-        }
+    for (S source : listSources()) {
+      try (BufferedReader reader = openReader(source)) {
+        String line;
+        while ((line = reader.readLine()) != null) {
+          if (StringUtils.isBlank(line)) {
+            continue;
+          }
 
-        StatisticsRecord record = parseRecord(line);
-        if (record == null) {
-          continue;
+          StatisticsRecord record = parseRecord(line);
+          if (record == null) {
+            continue;
+          }
+          recordConsumer.accept(record);
         }
-        recordConsumer.accept(record);
+      } catch (IOException e) {
+        throw new RuntimeException("Failed to read statistics", e);
       }
-    } catch (IOException e) {
-      throw new RuntimeException("Failed to read statistics", e);
     }
   }
 

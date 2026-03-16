@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.gravitino.maintenance.optimizer.updater.calculator.local;
+package org.apache.gravitino.maintenance.optimizer.updater.calculator;
 
 import java.util.List;
 import java.util.Map;

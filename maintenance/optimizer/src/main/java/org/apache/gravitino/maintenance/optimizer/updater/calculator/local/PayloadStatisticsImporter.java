@@ -21,12 +21,17 @@ package org.apache.gravitino.maintenance.optimizer.updater.calculator.local;
 
 import com.google.common.base.Preconditions;
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.StringReader;
+import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.gravitino.maintenance.optimizer.common.reader.FileContentReader;
+import org.apache.gravitino.maintenance.optimizer.updater.calculator.AbstractStatisticsImporter;
 
 /** Importer for inline JSON-lines statistics payloads. */
-public class PayloadStatisticsImporter extends AbstractStatisticsImporter {
+public class PayloadStatisticsImporter
+    extends AbstractStatisticsImporter<PayloadStatisticsImporter.PayloadSource> {
 
   private final String payload;
 
@@ -38,7 +43,18 @@ public class PayloadStatisticsImporter extends AbstractStatisticsImporter {
   }
 
   @Override
-  protected BufferedReader openReader() throws IOException {
-    return new BufferedReader(new StringReader(payload));
+  protected List<PayloadSource> listSources() {
+    return List.of(new PayloadSource(payload));
+  }
+
+  @Override
+  protected BufferedReader openReader(PayloadSource source) {
+    return new BufferedReader(new StringReader(source.getPayload()));
+  }
+
+  @AllArgsConstructor
+  @Getter
+  public static class PayloadSource implements FileContentReader.Source {
+    private final String payload;
   }
 }

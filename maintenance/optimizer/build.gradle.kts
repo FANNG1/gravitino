@@ -49,6 +49,7 @@ dependencies {
   implementation(libs.commons.dbcp2)
   implementation(libs.ql.expression)
   implementation(libs.h2db)
+  implementation(libs.aws.s3)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)

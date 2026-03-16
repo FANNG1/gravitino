@@ -351,14 +351,18 @@ public class Updater implements AutoCloseable {
       return;
     }
     LOG.info(
-        "Persisting partition statistics: identifier={}, partitions={}, names={}, sample={}",
+        "Persisting partition statistics: identifier={}, partitions={}",
         tableIdentifier,
-        partitionStatistics.size(),
-        partitionNames(partitionStatistics),
-        summarize(
-            partitionStatistics.values().stream()
-                .flatMap(Collection::stream)
-                .collect(Collectors.toList())));
+        partitionStatistics.size());
+
+    if (LOG.isDebugEnabled()) {
+      LOG.debug(
+          "Persisting partition statistics details: identifier={}, partitions={}, names={}, sample={}",
+          tableIdentifier,
+          partitionStatistics.size(),
+          partitionNames(partitionStatistics),
+          summarize(partitionStatistics.values().stream().flatMap(Collection::stream).toList()));
+    }
     statisticsUpdater.updatePartitionStatistics(tableIdentifier, partitionStatistics);
   }
 

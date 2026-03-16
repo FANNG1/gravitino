@@ -35,6 +35,7 @@ import org.apache.gravitino.maintenance.optimizer.common.OptimizerContent;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.maintenance.optimizer.common.StatisticsInputContent;
 import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
+import org.apache.gravitino.maintenance.optimizer.updater.calculator.StatisticsImporter;
 
 /**
  * Statistics calculator that reads statistics from either a local file path or an inline payload.
