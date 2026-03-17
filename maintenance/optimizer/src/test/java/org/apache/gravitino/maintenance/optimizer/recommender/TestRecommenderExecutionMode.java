@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.exceptions.NoSuchTableException;
 import org.apache.gravitino.maintenance.optimizer.api.common.Strategy;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.JobExecutionContext;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.JobSubmitter;
@@ -31,9 +32,12 @@ import org.apache.gravitino.maintenance.optimizer.api.recommender.StrategyEvalua
 import org.apache.gravitino.maintenance.optimizer.api.recommender.StrategyHandler;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.StrategyHandlerContext;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.StrategyProvider;
+import org.apache.gravitino.maintenance.optimizer.api.recommender.SupportTableStatistics;
 import org.apache.gravitino.maintenance.optimizer.api.recommender.TableMetadataProvider;
 import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
+import org.apache.gravitino.rel.Table;
+import org.apache.gravitino.rel.expressions.transforms.Transform;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -189,6 +193,169 @@ class TestRecommenderExecutionMode {
   }
 
   @Test
+  void testSubmitForStrategyNameWithOnlyNonExistingTablesAndSkipEnabled() {
+    NameIdentifier table1 = NameIdentifier.of("catalog", "db", "non_existing_table1");
+    NameIdentifier table2 = NameIdentifier.of("catalog", "db", "non_existing_table2");
+    NameIdentifier table3 = NameIdentifier.of("catalog", "db", "non_existing_table3");
+
+    StrategyProvider strategyProvider = Mockito.mock(StrategyProvider.class);
+    StatisticsProvider statisticsProvider = Mockito.mock(StatisticsProvider.class);
+    TableMetadataProvider tableMetadataProvider = Mockito.mock(TableMetadataProvider.class);
+    JobSubmitter jobSubmitter = Mockito.mock(JobSubmitter.class);
+
+    OptimizerConfig config =
+        new OptimizerConfig(
+            Map.of("gravitino.optimizer.recommender.skipNonExistingTables", "true"));
+    OptimizerEnv optimizerEnv = new OptimizerEnv(config);
+
+    Mockito.when(tableMetadataProvider.tableMetadata(table1))
+        .thenThrow(new NoSuchTableException("Table %s does not exist", table1));
+    Mockito.when(tableMetadataProvider.tableMetadata(table2))
+        .thenThrow(new NoSuchTableException("Table %s does not exist", table2));
+    Mockito.when(tableMetadataProvider.tableMetadata(table3))
+        .thenThrow(new NoSuchTableException("Table %s does not exist", table3));
+
+    Recommender recommender =
+        new Recommender(
+            strategyProvider,
+            statisticsProvider,
+            tableMetadataProvider,
+            jobSubmitter,
+            optimizerEnv);
+
+    IllegalArgumentException exception =
+        Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> recommender.submitForStrategyName(List.of(table1, table2, table3), "s1"));
+    Assertions.assertTrue(
+        exception.getMessage().contains("No identifiers matched strategy name 's1'"));
+
+    Mockito.verify(tableMetadataProvider, Mockito.times(1)).tableMetadata(table1);
+    Mockito.verify(tableMetadataProvider, Mockito.times(1)).tableMetadata(table2);
+    Mockito.verify(tableMetadataProvider, Mockito.times(1)).tableMetadata(table3);
+    Mockito.verify(strategyProvider, Mockito.never()).strategies(Mockito.any());
+    Mockito.verify(jobSubmitter, Mockito.never()).submitJob(Mockito.anyString(), Mockito.any());
+  }
+
+  @Test
+  void testSubmitForStrategyNameWithOnlyNonExistingTableAndSkipDisabled() {
+    NameIdentifier nonExistingTable = NameIdentifier.of("catalog", "db", "non_existing_table");
+
+    StrategyProvider strategyProvider = Mockito.mock(StrategyProvider.class);
+    StatisticsProvider statisticsProvider = Mockito.mock(StatisticsProvider.class);
+    TableMetadataProvider tableMetadataProvider = Mockito.mock(TableMetadataProvider.class);
+    JobSubmitter jobSubmitter = Mockito.mock(JobSubmitter.class);
+
+    OptimizerConfig config =
+        new OptimizerConfig(
+            Map.of("gravitino.optimizer.recommender.skipNonExistingTables", "false"));
+    OptimizerEnv optimizerEnv = new OptimizerEnv(config);
+
+    Mockito.when(strategyProvider.strategies(nonExistingTable)).thenReturn(List.of());
+
+    Recommender recommender =
+        new Recommender(
+            strategyProvider,
+            statisticsProvider,
+            tableMetadataProvider,
+            jobSubmitter,
+            optimizerEnv);
+
+    // Should not check table existence when skip is disabled
+    IllegalArgumentException exception =
+        Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> recommender.submitForStrategyName(List.of(nonExistingTable), "s1"));
+    Assertions.assertTrue(
+        exception.getMessage().contains("No identifiers matched strategy name 's1'"));
+
+    Mockito.verify(tableMetadataProvider, Mockito.never()).tableMetadata(nonExistingTable);
+    Mockito.verify(strategyProvider, Mockito.times(1)).strategies(nonExistingTable);
+    Mockito.verify(jobSubmitter, Mockito.never()).submitJob(Mockito.anyString(), Mockito.any());
+  }
+
+  @Test
+  void testSubmitForStrategyNameWithBothExistingAndNonExistingTablesAndSkipEnabled() {
+    NameIdentifier existingTable1 = NameIdentifier.of("catalog", "db", "existing_table1");
+    NameIdentifier nonExistingTable = NameIdentifier.of("catalog", "db", "non_existing_table");
+    NameIdentifier existingTable2 = NameIdentifier.of("catalog", "db", "existing_table2");
+    String strategyName = "compaction-strategy-1";
+
+    TableMetadataProvider tableMetadataProvider = Mockito.mock(TableMetadataProvider.class);
+    JobSubmitter jobSubmitter = Mockito.mock(JobSubmitter.class);
+
+    String templateName = "compaction-job-template";
+    Strategy mockStrategy = new TestStrategy(strategyName, STRATEGY_TYPE, templateName);
+
+    // Mock statistics provider required by strategy handler
+    SupportTableStatistics statisticsProvider = Mockito.mock(SupportTableStatistics.class);
+    Mockito.when(statisticsProvider.tableStatistics(Mockito.any())).thenReturn(List.of());
+    Mockito.when(statisticsProvider.partitionStatistics(Mockito.any())).thenReturn(Map.of());
+
+    OptimizerConfig config = Mockito.mock(OptimizerConfig.class);
+    Mockito.when(config.getStrategyHandlerClassName(STRATEGY_TYPE))
+        .thenReturn(TestStrategyHandler.class.getName());
+    Mockito.when(config.get(OptimizerConfig.SKIP_NON_EXISTING_TABLES_CONFIG)).thenReturn(true);
+    OptimizerEnv optimizerEnv = Mockito.mock(OptimizerEnv.class);
+    Mockito.when(optimizerEnv.config()).thenReturn(config);
+
+    // Mock table metadata
+    Table mockTable = Mockito.mock(Table.class);
+    Mockito.when(mockTable.name()).thenReturn("existing_table");
+    Mockito.when(mockTable.partitioning()).thenReturn(new Transform[0]);
+
+    // Mock existing tables return successfully
+    Mockito.when(tableMetadataProvider.tableMetadata(existingTable1)).thenReturn(mockTable);
+    Mockito.when(tableMetadataProvider.tableMetadata(existingTable2)).thenReturn(mockTable);
+    // Mock non-existing table throws exception
+    Mockito.when(tableMetadataProvider.tableMetadata(nonExistingTable))
+        .thenThrow(new NoSuchTableException("Table %s does not exist", nonExistingTable));
+
+    // Mock strategy provider returns non-empty strategies for existing tables
+    StrategyProvider strategyProvider = Mockito.mock(StrategyProvider.class);
+    Mockito.when(strategyProvider.strategies(existingTable1)).thenReturn(List.of(mockStrategy));
+    Mockito.when(strategyProvider.strategies(existingTable2)).thenReturn(List.of(mockStrategy));
+    Mockito.when(strategyProvider.strategy(strategyName)).thenReturn(mockStrategy);
+
+    // Mock job submitter
+    Mockito.when(jobSubmitter.submitJob(Mockito.anyString(), Mockito.any())).thenReturn("job-123");
+
+    Recommender recommender =
+        new Recommender(
+            strategyProvider,
+            statisticsProvider,
+            tableMetadataProvider,
+            jobSubmitter,
+            optimizerEnv);
+    createRecommender(strategyProvider, statisticsProvider, tableMetadataProvider, jobSubmitter);
+
+    // Should skip non-existing table and process existing tables
+    List<Recommender.RecommendationResult> recommendationResults =
+        recommender.submitForStrategyName(
+            List.of(existingTable1, nonExistingTable, existingTable2), strategyName);
+
+    Assertions.assertEquals(2, recommendationResults.size());
+    List<NameIdentifier> recommendationIdentifiers =
+        recommendationResults.stream().map(Recommender.RecommendationResult::identifier).toList();
+    Assertions.assertTrue(recommendationIdentifiers.contains(existingTable1));
+    Assertions.assertTrue(recommendationIdentifiers.contains(existingTable2));
+
+    // Verify all tables were checked for existence (may be called multiple times for existing
+    // tables)
+    Mockito.verify(tableMetadataProvider, Mockito.atLeast(1)).tableMetadata(existingTable1);
+    Mockito.verify(tableMetadataProvider, Mockito.atLeast(1)).tableMetadata(nonExistingTable);
+    Mockito.verify(tableMetadataProvider, Mockito.atLeast(1)).tableMetadata(existingTable2);
+
+    // Verify only existing tables were processed for strategies
+    Mockito.verify(strategyProvider, Mockito.times(1)).strategies(existingTable1);
+    Mockito.verify(strategyProvider, Mockito.never()).strategies(nonExistingTable);
+    Mockito.verify(strategyProvider, Mockito.times(1)).strategies(existingTable2);
+
+    // Verify strategy was looked up by name
+    Mockito.verify(strategyProvider, Mockito.times(1)).strategy(strategyName);
+  }
+
+  @Test
   void testSubmitForStrategyNameRejectsNonPositiveLimit() {
     NameIdentifier identifier = NameIdentifier.of("catalog", "db", "table");
     Strategy strategy = new TestStrategy("s1", STRATEGY_TYPE, "tpl-1");
@@ -218,6 +385,7 @@ class TestRecommenderExecutionMode {
     OptimizerConfig config = Mockito.mock(OptimizerConfig.class);
     Mockito.when(config.getStrategyHandlerClassName(STRATEGY_TYPE))
         .thenReturn(TestStrategyHandler.class.getName());
+    Mockito.when(config.get(OptimizerConfig.SKIP_NON_EXISTING_TABLES_CONFIG)).thenReturn(false);
     OptimizerEnv optimizerEnv = Mockito.mock(OptimizerEnv.class);
     Mockito.when(optimizerEnv.config()).thenReturn(config);
     return new Recommender(

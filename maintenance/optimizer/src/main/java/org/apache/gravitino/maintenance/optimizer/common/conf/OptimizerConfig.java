@@ -58,6 +58,8 @@ public class OptimizerConfig extends Config {
   private static final String STRATEGY_PROVIDER = RECOMMENDER_PREFIX + "strategyProvider";
   private static final String TABLE_META_PROVIDER = RECOMMENDER_PREFIX + "tableMetaProvider";
   private static final String JOB_SUBMITTER = RECOMMENDER_PREFIX + "jobSubmitter";
+  private static final String SKIP_NON_EXISTING_TABLES =
+      RECOMMENDER_PREFIX + "skipNonExistingTables";
 
   public static final String UPDATER_PREFIX = OPTIMIZER_PREFIX + "updater.";
   private static final String STATISTICS_UPDATER = UPDATER_PREFIX + "statisticsUpdater";
@@ -195,6 +197,16 @@ public class OptimizerConfig extends Config {
           .stringConf()
           .checkValue(StringUtils::isNotBlank, ConfigConstants.NOT_BLANK_ERROR_MSG)
           .createWithDefault("us-east-1");
+
+  public static final ConfigEntry<Boolean> SKIP_NON_EXISTING_TABLES_CONFIG =
+      new ConfigBuilder(SKIP_NON_EXISTING_TABLES)
+          .doc(
+              "Whether to skip non-existing tables during recommendation. If true, tables that "
+                  + "do not exist will be logged and skipped. If false (default), the recommender "
+                  + "will fail when encountering a non-existing table.")
+          .version(ConfigConstants.VERSION_1_2_0)
+          .booleanConf()
+          .createWithDefault(false);
 
   /** Create an empty optimizer config to populate programmatically. */
   public OptimizerConfig() {

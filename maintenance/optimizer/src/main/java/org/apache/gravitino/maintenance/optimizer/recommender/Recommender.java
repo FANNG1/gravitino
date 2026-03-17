@@ -32,6 +32,7 @@ import java.util.PriorityQueue;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.gravitino.NameIdentifier;
+import org.apache.gravitino.exceptions.NoSuchTableException;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
 import org.apache.gravitino.maintenance.optimizer.api.common.StatisticEntry;
 import org.apache.gravitino.maintenance.optimizer.api.common.Strategy;
@@ -140,6 +141,13 @@ public class Recommender implements AutoCloseable {
     Preconditions.checkArgument(
         StringUtils.isNotBlank(strategyType), "strategyType must not be blank");
 
+    if (optimizerEnv.config().get(OptimizerConfig.SKIP_NON_EXISTING_TABLES_CONFIG)) {
+      nameIdentifiers = filterNonExistingTables(nameIdentifiers);
+      if (nameIdentifiers.isEmpty()) {
+        LOG.info("No existing tables found for strategy type {}", strategyType);
+      }
+    }
+
     List<RecommendationResult> results = new ArrayList<>();
     Map<String, List<NameIdentifier>> identifiersByStrategyName =
         getIdentifiersByStrategyName(nameIdentifiers, strategyType);
@@ -201,6 +209,19 @@ public class Recommender implements AutoCloseable {
     return evaluateForStrategyName(nameIdentifiers, strategyName, limit, true);
   }
 
+  private List<NameIdentifier> filterNonExistingTables(List<NameIdentifier> nameIdentifiers) {
+    List<NameIdentifier> existingTables = new ArrayList<>();
+    for (NameIdentifier nameIdentifier : nameIdentifiers) {
+      try {
+        tableMetadataProvider.tableMetadata(nameIdentifier);
+        existingTables.add(nameIdentifier);
+      } catch (NoSuchTableException e) {
+        LOG.warn("Skipping table {} because it does not exist", nameIdentifier);
+      }
+    }
+    return existingTables;
+  }
+
   private List<RecommendationResult> evaluateForStrategyName(
       List<NameIdentifier> nameIdentifiers, String strategyName, int limit, boolean dryRun) {
     Preconditions.checkArgument(
@@ -208,6 +229,13 @@ public class Recommender implements AutoCloseable {
     Preconditions.checkArgument(
         StringUtils.isNotBlank(strategyName), "strategyName must not be blank");
     Preconditions.checkArgument(limit > 0, "limit must be > 0");
+
+    if (optimizerEnv.config().get(OptimizerConfig.SKIP_NON_EXISTING_TABLES_CONFIG)) {
+      nameIdentifiers = filterNonExistingTables(nameIdentifiers);
+      if (nameIdentifiers.isEmpty()) {
+        LOG.info("No existing tables found for strategy name {}", strategyName);
+      }
+    }
 
     List<NameIdentifier> identifiersForStrategy =
         getIdentifiersByExactStrategyName(nameIdentifiers, strategyName);
