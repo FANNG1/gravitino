@@ -19,27 +19,42 @@
 
 package org.apache.gravitino.maintenance.optimizer.recommender.job;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.gravitino.Catalog;
 import org.apache.gravitino.NameIdentifier;
 import org.apache.gravitino.client.GravitinoAdminClient;
+import org.apache.gravitino.client.GravitinoClient;
 import org.apache.gravitino.client.GravitinoMetalake;
 import org.apache.gravitino.dto.rel.ColumnDTO;
 import org.apache.gravitino.exceptions.NoSuchMetalakeException;
 import org.apache.gravitino.job.JobHandle;
 import org.apache.gravitino.maintenance.optimizer.api.common.PartitionPath;
+import org.apache.gravitino.maintenance.optimizer.common.OptimizerEnv;
 import org.apache.gravitino.maintenance.optimizer.common.PartitionEntryImpl;
 import org.apache.gravitino.maintenance.optimizer.common.conf.OptimizerConfig;
 import org.apache.gravitino.maintenance.optimizer.recommender.handler.compaction.CompactionJobContext;
+import org.apache.gravitino.maintenance.optimizer.tool.TableRegister;
 import org.apache.gravitino.rel.Column;
+import org.apache.gravitino.rel.Table;
 import org.apache.gravitino.rel.expressions.transforms.Transform;
 import org.apache.gravitino.rel.expressions.transforms.Transforms;
 import org.apache.gravitino.rel.types.Types;
+import org.apache.iceberg.HasTableOperations;
+import org.apache.iceberg.TableMetadata;
+import org.apache.iceberg.TableMetadataParser;
+import org.apache.iceberg.catalog.TableIdentifier;
+import org.apache.iceberg.rest.RESTCatalog;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.awaitility.Awaitility;
@@ -183,6 +198,91 @@ public class TestBuiltinIcebergRewriteDataFiles {
           refreshTable(spark, fullTableName);
           Map<String, Long> afterCounts = countDataFilesByPartition(spark, fullTableName);
           Map<String, Long> afterMaxSizes = maxFileSizeByPartition(spark, fullTableName);
+          Assertions.assertTrue(
+              afterMaxSizes.getOrDefault(targetPartition1, 0L)
+                  > beforeMaxSizes.getOrDefault(targetPartition1, 0L),
+              "Expected larger data files after compaction for " + targetPartition1);
+          Assertions.assertTrue(
+              afterMaxSizes.getOrDefault(targetPartition2, 0L)
+                  > beforeMaxSizes.getOrDefault(targetPartition2, 0L),
+              "Expected larger data files after compaction for " + targetPartition2);
+          Assertions.assertEquals(
+              beforeCounts.getOrDefault(otherPartition1, 0L),
+              afterCounts.getOrDefault(otherPartition1, 0L),
+              "Expected no compaction for " + otherPartition1);
+          Assertions.assertEquals(
+              beforeCounts.getOrDefault(otherPartition2, 0L),
+              afterCounts.getOrDefault(otherPartition2, 0L),
+              "Expected no compaction for " + otherPartition2);
+          Assertions.assertEquals(
+              beforeMaxSizes.getOrDefault(otherPartition1, 0L),
+              afterMaxSizes.getOrDefault(otherPartition1, 0L),
+              "Expected no size changes for " + otherPartition1);
+          Assertions.assertEquals(
+              beforeMaxSizes.getOrDefault(otherPartition2, 0L),
+              afterMaxSizes.getOrDefault(otherPartition2, 0L),
+              "Expected no size changes for " + otherPartition2);
+        });
+  }
+
+  @Test
+  void testCompactPartitionTableRegisteredInGenericCatalog() throws Exception {
+    String tableName = "rewrite_generic_partition_table";
+    String fullTableName = SPARK_CATALOG_NAME + ".db." + tableName;
+    String genericCatalogName = "generic_" + UUID.randomUUID().toString().replace("-", "");
+
+    runWithSparkAndMetalake(
+        (spark, metalake) -> {
+          createPartitionTableAndInsertData(spark, fullTableName);
+          createGenericCatalog(metalake, genericCatalogName);
+          registerExternalTable(genericCatalogName, tableName);
+
+          Table registeredTable = loadRegisteredTable(genericCatalogName, tableName);
+          Assertions.assertEquals(
+              "true",
+              registeredTable.properties().get(Table.PROPERTY_EXTERNAL),
+              "Expected registered table to use external Iceberg semantics");
+
+          Map<String, Long> beforeCounts = countDataFilesByPartition(spark, fullTableName);
+          Map<String, Long> beforeMaxSizes = maxFileSizeByPartition(spark, fullTableName);
+          String targetPartition1 = partitionKey(2024, "1");
+          String targetPartition2 = partitionKey(2024, "2");
+          String otherPartition1 = partitionKey(2025, "1");
+          String otherPartition2 = partitionKey(2025, "2");
+
+          Assertions.assertTrue(
+              beforeCounts.getOrDefault(targetPartition1, 0L) > 1,
+              "Expected multiple data files in " + targetPartition1 + " before compaction");
+          Assertions.assertTrue(
+              beforeCounts.getOrDefault(targetPartition2, 0L) > 1,
+              "Expected multiple data files in " + targetPartition2 + " before compaction");
+
+          OptimizerConfig optimizerConfig = createOptimizerConfig();
+          List<PartitionPath> partitions =
+              Arrays.asList(
+                  PartitionPath.of(
+                      Arrays.asList(
+                          new PartitionEntryImpl("year", "2024"),
+                          new PartitionEntryImpl("month", "1"))),
+                  PartitionPath.of(
+                      Arrays.asList(
+                          new PartitionEntryImpl("year", "2024"),
+                          new PartitionEntryImpl("month", "2"))));
+          Map<String, String> jobOptions = Map.of("min-input-files", "1");
+          Map<String, String> jobConf =
+              buildCompactionJobConfig(
+                  optimizerConfig,
+                  tableName,
+                  jobOptions,
+                  registeredTable.columns(),
+                  registeredTable.partitioning(),
+                  partitions);
+          submitCompactionJob(metalake, jobConf);
+
+          refreshTable(spark, fullTableName);
+          Map<String, Long> afterCounts = countDataFilesByPartition(spark, fullTableName);
+          Map<String, Long> afterMaxSizes = maxFileSizeByPartition(spark, fullTableName);
+
           Assertions.assertTrue(
               afterMaxSizes.getOrDefault(targetPartition1, 0L)
                   > beforeMaxSizes.getOrDefault(targetPartition1, 0L),
@@ -371,6 +471,72 @@ public class TestBuiltinIcebergRewriteDataFiles {
         OptimizerConfig.JOB_SUBMITTER_CONFIG_PREFIX + "spark_driver_memory", "1g");
     optimizerConfigProps.put(OptimizerConfig.JOB_SUBMITTER_CONFIG_PREFIX + "spark_conf", "{}");
     return new OptimizerConfig(optimizerConfigProps);
+  }
+
+  private static OptimizerEnv createTableRegistrationOptimizerEnv(String catalogName) {
+    return new OptimizerEnv(
+        new OptimizerConfig(
+            Map.of(
+                OptimizerConfig.GRAVITINO_URI,
+                SERVER_URI,
+                OptimizerConfig.GRAVITINO_METALAKE,
+                METALAKE_NAME,
+                OptimizerConfig.GRAVITINO_DEFAULT_CATALOG,
+                catalogName)));
+  }
+
+  private static void createGenericCatalog(GravitinoMetalake metalake, String catalogName) {
+    metalake.createCatalog(
+        catalogName,
+        Catalog.Type.RELATIONAL,
+        "lakehouse-generic",
+        "generic catalog for external iceberg registration IT",
+        Map.of("location", "file:///tmp/" + catalogName + "/"));
+  }
+
+  private static void registerExternalTable(String catalogName, String tableName)
+      throws IOException {
+    TableMetadata metadata = loadCurrentTableMetadata(tableName);
+    String registrationLine =
+        "{\"identifier\":\"db."
+            + tableName
+            + "\",\"tableMetadata\":"
+            + TableMetadataParser.toJson(metadata)
+            + "}";
+    Path inputFile = Files.createTempFile("table-registration-", ".jsonl");
+    Files.writeString(inputFile, registrationLine + System.lineSeparator(), StandardCharsets.UTF_8);
+    inputFile.toFile().deleteOnExit();
+    new TableRegister(createTableRegistrationOptimizerEnv(catalogName))
+        .registerFromFile(inputFile.toString());
+  }
+
+  private static TableMetadata loadCurrentTableMetadata(String tableName) throws IOException {
+    try (RESTCatalog restCatalog = createRestCatalog()) {
+      org.apache.iceberg.Table icebergTable =
+          restCatalog.loadTable(TableIdentifier.of("db", tableName));
+      return ((HasTableOperations) icebergTable).operations().current();
+    }
+  }
+
+  private static RESTCatalog createRestCatalog() {
+    RESTCatalog restCatalog = new RESTCatalog();
+    restCatalog.initialize(
+        SPARK_CATALOG_NAME,
+        Map.of(
+            "uri", ICEBERG_REST_URI,
+            "warehouse", WAREHOUSE_LOCATION,
+            "cache-enabled", "false"));
+    return restCatalog;
+  }
+
+  private static Table loadRegisteredTable(String catalogName, String tableName) throws Exception {
+    try (GravitinoClient client =
+        GravitinoClient.builder(SERVER_URI).withMetalake(METALAKE_NAME).build()) {
+      return client
+          .loadCatalog(catalogName)
+          .asTableCatalog()
+          .loadTable(NameIdentifier.of("db", tableName));
+    }
   }
 
   private static SparkSession createSparkSession() {

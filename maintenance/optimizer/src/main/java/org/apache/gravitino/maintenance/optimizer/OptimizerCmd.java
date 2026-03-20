@@ -52,6 +52,7 @@ import org.apache.gravitino.maintenance.optimizer.command.ListTableMetricsComman
 import org.apache.gravitino.maintenance.optimizer.command.MonitorMetricsCommand;
 import org.apache.gravitino.maintenance.optimizer.command.OptimizerCommandContext;
 import org.apache.gravitino.maintenance.optimizer.command.OptimizerCommandExecutor;
+import org.apache.gravitino.maintenance.optimizer.command.RegisterTablesCommand;
 import org.apache.gravitino.maintenance.optimizer.command.SubmitStrategyJobsCommand;
 import org.apache.gravitino.maintenance.optimizer.command.UpdateStatisticsCommand;
 import org.apache.gravitino.maintenance.optimizer.command.rule.CommandRules;
@@ -114,7 +115,14 @@ public class OptimizerCmd {
               EnumSet.of(CliOption.IDENTIFIERS),
               EnumSet.noneOf(CliOption.class),
               "List stored job metrics.",
-              "./bin/gravitino-optimizer.sh --type list-job-metrics --identifiers c.db.job"));
+              "./bin/gravitino-optimizer.sh --type list-job-metrics --identifiers c.db.job"),
+          OptimizerCommandType.REGISTER_TABLES,
+          CommandOptionSpec.of(
+              EnumSet.of(CliOption.FILE_PATH),
+              EnumSet.noneOf(CliOption.class),
+              "Register Iceberg tables from a JSONL input file.",
+              "./bin/gravitino-optimizer.sh --type register-tables --file-path "
+                  + "./table-metadata.jsonl"));
   private static final Map<OptimizerCommandType, OptimizerCommandExecutor> COMMAND_HANDLERS =
       Map.of(
           OptimizerCommandType.SUBMIT_STRATEGY_JOBS, new SubmitStrategyJobsCommand(),
@@ -122,7 +130,8 @@ public class OptimizerCmd {
           OptimizerCommandType.APPEND_METRICS, new AppendMetricsCommand(),
           OptimizerCommandType.MONITOR_METRICS, new MonitorMetricsCommand(),
           OptimizerCommandType.LIST_TABLE_METRICS, new ListTableMetricsCommand(),
-          OptimizerCommandType.LIST_JOB_METRICS, new ListJobMetricsCommand());
+          OptimizerCommandType.LIST_JOB_METRICS, new ListJobMetricsCommand(),
+          OptimizerCommandType.REGISTER_TABLES, new RegisterTablesCommand());
   private static final String LOCAL_STATS_CALCULATOR_NAME = "local-stats-calculator";
 
   static {
@@ -503,7 +512,8 @@ public class OptimizerCmd {
     APPEND_METRICS,
     MONITOR_METRICS,
     LIST_TABLE_METRICS,
-    LIST_JOB_METRICS;
+    LIST_JOB_METRICS,
+    REGISTER_TABLES;
 
     public static String allValues() {
       return Arrays.stream(values())

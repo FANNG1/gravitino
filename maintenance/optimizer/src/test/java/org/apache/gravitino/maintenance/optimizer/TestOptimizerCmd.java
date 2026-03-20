@@ -95,6 +95,13 @@ class TestOptimizerCmd {
   }
 
   @Test
+  void testRegisterTablesRequiresFilePath() {
+    String[] output = runCommand("--type", "register-tables");
+    Assertions.assertTrue(
+        output[1].contains("Missing required options for command 'register-tables': --file-path"));
+  }
+
+  @Test
   void testConfPathNonexistentFailsClearly() {
     String[] output =
         runCommand(
